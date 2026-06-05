@@ -1,26 +1,136 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Fonts */
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
+
+  /* Shadcn semantic color tokens */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Sofia — Ocean Blue scale */
+  --color-ocean-50:  var(--sofia-ocean-50);
+  --color-ocean-100: var(--sofia-ocean-100);
+  --color-ocean-200: var(--sofia-ocean-200);
+  --color-ocean-300: var(--sofia-ocean-300);
+  --color-ocean-400: var(--sofia-ocean-400);
+  --color-ocean-500: var(--sofia-ocean-500);
+  --color-ocean-600: var(--sofia-ocean-600);
+  --color-ocean-700: var(--sofia-ocean-700);
+  --color-ocean-800: var(--sofia-ocean-800);
+  --color-ocean-900: var(--sofia-ocean-900);
+
+  /* Sofia — Sand / Gold scale */
+  --color-sand-50:  var(--sofia-sand-50);
+  --color-sand-100: var(--sofia-sand-100);
+  --color-sand-200: var(--sofia-sand-200);
+  --color-sand-300: var(--sofia-sand-300);
+  --color-sand-400: var(--sofia-sand-400);
+  --color-sand-500: var(--sofia-sand-500);
+
+  /* Radius scale */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --radius: 0.75rem;
+
+  /* ============================================
+     SOFIA'S BRAND PALETTE
+     Ocean hue: 215 — clear Mediterranean sea
+     Sand hue:   78 — warm Búzios beach
+  ============================================ */
+
+  /* Ocean Blue — 10-step coastal scale
+     Hue 215 reads as bright sea-blue, not corporate navy.
+     Dark end (700-900) reserved for footer / admin UI only. */
+  --sofia-ocean-50:  oklch(0.97 0.018 215);
+  --sofia-ocean-100: oklch(0.93 0.040 215);
+  --sofia-ocean-200: oklch(0.87 0.075 215);
+  --sofia-ocean-300: oklch(0.75 0.110 215);
+  --sofia-ocean-400: oklch(0.63 0.140 215);
+  --sofia-ocean-500: oklch(0.52 0.155 215);
+  --sofia-ocean-600: oklch(0.44 0.155 215);
+  --sofia-ocean-700: oklch(0.37 0.135 215);
+  --sofia-ocean-800: oklch(0.28 0.100 215);
+  --sofia-ocean-900: oklch(0.20 0.070 215);
+
+  /* Sand / Gold — warm Búzios sand */
+  --sofia-sand-50:  oklch(0.98 0.010 88);
+  --sofia-sand-100: oklch(0.96 0.025 86);
+  --sofia-sand-200: oklch(0.91 0.048 82);
+  --sofia-sand-300: oklch(0.84 0.078 78);
+  --sofia-sand-400: oklch(0.76 0.100 75);
+  --sofia-sand-500: oklch(0.66 0.120 72);
+
+  /* ============================================
+     SHADCN SEMANTIC TOKENS
+  ============================================ */
+
+  /* Page background: warm pearl — breathable, not clinical white */
+  --background: oklch(0.988 0.005 90);
+  --foreground: oklch(0.22  0.018 230);
+
+  /* Cards: pure white — pop against the pearl page bg */
+  --card:            oklch(1    0    0);
+  --card-foreground: oklch(0.22 0.018 230);
+
+  --popover:            oklch(1    0    0);
+  --popover-foreground: oklch(0.22 0.018 230);
+
+  /* Primary = ocean-600 — bright coastal blue for CTAs
+     Not navy. Use ocean-700/800 only for footer and admin. */
+  --primary:            oklch(0.44 0.155 215);
+  --primary-foreground: oklch(0.99 0    0);
+
+  /* Secondary = ocean-50 tint with ocean-700 text — airy, not heavy */
+  --secondary:            oklch(0.95 0.025 215);
+  --secondary-foreground: oklch(0.37 0.135 215);
+
+  /* Muted = warm light sand-gray — never cold blue */
+  --muted:            oklch(0.96 0.010 90);
+  --muted-foreground: oklch(0.52 0.020 225);
+
+  /* Accent = sand-400 — warm gold for badges, highlights, stars */
+  --accent:            oklch(0.76 0.100 75);
+  --accent-foreground: oklch(0.22 0.018 230);
+
+  /* Destructive */
+  --destructive: oklch(0.577 0.245 27.325);
+
+  /* Borders and inputs: very subtle, warm */
+  --border: oklch(0.92 0.010 220);
+  --input:  oklch(0.92 0.010 220);
+  --ring:   oklch(0.52 0.155 215);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
 }
