@@ -44,7 +44,7 @@ export default function HomePage() {
           href="/quartos"
           className="inline-flex items-center justify-center bg-primary text-primary-foreground px-8 py-4 rounded-xl font-semibold text-sm hover:bg-ocean-700 transition-colors shadow-sm"
         >
-          Reservar Agora
+          Reservar agora
         </a>
         <a
           href={waHref}

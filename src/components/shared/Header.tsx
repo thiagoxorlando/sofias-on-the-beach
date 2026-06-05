@@ -55,7 +55,7 @@ export function Header() {
           href="/quartos"
           className="hidden md:inline-flex items-center bg-primary text-primary-foreground px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-ocean-700 transition-colors shadow-sm shrink-0"
         >
-          Reservar Agora
+          Reservar agora
         </Link>
 
         {/* Mobile hamburger */}
@@ -95,7 +95,7 @@ export function Header() {
                 className="flex items-center justify-center w-full bg-primary text-primary-foreground px-5 py-3 rounded-xl text-sm font-semibold hover:bg-ocean-700 transition-colors"
                 onClick={() => setMenuOpen(false)}
               >
-                Reservar Agora
+                Reservar agora
               </Link>
             </div>
           </nav>

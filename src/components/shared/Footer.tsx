@@ -81,7 +81,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <p className="text-ocean-500 text-xs">
-            © {year} Sofia&apos;s on the Beach. Todos os direitos reservados.
+            © {year}{' '}Sofia&apos;s on the Beach. Todos os direitos reservados.
           </p>
           <p className="text-ocean-600 text-xs">
             Reservas diretas · Melhor tarifa garantida
