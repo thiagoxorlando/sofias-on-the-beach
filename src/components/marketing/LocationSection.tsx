@@ -29,7 +29,7 @@ export function LocationSection() {
   const waHref = `https://wa.me/${phone}?text=${WA_MSG}`
 
   return (
-    <section className="bg-white py-20 md:py-28 overflow-hidden">
+    <section className="bg-white py-14 md:py-28 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 md:px-10">
         <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
 
@@ -70,7 +70,7 @@ export function LocationSection() {
               href={waHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 bg-ocean-900 text-white text-[12px] font-bold uppercase tracking-[0.12em] px-7 py-3.5 rounded-xl hover:bg-ocean-800 transition-colors shadow-sm"
+              className="flex sm:inline-flex items-center justify-center gap-3 w-full sm:w-auto bg-ocean-900 text-white text-[12px] font-bold uppercase tracking-[0.12em] px-7 py-3.5 rounded-xl hover:bg-ocean-800 transition-colors shadow-sm"
             >
               <WhatsAppIcon />
               Como chegar pelo WhatsApp

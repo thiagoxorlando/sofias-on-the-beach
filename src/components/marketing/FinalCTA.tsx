@@ -19,7 +19,7 @@ export function FinalCTA() {
         <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] gap-10 md:gap-16 items-center">
 
           {/* ── Left: brand anchor — horizontal icon + wordmark ── */}
-          <div className="flex items-center gap-4 md:border-r md:border-white/10 md:pr-16">
+          <div className="flex items-center justify-center md:justify-start gap-4 md:border-r md:border-white/10 md:pr-16">
             <SofiasMark className="w-[56px] h-[56px] text-ocean-300 shrink-0" />
             <div>
               <p className="font-serif text-[34px] md:text-[38px] font-bold text-white leading-none tracking-tight">
@@ -47,7 +47,7 @@ export function FinalCTA() {
               {/* Primary — blue filled */}
               <a
                 href="/quartos"
-                className="inline-flex items-center justify-center gap-2.5 bg-ocean-600 text-white px-7 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.12em] hover:bg-ocean-500 transition-colors shadow-md whitespace-nowrap"
+                className="flex sm:inline-flex items-center justify-center gap-2.5 w-full sm:w-auto bg-ocean-600 text-white px-7 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.12em] hover:bg-ocean-500 transition-colors shadow-md"
               >
                 <CalendarIcon />
                 Ver disponibilidade
@@ -57,7 +57,7 @@ export function FinalCTA() {
                 href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2.5 border border-white/25 text-white px-7 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.12em] hover:bg-white/10 transition-colors whitespace-nowrap"
+                className="flex sm:inline-flex items-center justify-center gap-2.5 w-full sm:w-auto border border-white/25 text-white px-7 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.12em] hover:bg-white/10 transition-colors"
               >
                 <WhatsAppIcon />
                 Falar no WhatsApp

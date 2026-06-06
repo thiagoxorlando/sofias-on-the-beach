@@ -134,7 +134,7 @@ export function HeroSection() {
               alt="Vista da varanda da pousada com mar de Búzios ao fundo"
               fill
               priority
-              className="object-cover object-center"
+              className="object-cover object-[center_35%]"
               sizes="100vw"
             />
           ) : (
@@ -158,7 +158,7 @@ export function HeroSection() {
         />
 
         {/* Bottom content */}
-        <div className="absolute bottom-0 inset-x-0 px-6 pb-8">
+        <div className="absolute bottom-0 inset-x-0 px-6 pb-[calc(6rem+env(safe-area-inset-bottom))]">
           <p className="text-[10px] font-bold text-white/60 uppercase tracking-[0.3em] mb-3">
             Beira-mar · Búzios · RJ
           </p>

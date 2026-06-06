@@ -118,9 +118,9 @@ export function RoomsPreview() {
         </div>
 
         {/* Bottom trust line */}
-        <div className="flex items-center justify-center gap-2 mt-12">
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-12 px-4">
           <LockIcon />
-          <p className="text-[10px] font-semibold text-ocean-800/55 uppercase tracking-[0.24em]">
+          <p className="text-[10px] font-semibold text-ocean-800/55 uppercase tracking-[0.10em] md:tracking-[0.22em] text-center">
             Melhor tarifa garantida · Atendimento pelo WhatsApp
           </p>
         </div>

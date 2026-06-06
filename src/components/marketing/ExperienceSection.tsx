@@ -60,7 +60,7 @@ export function ExperienceSection() {
       <div className="flex flex-col md:flex-row">
 
         {/* Left: text — white, padded */}
-        <div className="w-full md:w-[43%] flex flex-col justify-center px-6 py-14 md:py-[90px] md:pl-[5vw] md:pr-16" style={{ maxWidth: 'min(100%, calc(43vw))' }}>
+        <div className="w-full md:w-[43%] flex flex-col justify-center px-6 py-12 md:py-[90px] md:pl-[5vw] md:pr-16">
           <p className="text-[11px] font-bold text-ocean-600 uppercase tracking-[0.30em] mb-4">
             Experiências
           </p>
@@ -106,7 +106,7 @@ export function ExperienceSection() {
       </div>
 
       {/* ── Full-bleed photo strip — no gap, no padding, no rounding ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 h-[180px] md:h-[260px]">
+      <div className="grid grid-cols-3 h-[120px] md:h-[260px]">
         {stripImages.map((img) => {
           const exists = imgExists(img.src)
           const filename = img.src.split('/').pop() ?? ''
@@ -164,9 +164,9 @@ export function ExperienceSection() {
       </div>
 
       {/* ── Bottom trust line ── */}
-      <div className="flex items-center justify-center gap-2 pb-12 md:pb-14">
+      <div className="flex flex-wrap items-center justify-center gap-2 pb-12 md:pb-14 px-6">
         <LockIcon />
-        <p className="text-[10px] font-semibold text-ocean-800/50 uppercase tracking-[0.24em]">
+        <p className="text-[10px] font-semibold text-ocean-800/50 uppercase tracking-[0.10em] md:tracking-[0.22em] text-center">
           Reserva direta · Melhor tarifa garantida · Atendimento pelo WhatsApp
         </p>
       </div>
