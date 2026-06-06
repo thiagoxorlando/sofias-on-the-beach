@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 const WA_MSG = encodeURIComponent(
   "Olá! Gostaria de consultar disponibilidade na pousada Sofia's on the Beach."
 )
@@ -45,13 +47,13 @@ export function FinalCTA() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               {/* Primary — blue filled */}
-              <a
+              <Link
                 href="/quartos"
                 className="flex sm:inline-flex items-center justify-center gap-2.5 w-full sm:w-auto bg-ocean-600 text-white px-7 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.12em] hover:bg-ocean-500 transition-colors shadow-md"
               >
                 <CalendarIcon />
                 Ver disponibilidade
-              </a>
+              </Link>
               {/* Secondary — outlined */}
               <a
                 href={waHref}

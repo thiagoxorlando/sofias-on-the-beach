@@ -1,5 +1,79 @@
 import { createClient } from '@/lib/supabase/server'
 
+// ── All-rooms type (used by /quartos listing page) ────────────────────────────
+
+export interface PublicRoomFull {
+  id: string
+  slug: string
+  name: string
+  categoryName: string | null
+  description: string | null
+  imageUrl: string
+  imageAlt: string
+  priceFrom: number
+  maxGuests: number
+  sizeSqm: number | null
+  oceanView: boolean
+  amenities: string[]
+}
+
+export async function getAllActiveRooms(): Promise<PublicRoomFull[]> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('rooms')
+      .select(`
+        id,
+        name,
+        slug,
+        short_description,
+        base_price_brl,
+        max_guests,
+        ocean_view,
+        size_sqm,
+        amenities,
+        room_categories ( name ),
+        room_images ( url, alt_text, is_cover, sort_order )
+      `)
+      .eq('is_active', true)
+      .order('name', { ascending: true })
+
+    if (error || !data) return []
+
+    type Img = { url: string; alt_text: string | null; is_cover: boolean; sort_order: number }
+
+    return data.map((room) => {
+      const catName =
+        room.room_categories && !Array.isArray(room.room_categories)
+          ? (room.room_categories as { name: string }).name
+          : null
+
+      const imgs = (Array.isArray(room.room_images) ? room.room_images : []) as Img[]
+      const sortedImgs = [...imgs].sort((a, b) => a.sort_order - b.sort_order)
+      const cover = sortedImgs.find((i) => i.is_cover) ?? sortedImgs[0] ?? null
+
+      return {
+        id: room.id,
+        slug: room.slug,
+        name: room.name,
+        categoryName: catName,
+        description: room.short_description ?? null,
+        imageUrl: cover?.url ?? `/images/rooms/${room.slug}.jpg`,
+        imageAlt: cover?.alt_text ?? `${room.name} em Búzios`,
+        priceFrom: room.base_price_brl,
+        maxGuests: room.max_guests,
+        sizeSqm: room.size_sqm ?? null,
+        oceanView: room.ocean_view,
+        amenities: Array.isArray(room.amenities) ? (room.amenities as string[]) : [],
+      }
+    })
+  } catch {
+    return []
+  }
+}
+
+// ── Featured-rooms type (used by homepage RoomsPreview) ───────────────────────
+
 export interface PublicRoom {
   id: string
   name: string

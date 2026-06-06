@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import Image from 'next/image'
+import Link from 'next/link'
 import { getFeaturedRooms } from '@/lib/publicRooms'
 
 function imgExists(src: string): boolean {
@@ -104,12 +105,12 @@ export async function RoomsPreview() {
                         <span className="text-[10px] text-muted-foreground"> {room.priceSuffix}</span>
                       </p>
                     </div>
-                    <a
+                    <Link
                       href="/quartos"
                       className="bg-ocean-900 text-white text-[11px] font-bold px-5 py-2.5 rounded-xl hover:bg-ocean-800 transition-colors shadow-sm uppercase tracking-[0.08em]"
                     >
                       {room.ctaLabel}
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>

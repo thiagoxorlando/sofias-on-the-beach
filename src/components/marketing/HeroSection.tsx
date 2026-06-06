@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import Image from 'next/image'
+import Link from 'next/link'
 import { BookingWidget } from '@/components/marketing/BookingWidget'
 
 const HERO_IMG = '/images/hero/hero-terrace-main.png'
@@ -85,13 +86,13 @@ export function HeroSection() {
             </p>
 
             <div className="flex flex-wrap gap-2.5">
-              <a
+              <Link
                 href="/quartos"
                 className="inline-flex items-center gap-2 bg-ocean-900 text-white px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-800 transition-colors shadow-sm"
               >
                 <CalendarIcon />
                 Consultar disponibilidade
-              </a>
+              </Link>
               <a
                 href={waHref}
                 target="_blank"
@@ -166,13 +167,13 @@ export function HeroSection() {
             Acorde de frente para o mar em Búzios
           </h1>
           <div className="flex flex-col gap-2.5">
-            <a
+            <Link
               href="/quartos"
               className="flex items-center justify-center gap-2.5 bg-white text-ocean-900 py-3.5 rounded-xl font-bold text-[13px] uppercase tracking-[0.08em]"
             >
               <CalendarIcon />
               Consultar disponibilidade
-            </a>
+            </Link>
             <a
               href={waHref}
               target="_blank"
