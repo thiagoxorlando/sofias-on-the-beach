@@ -7,67 +7,64 @@ export function FinalCTA() {
   const waHref = `https://wa.me/${phone}?text=${WA_MSG}`
 
   return (
-    <section className="relative bg-gradient-to-br from-ocean-900 via-ocean-800 to-ocean-700 overflow-hidden py-24 md:py-32 px-6 md:px-10">
+    <section className="relative bg-ocean-900 py-16 md:py-20 px-6 md:px-10 overflow-hidden">
 
-      {/* Large arch silhouette — Mykonos architectural motif */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-t-full bg-ocean-800/30 pointer-events-none" />
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[360px] h-[180px] rounded-t-full bg-ocean-700/25 pointer-events-none" />
+      {/* Very subtle bottom glow */}
+      <div
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[180px] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at bottom, rgba(0,111,182,0.09) 0%, transparent 70%)' }}
+      />
 
-      {/* Sun glow — center top */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-ocean-400/15 blur-3xl pointer-events-none" />
-      {/* Corner glows */}
-      <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-ocean-500/10 blur-2xl pointer-events-none" />
-      <div className="absolute top-8 left-0 w-48 h-48 rounded-full bg-ocean-600/15 blur-2xl pointer-events-none" />
+      <div className="relative max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] gap-10 md:gap-16 items-center">
 
-      {/* Sun circle decoration */}
-      <div className="absolute top-12 right-12 md:right-24 w-32 h-32 rounded-full border border-white/10 pointer-events-none" />
-      <div className="absolute top-16 right-16 md:right-28 w-20 h-20 rounded-full border border-white/15 pointer-events-none" />
-
-      <div className="relative max-w-3xl mx-auto text-center">
-
-        {/* Logo mark in white */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <SofiasMark className="w-10 h-10 text-ocean-300" />
-          <div className="flex flex-col leading-none text-left">
-            <span className="font-serif text-lg font-bold text-white leading-none">Sofia&apos;s</span>
-            <span className="text-[9px] font-bold text-ocean-400 uppercase tracking-[0.18em] mt-0.5">on the Beach</span>
+          {/* ── Left: brand anchor — horizontal icon + wordmark ── */}
+          <div className="flex items-center gap-4 md:border-r md:border-white/10 md:pr-16">
+            <SofiasMark className="w-[56px] h-[56px] text-ocean-300 shrink-0" />
+            <div>
+              <p className="font-serif text-[34px] md:text-[38px] font-bold text-white leading-none tracking-tight">
+                SOFIA&apos;S
+              </p>
+              <p className="text-[10px] font-semibold text-ocean-400 uppercase tracking-[0.20em] mt-1.5">
+                on the beach
+              </p>
+            </div>
           </div>
-        </div>
 
-        <p className="text-[11px] font-bold text-ocean-300 uppercase tracking-widest mb-6">
-          Reserva direta
-        </p>
+          {/* ── Right: CTA ── */}
+          <div>
+            <h2
+              className="font-serif font-bold text-white leading-[1.1] mb-4"
+              style={{ fontSize: 'clamp(28px, 3.8vw, 52px)' }}
+            >
+              Reserve direto com Sofia&apos;s on the Beach
+            </h2>
+            <p className="text-[14px] md:text-[15px] text-ocean-300 leading-[1.7] mb-8" style={{ maxWidth: '560px' }}>
+              A melhor tarifa garantida, atendimento personalizado e condições exclusivas
+              para sua estadia à beira-mar.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Primary — blue filled */}
+              <a
+                href="/quartos"
+                className="inline-flex items-center justify-center gap-2.5 bg-ocean-600 text-white px-7 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.12em] hover:bg-ocean-500 transition-colors shadow-md whitespace-nowrap"
+              >
+                <CalendarIcon />
+                Ver disponibilidade
+              </a>
+              {/* Secondary — outlined */}
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2.5 border border-white/25 text-white px-7 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.12em] hover:bg-white/10 transition-colors whitespace-nowrap"
+              >
+                <WhatsAppIcon />
+                Falar no WhatsApp
+              </a>
+            </div>
+          </div>
 
-        <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.1] mb-6">
-          Reserve direto com<br className="hidden sm:block" /> Sofia&apos;s on the Beach
-        </h2>
-
-        <p className="text-ocean-200 text-base md:text-lg leading-relaxed mb-10 max-w-lg mx-auto">
-          Fale com a equipe e consulte as melhores condições<br className="hidden sm:block" />
-          para sua estadia à beira-mar.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <a
-            href="/quartos"
-            className="inline-flex items-center justify-center bg-white text-ocean-900 px-8 py-4 rounded-xl font-semibold text-sm hover:bg-ocean-50 transition-colors shadow-lg"
-          >
-            Consultar disponibilidade
-          </a>
-          <a
-            href={waHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2.5 bg-white/10 border border-white/20 text-white px-8 py-4 rounded-xl font-semibold text-sm hover:bg-white/20 transition-colors backdrop-blur-sm"
-          >
-            <WhatsAppIcon className="w-4 h-4 text-[#25D366] shrink-0" />
-            Falar no WhatsApp
-          </a>
-        </div>
-
-        {/* Wave accent */}
-        <div className="mt-10 flex justify-center opacity-40">
-          <WaveAccent className="w-32 text-ocean-300" />
         </div>
       </div>
     </section>
@@ -83,17 +80,20 @@ function SofiasMark({ className }: { className?: string }) {
   )
 }
 
-function WaveAccent({ className }: { className?: string }) {
+function CalendarIcon() {
   return (
-    <svg viewBox="0 0 160 20" fill="none" className={className} aria-hidden="true">
-      <path d="M0 10 Q20 2 40 10 T80 10 T120 10 T160 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0" aria-hidden="true">
+      <rect x={3} y={4} width={18} height={18} rx={2} ry={2} />
+      <line x1={16} y1={2} x2={16} y2={6} />
+      <line x1={8} y1={2} x2={8} y2={6} />
+      <line x1={3} y1={10} x2={21} y2={10} />
     </svg>
   )
 }
 
-function WhatsAppIcon({ className }: { className?: string }) {
+function WhatsAppIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 shrink-0" aria-hidden="true">
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
     </svg>
   )

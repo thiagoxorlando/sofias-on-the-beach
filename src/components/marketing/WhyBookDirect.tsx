@@ -1,137 +1,104 @@
-import Image from 'next/image'
-
-const features = [
-  {
-    id: 'vista',
-    icon: <WaveIcon />,
-    label: 'Vista privilegiada',
-    text: 'Acorde com o oceano como cenário todos os dias.',
-  },
-  {
-    id: 'experiencias',
-    icon: <StarIcon />,
-    label: 'Experiências autênticas',
-    text: 'O melhor de Búzios aos seus pés, curado com cuidado.',
-  },
-  {
-    id: 'atendimento',
-    icon: <ServiceBellIcon />,
-    label: 'Atendimento personalizado',
-    text: 'Cuidado em cada detalhe da sua estadia à beira-mar.',
-  },
+const benefits = [
   {
     id: 'tarifa',
     icon: <TagIcon />,
-    label: 'Melhor tarifa direta',
-    text: 'Reserve direto e garanta o menor preço disponível.',
+    title: 'Melhor tarifa direta',
+    body: 'Ao reservar diretamente conosco, você garante as melhores condições sem taxas de plataformas.',
+  },
+  {
+    id: 'whatsapp',
+    icon: <ChatIcon />,
+    title: 'Atendimento pelo WhatsApp',
+    body: 'Fale direto com a equipe da pousada antes, durante e depois da sua estadia.',
+  },
+  {
+    id: 'taxas',
+    icon: <ShieldIcon />,
+    title: 'Sem taxas de plataforma',
+    body: 'Reserve com transparência, sem acréscimos de intermediários.',
+  },
+  {
+    id: 'comunicacao',
+    icon: <MessageIcon />,
+    title: 'Comunicação direta',
+    body: 'Pedidos especiais, dúvidas e detalhes resolvidos diretamente com quem conhece a pousada.',
   },
 ]
 
 export function WhyBookDirect() {
   return (
-    <section className="bg-white py-20 px-6 md:px-10 border-b border-ocean-50">
+    <section className="bg-white py-14 md:py-20 px-6 md:px-10">
       <div className="max-w-7xl mx-auto">
-        <div className="grid md:grid-cols-[1fr_auto_1fr] gap-10 md:gap-16 items-start">
 
-          {/* Left: editorial intro */}
-          <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-px w-8 bg-ocean-300" />
-              <p className="text-[10px] font-bold text-ocean-500 uppercase tracking-[0.28em]">
-                Sofisticação à beira-mar
+        {/* Centered header */}
+        <div className="text-center mb-14 md:mb-18">
+          <p className="text-[11px] font-bold text-ocean-600 uppercase tracking-[0.30em] mb-4">
+            Vantagens exclusivas
+          </p>
+          <h2
+            className="font-serif font-bold text-ocean-900 leading-[1.1] mx-auto"
+            style={{ fontSize: 'clamp(26px, 2.6vw, 38px)', maxWidth: '520px' }}
+          >
+            Por que reservar direto?
+          </h2>
+          <div className="w-10 h-[3px] rounded-full bg-ocean-500 mx-auto mt-5" />
+        </div>
+
+        {/* 4 benefit columns */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-10 lg:gap-14">
+          {benefits.map((b) => (
+            <div key={b.id} className="border-t-2 border-ocean-100 pt-7">
+              <div className="text-ocean-600 mb-5 w-6 h-6">
+                {b.icon}
+              </div>
+              <h3 className="font-serif text-[17px] font-bold text-ocean-900 leading-snug mb-3">
+                {b.title}
+              </h3>
+              <p className="text-[13px] text-foreground/58 leading-relaxed">
+                {b.body}
               </p>
             </div>
-            <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground leading-[1.1] mb-5">
-              Suítes que abraçam<br />o mar e o conforto
-            </h2>
-            <p className="text-[15px] text-muted-foreground leading-relaxed mb-7 max-w-xs">
-              Ambientes exclusivos com varanda, design inspirado nas cores do mar
-              e todo o conforto que você merece.
-            </p>
-            <a
-              href="/quartos"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-ocean-700 hover:text-ocean-900 transition-colors"
-            >
-              Conhecer suítes
-              <span aria-hidden="true">→</span>
-            </a>
-          </div>
-
-          {/* Center: features */}
-          <div className="flex flex-col gap-7 md:pt-1">
-            {features.map((f) => (
-              <div key={f.id} className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-ocean-50 border border-ocean-100 flex items-center justify-center text-ocean-500 shrink-0 mt-0.5">
-                  {f.icon}
-                </div>
-                <div>
-                  <p className="text-[11px] font-bold text-ocean-500 uppercase tracking-widest mb-1">
-                    {f.label}
-                  </p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {f.text}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Right: arch-framed photo */}
-          <div className="flex justify-center md:justify-end">
-            <div className="relative w-[220px] md:w-[260px] lg:w-[300px] h-[320px] md:h-[380px] lg:h-[420px] rounded-t-full rounded-b-3xl overflow-hidden shadow-2xl">
-              <Image
-                src="/images/hero/exterior-blue-white.jpg"
-                alt="Exterior da pousada Sofia's on the Beach com arquitectura branca e detalhes azuis"
-                fill
-                className="object-cover object-top"
-                sizes="(max-width: 768px) 220px, (max-width: 1024px) 260px, 300px"
-              />
-              {/* Subtle bottom vignette for blend */}
-              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-ocean-900/10 to-transparent" />
-            </div>
-          </div>
-
+          ))}
         </div>
+
       </div>
     </section>
   )
 }
 
-function WaveIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" className="w-4 h-4" aria-hidden="true">
-      <path d="M2 7c.6.5 1.2 1 2.5 1C7 8 7 6 9.5 6s2.5 2 5 2 2.5-2 5-2" />
-      <path d="M2 14c.6.5 1.2 1 2.5 1C7 15 7 13 9.5 13s2.5 2 5 2 2.5-2 5-2" />
-    </svg>
-  )
-}
-
-function StarIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden="true">
-      <circle cx={12} cy={12} r={10} />
-      <line x1={12} y1={2} x2={12} y2={6} />
-      <line x1={12} y1={18} x2={12} y2={22} />
-      <line x1={2} y1={12} x2={6} y2={12} />
-      <line x1={18} y1={12} x2={22} y2={12} />
-    </svg>
-  )
-}
-
-function ServiceBellIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden="true">
-      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
-  )
-}
-
 function TagIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-full h-full" aria-hidden="true">
       <path d="M12 2H2v10l9.29 9.29a1 1 0 0 0 1.41 0l7.29-7.29a1 1 0 0 0 0-1.41L12 2z" />
       <circle cx={7} cy={7} r={1} fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+function ChatIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-full h-full" aria-hidden="true">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      <line x1={9} y1={10} x2={9} y2={10} strokeWidth={2.5} />
+      <line x1={12} y1={10} x2={12} y2={10} strokeWidth={2.5} />
+      <line x1={15} y1={10} x2={15} y2={10} strokeWidth={2.5} />
+    </svg>
+  )
+}
+
+function ShieldIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-full h-full" aria-hidden="true">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <polyline points="9 12 11 14 15 10" />
+    </svg>
+  )
+}
+
+function MessageIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-full h-full" aria-hidden="true">
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
     </svg>
   )
 }
