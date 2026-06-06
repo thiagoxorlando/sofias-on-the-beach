@@ -1,5 +1,7 @@
+import Image from 'next/image'
+
 const WA_MSG = encodeURIComponent(
-  "Olá! Gostaria de saber mais sobre a localização da pousada Sofia's on the Beach."
+  "Olá! Gostaria de saber mais sobre como chegar na pousada Sofia's on the Beach."
 )
 
 export function LocationSection() {
@@ -7,130 +9,92 @@ export function LocationSection() {
   const waHref = `https://wa.me/${phone}?text=${WA_MSG}`
 
   return (
-    <section className="bg-sand-50 py-20 px-6 md:px-10 border-y border-sand-200">
-      <div className="max-w-6xl mx-auto">
+    <section className="bg-white py-20 px-6 md:px-10">
+      <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 md:gap-20 items-center">
 
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+        {/* Text */}
+        <div>
+          <p className="text-[11px] font-bold text-ocean-500 uppercase tracking-widest mb-3">
+            Localização
+          </p>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-5 leading-tight">
+            No coração de Búzios,<br className="hidden sm:block" /> com o mar como cenário
+          </h2>
+          <p className="text-muted-foreground leading-relaxed mb-8">
+            A Sofia&apos;s on the Beach está localizada diretamente na orla de Búzios,
+            em uma das posições mais privilegiadas do litoral brasileiro. Acesso
+            imediato à praia e a poucos minutos do centro histórico.
+          </p>
 
-          {/* Text */}
-          <div className="flex-1">
-            <p className="text-xs font-bold text-ocean-500 uppercase tracking-widest mb-3">
-              Localização
-            </p>
-            <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-5">
-              No coração de Búzios, frente ao oceano
-            </h2>
-            <div className="h-0.5 w-12 bg-accent rounded-full mb-6" />
-
-            <p className="text-muted-foreground text-base leading-relaxed mb-4">
-              A Sofia&apos;s on the Beach está localizada diretamente na orla de
-              Búzios, em uma das posições mais privilegiadas da cidade. Com acesso
-              imediato à praia e a poucos minutos do centro histórico e das melhores
-              praias da região.
-            </p>
-            <p className="text-muted-foreground text-base leading-relaxed mb-8">
-              Búzios é considerada um dos destinos mais charmosos do Brasil, com
-              mais de 23 praias de diferentes perfis, gastronomia sofisticada e o
-              relaxamento inconfundível do litoral fluminense.
-            </p>
-
-            {/* Location details */}
-            <ul className="space-y-3 mb-8">
-              {[
-                'Acesso direto à praia',
-                'A 2h30 do Rio de Janeiro',
-                'Próximo ao centro histórico de Búzios',
-                'Cercado pelas praias mais belas da região',
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-3 text-sm text-foreground">
-                  <CheckIcon className="w-4 h-4 text-ocean-500 shrink-0 mt-0.5" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-
-            <a
-              href={waHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-7 py-3.5 rounded-xl font-semibold text-sm hover:bg-ocean-700 transition-colors shadow-sm"
-            >
-              <WhatsAppIcon className="w-4 h-4 text-white/80 shrink-0" />
-              Falar sobre como chegar
-            </a>
-          </div>
-
-          {/* Map placeholder */}
-          <div className="flex-1 w-full lg:max-w-md">
-            <div className="relative w-full h-80 lg:h-96 rounded-3xl overflow-hidden bg-ocean-50 border border-ocean-100 shadow-sm">
-
-              {/* Grid lines (abstract map feel) */}
-              <div className="absolute inset-0 opacity-20">
-                {[20, 40, 60, 80].map((pct) => (
-                  <div
-                    key={`h-${pct}`}
-                    className="absolute w-full h-px bg-ocean-400"
-                    style={{ top: `${pct}%` }}
-                  />
-                ))}
-                {[20, 40, 60, 80].map((pct) => (
-                  <div
-                    key={`v-${pct}`}
-                    className="absolute h-full w-px bg-ocean-400"
-                    style={{ left: `${pct}%` }}
-                  />
-                ))}
-              </div>
-
-              {/* Ocean area */}
-              <div className="absolute bottom-0 left-0 right-0 h-2/5 bg-ocean-200/60 rounded-b-3xl" />
-
-              {/* Land area */}
-              <div className="absolute bottom-1/3 left-0 right-0 h-12 bg-sand-200/80" />
-
-              {/* Location marker */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <div className="relative flex flex-col items-center">
-                  <div className="w-10 h-10 rounded-full bg-primary shadow-lg flex items-center justify-center">
-                    <MapPinIcon className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="mt-2 bg-white border border-border rounded-xl px-3 py-1.5 shadow-sm whitespace-nowrap">
-                    <p className="text-xs font-bold text-foreground">Sofia&apos;s on the Beach</p>
-                    <p className="text-[10px] text-muted-foreground">Búzios, RJ</p>
-                  </div>
-                  <div className="absolute -bottom-1 w-2 h-2 bg-primary rotate-45 -z-10 translate-y-3 left-1/2 -translate-x-1/2 shadow-sm" />
+          {/* Highlights */}
+          <ul className="space-y-4 mb-10">
+            {[
+              { text: 'Acesso direto à praia', sub: 'Beira-mar · Búzios, RJ' },
+              { text: 'Próximo ao centro histórico', sub: 'Rua das Pedras e Orla Bardot' },
+              { text: 'Fácil contato pelo WhatsApp', sub: 'Atendimento direto com a equipe' },
+              { text: 'Experiência exclusiva à beira-mar', sub: 'A 2h30 do Rio de Janeiro' },
+            ].map((item) => (
+              <li key={item.text} className="flex items-start gap-4">
+                <span className="w-7 h-7 rounded-full bg-ocean-50 border border-ocean-100 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-ocean-400" />
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{item.text}</p>
+                  <p className="text-xs text-muted-foreground">{item.sub}</p>
                 </div>
-              </div>
+              </li>
+            ))}
+          </ul>
 
-              {/* Corner label */}
-              <div className="absolute top-4 left-4">
-                <span className="text-[10px] font-bold text-ocean-400 uppercase tracking-widest">
-                  Búzios · Rio de Janeiro
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-7 py-3.5 rounded-xl font-semibold text-sm hover:bg-ocean-700 transition-colors shadow-sm"
+          >
+            <WhatsAppIcon className="w-4 h-4 text-white/80 shrink-0" />
+            Falar sobre como chegar
+          </a>
+        </div>
+
+        {/* Visual — arch-framed location photo */}
+        <div className="relative flex justify-center">
+
+          {/* Decorative background circle */}
+          <div className="absolute -top-10 -right-10 w-64 h-64 rounded-full border border-ocean-100 pointer-events-none" />
+          <div className="absolute -top-4 -right-4 w-44 h-44 rounded-full bg-ocean-50 pointer-events-none" />
+
+          {/* Main photo — arch-shaped for Mykonos motif */}
+          <div className="relative w-[280px] md:w-[320px] lg:w-[360px] h-[380px] md:h-[420px] rounded-t-full rounded-b-3xl overflow-hidden shadow-2xl z-10">
+            <Image
+              src="/images/location/buzios-beachfront.jpg"
+              alt="Vista da baía de Búzios com barcos e montanhas ao fundo, a partir da pousada"
+              fill
+              className="object-cover object-center"
+              sizes="(max-width: 768px) 280px, 360px"
+            />
+
+            {/* Floating distance badge */}
+            <div className="absolute bottom-14 inset-x-0 flex justify-center z-10">
+              <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full px-4 py-1.5 shadow-md border border-white/80">
+                <span className="w-1.5 h-1.5 rounded-full bg-ocean-400 shrink-0" />
+                <span className="text-[10px] font-bold text-ocean-700 tracking-wide uppercase">
+                  2h30 do Rio de Janeiro
                 </span>
               </div>
             </div>
           </div>
+
+          {/* Small accent card */}
+          <div className="absolute -bottom-4 -left-4 z-20 bg-white rounded-2xl shadow-xl border border-ocean-100 px-4 py-3">
+            <p className="text-[9px] font-bold text-ocean-500 uppercase tracking-widest mb-0.5">
+              Localização
+            </p>
+            <p className="text-sm font-semibold text-foreground">Búzios, Rio de Janeiro</p>
+          </div>
         </div>
       </div>
     </section>
-  )
-}
-
-/* ── Inline icons ── */
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  )
-}
-
-function MapPinIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-    </svg>
   )
 }
 

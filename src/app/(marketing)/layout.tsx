@@ -10,7 +10,7 @@ export default function MarketingLayout({
   return (
     <>
       <Header />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 pt-[64px] md:pt-[92px]">{children}</main>
       <Footer />
       <WhatsAppButton />
     </>

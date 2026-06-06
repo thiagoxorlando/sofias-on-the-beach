@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { HeroSection } from '@/components/marketing/HeroSection'
-import { BookingWidget } from '@/components/marketing/BookingWidget'
 import { WhyBookDirect } from '@/components/marketing/WhyBookDirect'
 import { RoomsPreview } from '@/components/marketing/RoomsPreview'
 import { ExperienceSection } from '@/components/marketing/ExperienceSection'
@@ -17,7 +16,6 @@ export default function HomePage() {
   return (
     <>
       <HeroSection />
-      <BookingWidget />
       <WhyBookDirect />
       <RoomsPreview />
       <ExperienceSection />

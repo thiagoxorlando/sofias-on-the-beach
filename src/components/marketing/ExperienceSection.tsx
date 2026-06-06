@@ -1,131 +1,124 @@
-const experiences = [
+import Image from 'next/image'
+
+const features = [
   {
     id: 'cafe',
-    title: 'Café da manhã incluso',
-    description:
-      'Café completo com frutas frescas, tapioca, pães artesanais e produtos regionais. Servido com vista para o jardim.',
-    gradientFrom: 'from-sand-200',
-    gradientTo: 'to-sand-400',
-    icon: <CoffeeIcon />,
+    label: 'Café da manhã',
+    title: 'Café da manhã com vista',
+    text: 'Café completo com frutas frescas, tapioca e pães artesanais, servido com o oceano como cenário.',
+    image: '/images/experience/cafe-da-manha.jpg',
+    imageAlt: 'Café da manhã com buffet e vista para o oceano',
   },
   {
     id: 'praia',
-    title: 'Acesso à beira-mar',
-    description:
-      'A pousada fica a passos da praia. Acordar, abrir a janela e sentir a brisa do oceano faz parte da estadia.',
-    gradientFrom: 'from-ocean-200',
-    gradientTo: 'to-ocean-500',
-    icon: <WaveIcon />,
+    label: 'Beira-mar',
+    title: 'Praia a poucos passos',
+    text: 'Você acorda e está na praia. Sem distância entre você e o oceano. Acesso direto à beira-mar.',
+    image: '/images/experience/praia-em-frente.jpg',
+    imageAlt: 'Praia em frente à pousada com barcos e oceano ao entardecer',
   },
   {
     id: 'vista',
-    title: 'Vista para o oceano',
-    description:
-      'Quartos com vista privilegiada para o Atlântico. O horizonte do mar como cenário a qualquer hora do dia.',
-    gradientFrom: 'from-ocean-300',
-    gradientTo: 'to-ocean-700',
-    icon: <HorizonIcon />,
+    label: 'Vista para o oceano',
+    title: 'Vista para o Atlântico',
+    text: 'Suítes com vista privilegiada para o Atlântico. O horizonte do mar como cenário a qualquer hora.',
+    image: '/images/experience/vista-mar.jpg',
+    imageAlt: 'Terraço aberto com vista direta para a baía de Búzios',
   },
   {
     id: 'buzios',
+    label: 'Búzios',
     title: 'O melhor de Búzios',
-    description:
-      'A poucos minutos das praias mais bonitas do Brasil e do encantador centro histórico de Búzios.',
-    gradientFrom: 'from-sand-300',
-    gradientTo: 'to-ocean-300',
-    icon: <MapIcon />,
+    text: 'A poucos minutos das praias mais bonitas do Brasil e do encantador centro histórico de Búzios.',
+    image: '/images/experience/area-externa.jpg',
+    imageAlt: 'Área externa da pousada Sofia\'s on the Beach com arquitetura azul e branca',
   },
 ]
 
 export function ExperienceSection() {
   return (
-    <section className="bg-ocean-50 py-20 px-6 md:px-10 border-y border-ocean-100">
-      <div className="max-w-6xl mx-auto">
+    <section className="bg-ocean-50 border-y border-ocean-100">
 
-        <div className="text-center mb-14">
-          <p className="text-xs font-bold text-ocean-500 uppercase tracking-widest mb-3">
-            Experiência
-          </p>
-          <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground">
-            A experiência Sofia&apos;s
-          </h2>
-          <p className="text-muted-foreground text-base mt-4 max-w-xl mx-auto leading-relaxed">
-            Cada detalhe foi pensado para que sua estadia em Búzios seja inesquecível.
-          </p>
-          <div className="h-0.5 w-12 bg-accent rounded-full mx-auto mt-5" />
+      {/* Cinematic full-width banner with overlaid headline */}
+      <div className="relative overflow-hidden">
+        {/* Large ocean photo frame */}
+        <div className="relative h-[380px] md:h-[480px]">
+          <Image
+            src="/images/experience/praia-em-frente.jpg"
+            alt="Praia em frente à pousada Sofia's on the Beach ao entardecer, com barcos e oceano"
+            fill
+            className="object-cover object-center"
+            sizes="100vw"
+          />
+          {/* Gradient for text legibility at bottom-left */}
+          <div className="absolute inset-0 bg-gradient-to-t from-ocean-900/70 via-ocean-900/20 to-transparent" />
+
+          {/* Overlaid text — positioned bottom-left */}
+          <div className="absolute inset-0 flex items-end">
+            <div className="max-w-7xl mx-auto w-full px-6 md:px-10 pb-10 md:pb-14">
+              <p className="text-ocean-200 text-[11px] font-bold uppercase tracking-widest mb-3">
+                Experiência
+              </p>
+              <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.1] max-w-xl">
+                Viva Búzios de frente<br className="hidden sm:block" /> para o mar
+              </h2>
+              <p className="text-white/70 text-base mt-3 max-w-md leading-relaxed">
+                Cada detalhe foi pensado para que sua estadia seja inesquecível.
+              </p>
+            </div>
+          </div>
+
+          {/* Overlapping small card — café da manhã — floats at right */}
+          <div className="absolute top-8 right-6 md:right-12 bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-xl border border-white/80 max-w-[160px] hidden md:block z-10">
+            <div className="relative w-full h-20 rounded-xl overflow-hidden mb-3">
+              <Image
+                src="/images/experience/cafe-da-manha.jpg"
+                alt="Café da manhã com vista para o oceano"
+                fill
+                className="object-cover"
+                sizes="128px"
+              />
+            </div>
+            <p className="text-[9px] font-bold text-ocean-500 uppercase tracking-widest mb-0.5">
+              Café da manhã
+            </p>
+            <p className="text-xs font-semibold text-foreground leading-snug">
+              Com vista para o oceano
+            </p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {experiences.map((exp) => (
-            <div
-              key={exp.id}
-              className="bg-card rounded-3xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col sm:flex-row"
-            >
-              {/* Image block */}
-              <div className={`relative w-full sm:w-36 h-40 sm:h-auto shrink-0 bg-gradient-to-br ${exp.gradientFrom} ${exp.gradientTo}`}>
-                <div className="absolute inset-0 flex items-center justify-center text-white/60">
-                  {exp.icon}
-                </div>
-              </div>
+        {/* Transition strip */}
+        <div className="h-10 md:h-14 bg-ocean-50" />
+      </div>
 
-              {/* Text */}
-              <div className="p-6 flex flex-col justify-center">
-                <h3 className="font-serif text-lg font-semibold text-foreground mb-2">
-                  {exp.title}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {exp.description}
-                </p>
+      {/* Feature items grid */}
+      <div className="max-w-7xl mx-auto px-6 md:px-10 py-14">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          {features.map((f) => (
+            <div key={f.id}>
+              <div className="relative h-28 rounded-2xl overflow-hidden mb-4">
+                <Image
+                  src={f.image}
+                  alt={f.imageAlt}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 45vw, 25vw"
+                />
               </div>
+              <p className="text-[10px] font-bold text-ocean-500 uppercase tracking-widest mb-2">
+                {f.label}
+              </p>
+              <h3 className="font-serif text-base font-semibold text-foreground mb-2 leading-snug">
+                {f.title}
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {f.text}
+              </p>
             </div>
           ))}
         </div>
       </div>
     </section>
-  )
-}
-
-/* ── Inline icons ── */
-
-function CoffeeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10" aria-hidden="true">
-      <path d="M17 8h1a4 4 0 1 1 0 8h-1" />
-      <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-      <line x1={6} y1={2} x2={6} y2={4} />
-      <line x1={10} y1={2} x2={10} y2={4} />
-      <line x1={14} y1={2} x2={14} y2={4} />
-    </svg>
-  )
-}
-
-function WaveIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" className="w-10 h-10" aria-hidden="true">
-      <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5s2.5 2 5 2 2.5-2 5-2" />
-      <path d="M2 12c.6.5 1.2 1 2.5 1C7 13 7 11 9.5 11s2.5 2 5 2 2.5-2 5-2" />
-      <path d="M2 18c.6.5 1.2 1 2.5 1C7 19 7 17 9.5 17s2.5 2 5 2 2.5-2 5-2" />
-    </svg>
-  )
-}
-
-function HorizonIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10" aria-hidden="true">
-      <circle cx={12} cy={12} r={4} />
-      <line x1={1.05} y1={12} x2={7} y2={12} />
-      <line x1={17.01} y1={12} x2={22.96} y2={12} />
-      <path d="M4 4c2 2 5 3 8 3s6-1 8-3" />
-    </svg>
-  )
-}
-
-function MapIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10" aria-hidden="true">
-      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
-      <line x1={9} y1={3} x2={9} y2={18} />
-      <line x1={15} y1={6} x2={15} y2={21} />
-    </svg>
   )
 }

@@ -39,7 +39,7 @@
   --color-ocean-800: var(--sofia-ocean-800);
   --color-ocean-900: var(--sofia-ocean-900);
 
-  /* Sofia — Sand / Gold scale */
+  /* Sofia — Sand / Wood scale */
   --color-sand-50:  var(--sofia-sand-50);
   --color-sand-100: var(--sofia-sand-100);
   --color-sand-200: var(--sofia-sand-200);
@@ -58,72 +58,77 @@
   --radius: 0.75rem;
 
   /* ============================================
-     SOFIA'S BRAND PALETTE
-     Ocean hue: 215 — clear Mediterranean sea
-     Sand hue:   78 — warm Búzios beach
+     SOFIA'S BRAND PALETTE — MYKONOS / GREEK BLUE
+     Reference:
+       Sofia blue  #009FE3  — bright Greek sky blue
+       Ocean blue  #0077B6  — primary CTA
+       Deep ocean  #005E88
+       Navy        #003B5C  — footer/contrast only
+       Sky bg      #F3FBFF  — very light section bg
+       Light blue  #DDF4FF  — tints
+     Hue 220-248: true blue, NOT cyan/turquoise (200-210)
   ============================================ */
 
-  /* Ocean Blue — 10-step coastal scale
-     Hue 215 reads as bright sea-blue, not corporate navy.
-     Dark end (700-900) reserved for footer / admin UI only. */
-  --sofia-ocean-50:  oklch(0.97 0.018 215);
-  --sofia-ocean-100: oklch(0.93 0.040 215);
-  --sofia-ocean-200: oklch(0.87 0.075 215);
-  --sofia-ocean-300: oklch(0.75 0.110 215);
-  --sofia-ocean-400: oklch(0.63 0.140 215);
-  --sofia-ocean-500: oklch(0.52 0.155 215);
-  --sofia-ocean-600: oklch(0.44 0.155 215);
-  --sofia-ocean-700: oklch(0.37 0.135 215);
-  --sofia-ocean-800: oklch(0.28 0.100 215);
-  --sofia-ocean-900: oklch(0.20 0.070 215);
+  /* Ocean Blue — Greek blue scale
+     Light end (50-100): sky white for section backgrounds
+     Mid (300-400): Sofia blue / Greek sky blue
+     Dark end (700-900): deep ocean and navy */
+  --sofia-ocean-50:  oklch(0.985 0.012 220);   /* ≈ #F3FBFF — sky white section bg */
+  --sofia-ocean-100: oklch(0.965 0.026 220);   /* ≈ #DDF4FF — light blue */
+  --sofia-ocean-200: oklch(0.880 0.065 222);   /* soft blue tint */
+  --sofia-ocean-300: oklch(0.775 0.105 223);   /* medium blue */
+  --sofia-ocean-400: oklch(0.650 0.162 224);   /* ≈ #009FE3 — Sofia blue / bright Greek blue */
+  --sofia-ocean-500: oklch(0.568 0.148 228);   /* mid ocean */
+  --sofia-ocean-600: oklch(0.462 0.148 231);   /* ≈ #006FB6 — ocean blue (primary CTA) */
+  --sofia-ocean-700: oklch(0.380 0.120 236);   /* ≈ #005080 — deep ocean */
+  --sofia-ocean-800: oklch(0.295 0.100 240);   /* very dark ocean */
+  --sofia-ocean-900: oklch(0.195 0.092 242);   /* ≈ #002B4A — deep navy buttons */
 
-  /* Sand / Gold — warm Búzios sand */
-  --sofia-sand-50:  oklch(0.98 0.010 88);
-  --sofia-sand-100: oklch(0.96 0.025 86);
-  --sofia-sand-200: oklch(0.91 0.048 82);
-  --sofia-sand-300: oklch(0.84 0.078 78);
-  --sofia-sand-400: oklch(0.76 0.100 75);
-  --sofia-sand-500: oklch(0.66 0.120 72);
+  /* Sand / Wood — warm Búzios detail, used sparingly
+     sand-200 ≈ #F2E6D2  sand-500 ≈ #9B6A3D warm wood */
+  --sofia-sand-50:  oklch(0.985 0.010 80);
+  --sofia-sand-100: oklch(0.970 0.018 78);
+  --sofia-sand-200: oklch(0.930 0.040 75);     /* ≈ #F2E6D2 soft sand */
+  --sofia-sand-300: oklch(0.845 0.068 70);
+  --sofia-sand-400: oklch(0.750 0.095 65);
+  --sofia-sand-500: oklch(0.548 0.090 52);     /* ≈ #9B6A3D warm wood */
 
   /* ============================================
      SHADCN SEMANTIC TOKENS
   ============================================ */
 
-  /* Page background: warm pearl — breathable, not clinical white */
-  --background: oklch(0.988 0.005 90);
-  --foreground: oklch(0.22  0.018 230);
+  /* Page background: pure white */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.18 0.025 230);
 
-  /* Cards: pure white — pop against the pearl page bg */
   --card:            oklch(1    0    0);
-  --card-foreground: oklch(0.22 0.018 230);
+  --card-foreground: oklch(0.18 0.025 230);
 
   --popover:            oklch(1    0    0);
-  --popover-foreground: oklch(0.22 0.018 230);
+  --popover-foreground: oklch(0.18 0.025 230);
 
-  /* Primary = ocean-600 — bright coastal blue for CTAs
-     Not navy. Use ocean-700/800 only for footer and admin. */
-  --primary:            oklch(0.44 0.155 215);
-  --primary-foreground: oklch(0.99 0    0);
+  /* Primary = ocean-600 — ≈ #006FB6 Greek ocean blue for CTAs */
+  --primary:            oklch(0.462 0.148 231);
+  --primary-foreground: oklch(0.99  0    0);
 
-  /* Secondary = ocean-50 tint with ocean-700 text — airy, not heavy */
-  --secondary:            oklch(0.95 0.025 215);
-  --secondary-foreground: oklch(0.37 0.135 215);
+  /* Secondary = ocean-50 tint */
+  --secondary:            oklch(0.965 0.026 220);
+  --secondary-foreground: oklch(0.400 0.110 236);
 
-  /* Muted = warm light sand-gray — never cold blue */
-  --muted:            oklch(0.96 0.010 90);
-  --muted-foreground: oklch(0.52 0.020 225);
+  /* Muted = very light blue-white */
+  --muted:            oklch(0.972 0.016 220);
+  --muted-foreground: oklch(0.505 0.022 228);
 
-  /* Accent = sand-400 — warm gold for badges, highlights, stars */
-  --accent:            oklch(0.76 0.100 75);
-  --accent-foreground: oklch(0.22 0.018 230);
+  /* Accent = warm sand-200 — small warm detail only */
+  --accent:            oklch(0.930 0.040 75);
+  --accent-foreground: oklch(0.18  0.025 230);
 
-  /* Destructive */
   --destructive: oklch(0.577 0.245 27.325);
 
-  /* Borders and inputs: very subtle, warm */
-  --border: oklch(0.92 0.010 220);
-  --input:  oklch(0.92 0.010 220);
-  --ring:   oklch(0.52 0.155 215);
+  /* Borders: subtle Greek blue tint */
+  --border: oklch(0.910 0.022 222);
+  --input:  oklch(0.910 0.022 222);
+  --ring:   oklch(0.462 0.148 231);
 }
 
 @layer base {

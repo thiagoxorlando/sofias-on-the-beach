@@ -7,26 +7,50 @@ export function FinalCTA() {
   const waHref = `https://wa.me/${phone}?text=${WA_MSG}`
 
   return (
-    <section className="bg-ocean-900 py-20 px-6 md:px-10">
-      <div className="max-w-3xl mx-auto text-center">
+    <section className="relative bg-gradient-to-br from-ocean-900 via-ocean-800 to-ocean-700 overflow-hidden py-24 md:py-32 px-6 md:px-10">
 
-        <p className="text-ocean-400 text-xs font-bold uppercase tracking-widest mb-4">
-          Reserve agora
+      {/* Large arch silhouette — Mykonos architectural motif */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-t-full bg-ocean-800/30 pointer-events-none" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[360px] h-[180px] rounded-t-full bg-ocean-700/25 pointer-events-none" />
+
+      {/* Sun glow — center top */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-ocean-400/15 blur-3xl pointer-events-none" />
+      {/* Corner glows */}
+      <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-ocean-500/10 blur-2xl pointer-events-none" />
+      <div className="absolute top-8 left-0 w-48 h-48 rounded-full bg-ocean-600/15 blur-2xl pointer-events-none" />
+
+      {/* Sun circle decoration */}
+      <div className="absolute top-12 right-12 md:right-24 w-32 h-32 rounded-full border border-white/10 pointer-events-none" />
+      <div className="absolute top-16 right-16 md:right-28 w-20 h-20 rounded-full border border-white/15 pointer-events-none" />
+
+      <div className="relative max-w-3xl mx-auto text-center">
+
+        {/* Logo mark in white */}
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <SofiasMark className="w-10 h-10 text-ocean-300" />
+          <div className="flex flex-col leading-none text-left">
+            <span className="font-serif text-lg font-bold text-white leading-none">Sofia&apos;s</span>
+            <span className="text-[9px] font-bold text-ocean-400 uppercase tracking-[0.18em] mt-0.5">on the Beach</span>
+          </div>
+        </div>
+
+        <p className="text-[11px] font-bold text-ocean-300 uppercase tracking-widest mb-6">
+          Reserva direta
         </p>
 
-        <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.15] mb-5">
-          Reserve direto com Sofia&apos;s on the Beach
+        <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.1] mb-6">
+          Reserve direto com<br className="hidden sm:block" /> Sofia&apos;s on the Beach
         </h2>
 
-        <p className="text-ocean-300 text-base md:text-lg leading-relaxed mb-10 max-w-xl mx-auto">
-          Garanta a melhor tarifa, atendimento personalizado e comunicação direta
-          com a equipe da pousada. Sem intermediários.
+        <p className="text-ocean-200 text-base md:text-lg leading-relaxed mb-10 max-w-lg mx-auto">
+          Fale com a equipe e consulte as melhores condições<br className="hidden sm:block" />
+          para sua estadia à beira-mar.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <a
             href="/quartos"
-            className="inline-flex items-center justify-center bg-white text-ocean-900 px-8 py-4 rounded-xl font-semibold text-sm hover:bg-ocean-50 transition-colors shadow-sm"
+            className="inline-flex items-center justify-center bg-white text-ocean-900 px-8 py-4 rounded-xl font-semibold text-sm hover:bg-ocean-50 transition-colors shadow-lg"
           >
             Consultar disponibilidade
           </a>
@@ -34,19 +58,36 @@ export function FinalCTA() {
             href={waHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2.5 bg-ocean-800 border border-ocean-700 text-white px-8 py-4 rounded-xl font-semibold text-sm hover:bg-ocean-700 transition-colors"
+            className="inline-flex items-center justify-center gap-2.5 bg-white/10 border border-white/20 text-white px-8 py-4 rounded-xl font-semibold text-sm hover:bg-white/20 transition-colors backdrop-blur-sm"
           >
             <WhatsAppIcon className="w-4 h-4 text-[#25D366] shrink-0" />
             Falar no WhatsApp
           </a>
         </div>
 
-        {/* Trust line */}
-        <p className="text-ocean-500 text-xs mt-8 font-medium tracking-wide">
-          Reservas diretas · Melhor tarifa garantida · Atendimento pelo WhatsApp
-        </p>
+        {/* Wave accent */}
+        <div className="mt-10 flex justify-center opacity-40">
+          <WaveAccent className="w-32 text-ocean-300" />
+        </div>
       </div>
     </section>
+  )
+}
+
+function SofiasMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 40 40" fill="none" className={className} aria-hidden="true">
+      <path d="M10 36 L10 20 A10 10 0 0 1 30 20 L30 36" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 38 Q12 34 20 38 T36 38" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function WaveAccent({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 160 20" fill="none" className={className} aria-hidden="true">
+      <path d="M0 10 Q20 2 40 10 T80 10 T120 10 T160 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
   )
 }
 
