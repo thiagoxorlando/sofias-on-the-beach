@@ -7,8 +7,8 @@ function imgExists(src: string): boolean {
   return fs.existsSync(path.join(process.cwd(), 'public', src.replace(/^\//, '')))
 }
 
-export function RoomsPreview() {
-  const rooms = getFeaturedRooms()
+export async function RoomsPreview() {
+  const rooms = await getFeaturedRooms()
 
   return (
     <section className="bg-white py-14 md:py-20 px-6 md:px-10">

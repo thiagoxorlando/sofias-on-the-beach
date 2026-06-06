@@ -1,9 +1,8 @@
-// Temporary fallback data. Later this will be replaced by rooms managed from the admin/Supabase.
+import { createClient } from '@/lib/supabase/server'
 
 export interface PublicRoom {
   id: string
   name: string
-  /** Badge text shown on the card image, e.g. "MAIS PROCURADA". Null = no badge. */
   categoryLabel: string | null
   description: string
   imageUrl: string
@@ -60,6 +59,57 @@ const FALLBACK_ROOMS: PublicRoom[] = [
   },
 ]
 
-export function getFeaturedRooms(): PublicRoom[] {
-  return FALLBACK_ROOMS
+export async function getFeaturedRooms(): Promise<PublicRoom[]> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('rooms')
+      .select(`
+        id,
+        name,
+        slug,
+        short_description,
+        base_price_brl,
+        ocean_view,
+        amenities,
+        sort_order,
+        room_categories ( name )
+      `)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .limit(6)
+
+    if (error || !data || data.length === 0) return FALLBACK_ROOMS
+
+    return data.map((room) => {
+      const categoryName =
+        room.room_categories && !Array.isArray(room.room_categories)
+          ? (room.room_categories as { name: string }).name
+          : null
+
+      const amenities = Array.isArray(room.amenities)
+        ? (room.amenities as string[]).slice(0, 4)
+        : []
+
+      if (room.ocean_view && !amenities.includes('Vista para o mar')) {
+        amenities.unshift('Vista para o mar')
+      }
+
+      return {
+        id: room.slug,
+        name: room.name,
+        categoryLabel: categoryName?.toUpperCase() ?? null,
+        description: room.short_description ?? '',
+        imageUrl: `/images/rooms/${room.slug}.jpg`,
+        imageAlt: `${room.name} em Búzios`,
+        priceFrom: room.base_price_brl,
+        priceSuffix: '/ noite',
+        features: amenities.slice(0, 4),
+        featured: room.ocean_view,
+        ctaLabel: room.name.toLowerCase().includes('suíte') ? 'VER SUÍTE' : 'VER QUARTO',
+      }
+    })
+  } catch {
+    return FALLBACK_ROOMS
+  }
 }

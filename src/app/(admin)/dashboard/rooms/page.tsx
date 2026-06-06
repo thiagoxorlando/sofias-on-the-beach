@@ -1,13 +1,39 @@
-import { PlaceholderPage } from '../_components/PlaceholderPage'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { RoomsManager } from './_components/RoomsManager'
+import type { CategoryRow, RoomRow } from './_components/types'
+import type { Metadata } from 'next'
 
-export const metadata = { title: "Quartos — Painel Sofia's" }
+export const metadata: Metadata = { title: "Quartos — Sofia's Admin" }
 
-export default function RoomsPage() {
+export default async function RoomsPage() {
+  const db = createAdminClient()
+
+  const [{ data: categoriesData }, { data: roomsData }] = await Promise.all([
+    db
+      .from('room_categories')
+      .select('id, name, slug, short_description, is_active, sort_order')
+      .order('sort_order', { ascending: true }),
+    db
+      .from('rooms')
+      .select('id, name, slug, category_id, short_description, base_price_brl, max_guests, ocean_view, is_active, sort_order, size_sqm, amenities')
+      .order('sort_order', { ascending: true }),
+  ])
+
+  const categories: CategoryRow[] = categoriesData ?? []
+  const rooms: RoomRow[] = (roomsData ?? []).map((r) => ({
+    ...r,
+    amenities: Array.isArray(r.amenities) ? (r.amenities as string[]) : [],
+  }))
+
   return (
-    <PlaceholderPage
-      eyebrow="Gestão"
-      title="Quartos e suítes"
-      description="Cadastre, edite e gerencie os quartos e suítes da pousada, incluindo fotos, preços e amenidades."
-    />
+    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
+      <div className="mb-8">
+        <h1 className="font-serif text-[28px] font-bold text-ocean-900">Quartos</h1>
+        <p className="text-[14px] text-ocean-500 mt-1">
+          Gerencie as categorias e quartos da pousada.
+        </p>
+      </div>
+      <RoomsManager categories={categories} rooms={rooms} />
+    </div>
   )
 }
