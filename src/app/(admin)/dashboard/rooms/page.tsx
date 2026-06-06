@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { RoomsManager } from './_components/RoomsManager'
-import type { CategoryRow, RoomRow } from './_components/types'
+import type { CategoryRow, RoomRow, ImageRow } from './_components/types'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: "Quartos — Sofia's Admin" }
@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Quartos — Sofia's Admin" }
 export default async function RoomsPage() {
   const db = createAdminClient()
 
-  const [{ data: categoriesData }, { data: roomsData }] = await Promise.all([
+  const [{ data: categoriesData }, { data: roomsData }, { data: imagesData }] = await Promise.all([
     db
       .from('room_categories')
       .select('id, name, slug, short_description, is_active, sort_order')
@@ -16,6 +16,10 @@ export default async function RoomsPage() {
     db
       .from('rooms')
       .select('id, name, slug, category_id, short_description, base_price_brl, max_guests, ocean_view, featured, is_active, sort_order, size_sqm, amenities')
+      .order('sort_order', { ascending: true }),
+    db
+      .from('room_images')
+      .select('id, room_id, url, storage_path, alt_text, is_cover, sort_order, created_at')
       .order('sort_order', { ascending: true }),
   ])
 
@@ -25,6 +29,12 @@ export default async function RoomsPage() {
     amenities: Array.isArray(r.amenities) ? (r.amenities as string[]) : [],
   }))
 
+  const imagesByRoomId: Record<string, ImageRow[]> = {}
+  for (const img of (imagesData ?? []) as ImageRow[]) {
+    if (!imagesByRoomId[img.room_id]) imagesByRoomId[img.room_id] = []
+    imagesByRoomId[img.room_id].push(img)
+  }
+
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
       <div className="mb-8">
@@ -33,7 +43,7 @@ export default async function RoomsPage() {
           Gerencie as categorias e quartos da pousada.
         </p>
       </div>
-      <RoomsManager categories={categories} rooms={rooms} />
+      <RoomsManager categories={categories} rooms={rooms} imagesByRoomId={imagesByRoomId} />
     </div>
   )
 }

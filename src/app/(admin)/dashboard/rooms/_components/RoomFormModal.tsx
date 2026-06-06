@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
+import { useActionState, useEffect, useRef, useState, useTransition } from 'react'
 import { cn } from '@/lib/utils'
 import { toSlug } from '@/lib/utils'
 import {
@@ -9,30 +9,90 @@ import {
   type FormState,
 } from '../actions'
 import { ModalOverlay, FormField, INPUT, BTN_PRIMARY, BTN_SECONDARY, ErrorMessage } from './form-helpers'
-import type { CategoryRow, RoomRow } from './types'
+import { RoomPhotosSection } from './RoomPhotosSection'
+import type { CategoryRow, RoomRow, ImageRow, PendingFile } from './types'
 
 type Props = {
   mode: 'create' | 'edit'
   initial?: RoomRow
+  images?: ImageRow[]
   categories: CategoryRow[]
   onClose: () => void
 }
 
-export function RoomFormModal({ mode, initial, categories, onClose }: Props) {
-  const action = mode === 'edit' ? updateRoomAction : createRoomAction
-  const [state, formAction, isPending] = useActionState<FormState, FormData>(
-    action,
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+export function RoomFormModal({ mode, initial, images, categories, onClose }: Props) {
+  // Edit mode — useActionState drives the form action
+  const [editState, editFormAction, isEditPending] = useActionState<FormState, FormData>(
+    updateRoomAction,
     undefined,
   )
 
+  // Create mode — manual transition so we can append photo files to FormData
+  const [createState, setCreateState] = useState<FormState>(undefined)
+  const [isCreating, startCreate] = useTransition()
+
+  const state    = mode === 'edit' ? editState : createState
+  const isPending = mode === 'edit' ? isEditPending : isCreating
+
+  // Room name / slug
   const [name, setName] = useState(initial?.name ?? '')
   const [slug, setSlug] = useState(initial?.slug ?? '')
   const [slugTouched, setSlugTouched] = useState(mode === 'edit')
+
+  // Pending photos (create mode only)
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([])
+  const createFileRef = useRef<HTMLInputElement>(null)
 
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value
     setName(val)
     if (!slugTouched) setSlug(toSlug(val))
+  }
+
+  function handleCreateFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    if (files.length === 0) return
+    setPendingFiles((prev) => {
+      const next: PendingFile[] = files.map((file, idx) => ({
+        localId: `${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        altText: '',
+        sortOrder: prev.length + idx,
+      }))
+      return [...prev, ...next]
+    })
+    if (createFileRef.current) createFileRef.current.value = ''
+  }
+
+  function removePendingFile(localId: string) {
+    setPendingFiles((prev) => {
+      const item = prev.find((p) => p.localId === localId)
+      if (item) URL.revokeObjectURL(item.previewUrl)
+      return prev.filter((p) => p.localId !== localId)
+    })
+  }
+
+  function updatePendingAlt(localId: string, altText: string) {
+    setPendingFiles((prev) => prev.map((p) => (p.localId === localId ? { ...p, altText } : p)))
+  }
+
+  function handleCreateSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    pendingFiles.forEach((item, i) => {
+      fd.append('photos', item.file)
+      fd.append(`photo_alt_${i}`, item.altText)
+    })
+    startCreate(async () => {
+      const result = await createRoomAction(undefined, fd)
+      setCreateState(result)
+    })
   }
 
   useEffect(() => {
@@ -53,10 +113,18 @@ export function RoomFormModal({ mode, initial, categories, onClose }: Props) {
         </div>
       )}
 
-      <form action={formAction} className="space-y-4">
+      {/* ── Section 1: Room data ───────────────────────────────────────────── */}
+      <p className="text-[10px] font-bold text-ocean-500 uppercase tracking-[0.15em] mb-4">
+        Dados do quarto
+      </p>
+
+      <form
+        action={mode === 'edit' ? editFormAction : undefined}
+        onSubmit={mode === 'create' ? handleCreateSubmit : undefined}
+        className="space-y-4"
+      >
         {mode === 'edit' && <input type="hidden" name="id" value={initial?.id} />}
 
-        {/* Name + slug */}
         <FormField label="Nome *">
           <input
             name="name"
@@ -79,7 +147,6 @@ export function RoomFormModal({ mode, initial, categories, onClose }: Props) {
           />
         </FormField>
 
-        {/* Category */}
         <FormField label="Categoria *">
           <select
             name="category_id"
@@ -96,7 +163,6 @@ export function RoomFormModal({ mode, initial, categories, onClose }: Props) {
           </select>
         </FormField>
 
-        {/* Short description */}
         <FormField label="Descrição curta">
           <input
             name="short_description"
@@ -106,7 +172,6 @@ export function RoomFormModal({ mode, initial, categories, onClose }: Props) {
           />
         </FormField>
 
-        {/* Price + guests */}
         <div className="grid grid-cols-2 gap-4">
           <FormField label="Preço base (R$) *">
             <input
@@ -132,7 +197,6 @@ export function RoomFormModal({ mode, initial, categories, onClose }: Props) {
           </FormField>
         </div>
 
-        {/* Size */}
         <FormField label="Tamanho (m²)">
           <input
             name="size_sqm"
@@ -145,7 +209,6 @@ export function RoomFormModal({ mode, initial, categories, onClose }: Props) {
           />
         </FormField>
 
-        {/* Landing page slot */}
         <FormField label="Destaque na landing page">
           <select
             name="homepage_slot"
@@ -171,7 +234,6 @@ export function RoomFormModal({ mode, initial, categories, onClose }: Props) {
           </p>
         </FormField>
 
-        {/* Amenities */}
         <FormField label="Comodidades" hint="separadas por vírgula">
           <input
             name="amenities"
@@ -181,7 +243,6 @@ export function RoomFormModal({ mode, initial, categories, onClose }: Props) {
           />
         </FormField>
 
-        {/* Checkboxes */}
         <div className="flex flex-wrap gap-6 pt-1">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -203,6 +264,77 @@ export function RoomFormModal({ mode, initial, categories, onClose }: Props) {
           </label>
         </div>
 
+        {/* ── Section 2: Photos (create mode inline) ───────────────────────── */}
+        {mode === 'create' && (
+          <div className="pt-5 border-t border-ocean-100 space-y-3">
+            <p className="text-[10px] font-bold text-ocean-500 uppercase tracking-[0.15em]">
+              Fotos do quarto
+            </p>
+
+            {pendingFiles.length > 0 && (
+              <div className="space-y-2">
+                {pendingFiles.map((item) => (
+                  <div
+                    key={item.localId}
+                    className="flex items-center gap-3 p-2.5 border border-ocean-200 rounded-xl"
+                  >
+                    <div className="w-14 h-10 rounded-lg overflow-hidden bg-ocean-50 border border-ocean-100 shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={item.previewUrl} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] text-ocean-800 font-medium truncate">{item.file.name}</p>
+                      <p className="text-[10px] text-ocean-400">{formatFileSize(item.file.size)}</p>
+                    </div>
+                    <input
+                      value={item.altText}
+                      onChange={(e) => updatePendingAlt(item.localId, e.target.value)}
+                      className={cn(INPUT, 'w-32 text-[12px] py-1.5')}
+                      placeholder="Texto alt"
+                      disabled={isPending}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePendingFile(item.localId)}
+                      disabled={isPending}
+                      className="text-ocean-300 hover:text-red-500 transition-colors disabled:opacity-40 shrink-0 text-[13px] font-bold px-1"
+                      aria-label="Remover"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                <p className="text-[11px] text-ocean-500 bg-ocean-50 rounded-lg px-3 py-2">
+                  {pendingFiles.length} foto{pendingFiles.length > 1 ? 's' : ''} selecionada{pendingFiles.length > 1 ? 's' : ''}. Serão enviadas ao criar o quarto.
+                </p>
+              </div>
+            )}
+
+            <label
+              className={cn(
+                'flex items-center justify-center cursor-pointer group',
+                isPending && 'pointer-events-none opacity-40',
+              )}
+            >
+              <input
+                ref={createFileRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                multiple
+                onChange={handleCreateFileSelect}
+                className="sr-only"
+                disabled={isPending}
+              />
+              <span className="flex-1 text-center text-[13px] font-semibold py-2.5 px-4 rounded-xl border-2 border-dashed border-ocean-200 text-ocean-500 transition-colors group-hover:border-ocean-400 group-hover:text-ocean-700">
+                {pendingFiles.length > 0 ? '+ Adicionar mais fotos' : 'Selecionar fotos'}
+              </span>
+            </label>
+            <p className="text-[11px] text-ocean-400 text-center">
+              Opcional. JPG, PNG ou WebP, máx. 5 MB por foto. A primeira foto será definida como capa.
+            </p>
+          </div>
+        )}
+
         {state && 'error' in state && <ErrorMessage message={state.error} />}
 
         <div className="flex gap-3 pt-2">
@@ -214,10 +346,29 @@ export function RoomFormModal({ mode, initial, categories, onClose }: Props) {
             disabled={isPending || activeCategories.length === 0}
             className={cn(BTN_PRIMARY, 'flex-1')}
           >
-            {isPending ? 'Salvando…' : mode === 'edit' ? 'Salvar alterações' : 'Criar quarto'}
+            {isPending
+              ? mode === 'edit'
+                ? 'Salvando…'
+                : 'Criando quarto…'
+              : mode === 'edit'
+                ? 'Salvar alterações'
+                : 'Criar quarto'}
           </button>
         </div>
       </form>
+
+      {/* ── Section 2: Photos (edit mode — separate component) ────────────── */}
+      {mode === 'edit' && (
+        <div className="mt-6 pt-6 border-t border-ocean-100">
+          <p className="text-[10px] font-bold text-ocean-500 uppercase tracking-[0.15em] mb-4">
+            Fotos do quarto
+          </p>
+          <RoomPhotosSection
+            roomId={initial!.id}
+            initialImages={images ?? []}
+          />
+        </div>
+      )}
     </ModalOverlay>
   )
 }

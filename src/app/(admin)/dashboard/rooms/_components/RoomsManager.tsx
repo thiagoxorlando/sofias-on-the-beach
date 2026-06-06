@@ -4,13 +4,14 @@ import { useState, useTransition } from 'react'
 import { CategoryFormModal } from './CategoryFormModal'
 import { RoomFormModal } from './RoomFormModal'
 import { toggleCategoryActiveAction, toggleRoomActiveAction } from '../actions'
-import type { CategoryRow, RoomRow } from './types'
+import type { CategoryRow, RoomRow, ImageRow } from './types'
 import { BTN_PRIMARY } from './form-helpers'
 import { cn } from '@/lib/utils'
 
 type Props = {
   categories: CategoryRow[]
   rooms: RoomRow[]
+  imagesByRoomId: Record<string, ImageRow[]>
 }
 
 type ActiveModal =
@@ -20,7 +21,7 @@ type ActiveModal =
   | { type: 'room-edit'; row: RoomRow }
   | null
 
-export function RoomsManager({ categories, rooms }: Props) {
+export function RoomsManager({ categories, rooms, imagesByRoomId }: Props) {
   const [modal, setModal] = useState<ActiveModal>(null)
 
   return (
@@ -128,7 +129,13 @@ export function RoomsManager({ categories, rooms }: Props) {
         <RoomFormModal mode="create" categories={categories} onClose={() => setModal(null)} />
       )}
       {modal?.type === 'room-edit' && (
-        <RoomFormModal mode="edit" initial={modal.row} categories={categories} onClose={() => setModal(null)} />
+        <RoomFormModal
+          mode="edit"
+          initial={modal.row}
+          images={imagesByRoomId[modal.row.id] ?? []}
+          categories={categories}
+          onClose={() => setModal(null)}
+        />
       )}
     </div>
   )

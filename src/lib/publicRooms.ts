@@ -73,7 +73,8 @@ export async function getFeaturedRooms(): Promise<PublicRoom[]> {
         ocean_view,
         amenities,
         sort_order,
-        room_categories ( name )
+        room_categories ( name ),
+        room_images ( url, alt_text, is_cover, sort_order )
       `)
       .eq('is_active', true)
       .eq('featured', true)
@@ -82,11 +83,17 @@ export async function getFeaturedRooms(): Promise<PublicRoom[]> {
 
     if (error || !data || data.length === 0) return FALLBACK_ROOMS
 
+    type RoomImageJoin = { url: string; alt_text: string | null; is_cover: boolean; sort_order: number }
+
     return data.map((room) => {
       const categoryName =
         room.room_categories && !Array.isArray(room.room_categories)
           ? (room.room_categories as { name: string }).name
           : null
+
+      const images = (Array.isArray(room.room_images) ? room.room_images : []) as RoomImageJoin[]
+      const sortedImgs = images.sort((a, b) => a.sort_order - b.sort_order)
+      const coverImg = sortedImgs.find((img) => img.is_cover) ?? sortedImgs[0] ?? null
 
       const amenities = Array.isArray(room.amenities)
         ? (room.amenities as string[]).slice(0, 4)
@@ -101,8 +108,8 @@ export async function getFeaturedRooms(): Promise<PublicRoom[]> {
         name: room.name,
         categoryLabel: categoryName?.toUpperCase() ?? null,
         description: room.short_description ?? '',
-        imageUrl: `/images/rooms/${room.slug}.jpg`,
-        imageAlt: `${room.name} em Búzios`,
+        imageUrl: coverImg?.url ?? `/images/rooms/${room.slug}.jpg`,
+        imageAlt: coverImg?.alt_text ?? `${room.name} em Búzios`,
         priceFrom: room.base_price_brl,
         priceSuffix: '/ noite',
         features: amenities.slice(0, 4),
