@@ -830,6 +830,7 @@ export type Database = {
           category_id: string
           created_at: string
           description: string | null
+          featured: boolean
           floor: number | null
           id: string
           is_active: boolean
@@ -850,6 +851,7 @@ export type Database = {
           category_id: string
           created_at?: string
           description?: string | null
+          featured?: boolean
           floor?: number | null
           id?: string
           is_active?: boolean
@@ -870,6 +872,7 @@ export type Database = {
           category_id?: string
           created_at?: string
           description?: string | null
+          featured?: boolean
           floor?: number | null
           id?: string
           is_active?: boolean

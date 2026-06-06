@@ -76,6 +76,7 @@ export async function getFeaturedRooms(): Promise<PublicRoom[]> {
         room_categories ( name )
       `)
       .eq('is_active', true)
+      .eq('featured', true)
       .order('sort_order', { ascending: true })
       .limit(6)
 

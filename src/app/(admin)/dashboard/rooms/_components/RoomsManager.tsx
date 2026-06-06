@@ -97,6 +97,7 @@ export function RoomsManager({ categories, rooms }: Props) {
                   <th className="text-left px-4 py-3 font-semibold text-ocean-700 hidden sm:table-cell">Preço</th>
                   <th className="text-left px-4 py-3 font-semibold text-ocean-700 hidden lg:table-cell">Hóspedes</th>
                   <th className="text-left px-4 py-3 font-semibold text-ocean-700 hidden lg:table-cell">Vista</th>
+                  <th className="text-left px-4 py-3 font-semibold text-ocean-700 hidden sm:table-cell">Landing page</th>
                   <th className="text-left px-4 py-3 font-semibold text-ocean-700">Status</th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -206,6 +207,15 @@ function RoomTableRow({
           <span className="text-[11px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Sim</span>
         ) : (
           <span className="text-[11px] text-slate-400">—</span>
+        )}
+      </td>
+      <td className="px-4 py-3 hidden sm:table-cell">
+        {row.featured ? (
+          <span className="text-[11px] text-ocean-700 bg-ocean-50 px-2 py-0.5 rounded-full">
+            {row.sort_order + 1}º destaque
+          </span>
+        ) : (
+          <span className="text-[11px] text-slate-400">Não destacar</span>
         )}
       </td>
       <td className="px-4 py-3">

@@ -19,6 +19,7 @@ export type RoomRow = {
   base_price_brl: number
   max_guests: number
   ocean_view: boolean
+  featured: boolean
   is_active: boolean
   sort_order: number
   size_sqm: number | null

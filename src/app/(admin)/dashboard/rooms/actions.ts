@@ -105,12 +105,14 @@ export async function createRoomAction(
   const ocean_view    = formData.get('ocean_view') === 'on'
   const size_sqm_raw  = str(formData, 'size_sqm')
   const size_sqm      = size_sqm_raw ? parseFloat(size_sqm_raw) : null
-  const sort_order    = int(formData, 'sort_order', 0)
   const is_active     = formData.get('is_active') === 'on'
   const amenities_raw = str(formData, 'amenities')
   const amenities     = amenities_raw
     ? amenities_raw.split(',').map((a) => a.trim()).filter(Boolean)
     : []
+  const homepage_slot = str(formData, 'homepage_slot')
+  const featured      = homepage_slot !== 'none'
+  const sort_order    = featured ? parseInt(homepage_slot, 10) : 0
 
   if (!name)                          return { error: 'Nome é obrigatório.' }
   if (!slug)                          return { error: 'Slug é obrigatório.' }
@@ -125,7 +127,7 @@ export async function createRoomAction(
     base_price_brl: base_price,
     max_guests, ocean_view,
     size_sqm: size_sqm && !isNaN(size_sqm) ? size_sqm : null,
-    sort_order, is_active, amenities,
+    sort_order, featured, is_active, amenities,
   })
 
   if (error) {
@@ -151,12 +153,14 @@ export async function updateRoomAction(
   const ocean_view    = formData.get('ocean_view') === 'on'
   const size_sqm_raw  = str(formData, 'size_sqm')
   const size_sqm      = size_sqm_raw ? parseFloat(size_sqm_raw) : null
-  const sort_order    = int(formData, 'sort_order', 0)
   const is_active     = formData.get('is_active') === 'on'
   const amenities_raw = str(formData, 'amenities')
   const amenities     = amenities_raw
     ? amenities_raw.split(',').map((a) => a.trim()).filter(Boolean)
     : []
+  const homepage_slot = str(formData, 'homepage_slot')
+  const featured      = homepage_slot !== 'none'
+  const sort_order    = featured ? parseInt(homepage_slot, 10) : 0
 
   if (!id)                            return { error: 'ID inválido.' }
   if (!name)                          return { error: 'Nome é obrigatório.' }
@@ -174,7 +178,7 @@ export async function updateRoomAction(
       base_price_brl: base_price,
       max_guests, ocean_view,
       size_sqm: size_sqm && !isNaN(size_sqm) ? size_sqm : null,
-      sort_order, is_active, amenities,
+      sort_order, featured, is_active, amenities,
     })
     .eq('id', id)
 

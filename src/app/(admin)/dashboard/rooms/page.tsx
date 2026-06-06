@@ -15,7 +15,7 @@ export default async function RoomsPage() {
       .order('sort_order', { ascending: true }),
     db
       .from('rooms')
-      .select('id, name, slug, category_id, short_description, base_price_brl, max_guests, ocean_view, is_active, sort_order, size_sqm, amenities')
+      .select('id, name, slug, category_id, short_description, base_price_brl, max_guests, ocean_view, featured, is_active, sort_order, size_sqm, amenities')
       .order('sort_order', { ascending: true }),
   ])
 

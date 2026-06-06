@@ -132,41 +132,44 @@ export function RoomFormModal({ mode, initial, categories, onClose }: Props) {
           </FormField>
         </div>
 
-        {/* Size + position */}
-        <div className="grid grid-cols-2 gap-4">
-          <FormField label="Tamanho (m²)">
-            <input
-              name="size_sqm"
-              type="number"
-              min={1}
-              step={0.1}
-              defaultValue={initial?.size_sqm ?? ''}
-              className={INPUT}
-              placeholder="Opcional"
-            />
-          </FormField>
-          <FormField label="Posição no site">
-            <select
-              name="sort_order"
-              defaultValue={initial?.sort_order ?? 0}
-              className={INPUT}
-            >
-              <option value={0}>1º — Mostrar primeiro</option>
-              <option value={1}>2º — Mostrar segundo</option>
-              <option value={2}>3º — Mostrar terceiro</option>
-              <option value={3}>4º — Mostrar quarto</option>
-              <option value={4}>5º — Mostrar quinto</option>
-              <option value={5}>6º — Mostrar sexto</option>
-              <option value={6}>7º — Mostrar sétimo</option>
-              <option value={7}>8º — Mostrar oitavo</option>
-              <option value={8}>9º — Mostrar nono</option>
-              <option value={9}>10º — Mostrar décimo</option>
-            </select>
-            <p className="text-[11px] text-ocean-400 mt-1.5">
-              Escolha a ordem em que este quarto aparece no site.
-            </p>
-          </FormField>
-        </div>
+        {/* Size */}
+        <FormField label="Tamanho (m²)">
+          <input
+            name="size_sqm"
+            type="number"
+            min={1}
+            step={0.1}
+            defaultValue={initial?.size_sqm ?? ''}
+            className={INPUT}
+            placeholder="Opcional"
+          />
+        </FormField>
+
+        {/* Landing page slot */}
+        <FormField label="Destaque na landing page">
+          <select
+            name="homepage_slot"
+            defaultValue={
+              initial
+                ? initial.featured
+                  ? String(initial.sort_order)
+                  : 'none'
+                : 'none'
+            }
+            className={INPUT}
+          >
+            <option value="none">Não destacar na landing page</option>
+            <option value="0">1º destaque na landing page</option>
+            <option value="1">2º destaque na landing page</option>
+            <option value="2">3º destaque na landing page</option>
+            <option value="3">4º destaque na landing page</option>
+            <option value="4">5º destaque na landing page</option>
+            <option value="5">6º destaque na landing page</option>
+          </select>
+          <p className="text-[11px] text-ocean-400 mt-1.5">
+            Quartos destacados aparecem na página inicial. Máximo 6.
+          </p>
+        </FormField>
 
         {/* Amenities */}
         <FormField label="Comodidades" hint="separadas por vírgula">
@@ -196,7 +199,7 @@ export function RoomFormModal({ mode, initial, categories, onClose }: Props) {
               defaultChecked={initial?.is_active ?? true}
               className="w-4 h-4 rounded"
             />
-            <span className="text-[13px] text-foreground/70">Ativo (visível no site)</span>
+            <span className="text-[13px] text-foreground/70">Ativo no site (visível ao público)</span>
           </label>
         </div>
 
