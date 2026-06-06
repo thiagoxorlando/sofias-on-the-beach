@@ -138,9 +138,17 @@ export function Footer() {
           <p className="text-[11px] text-ocean-600">
             © {year} Sofia&apos;s on the Beach. Todos os direitos reservados.
           </p>
-          <p className="text-[11px] text-ocean-700">
-            Reservas diretas · Melhor tarifa garantida
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="text-[11px] text-ocean-700">
+              Reservas diretas · Melhor tarifa garantida
+            </p>
+            <Link
+              href="/login"
+              className="text-[10px] text-ocean-800/30 hover:text-ocean-500 transition-colors"
+            >
+              Acesso administrativo
+            </Link>
+          </div>
         </div>
 
       </div>
