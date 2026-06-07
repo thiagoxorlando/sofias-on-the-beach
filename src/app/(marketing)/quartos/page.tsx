@@ -43,11 +43,8 @@ function roomWaHref(roomName: string): string {
   return `https://wa.me/${WA_NUMBER}?text=${msg}`
 }
 
-function reserveWaHref(roomName: string, checkIn: string, checkOut: string, guests: number): string {
-  const msg = encodeURIComponent(
-    `Olá! Gostaria de reservar o ${roomName} de ${formatDatePt(checkIn)} a ${formatDatePt(checkOut)} para ${guests} hóspede${guests > 1 ? 's' : ''}. Podem confirmar disponibilidade?`,
-  )
-  return `https://wa.me/${WA_NUMBER}?text=${msg}`
+function reservarUrl(roomId: string, checkIn: string, checkOut: string, guests: number): string {
+  return `/reservar?room_id=${roomId}&check_in=${checkIn}&check_out=${checkOut}&guests=${guests}`
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────────
@@ -172,9 +169,9 @@ export default async function QuartosPage({ searchParams }: { searchParams: Sear
                   key={room.id}
                   room={room}
                   available={room.available}
-                  primaryHref={
+                  reservarHref={
                     room.available === true && hasValidDates && guests
-                      ? reserveWaHref(room.name, checkIn!, checkOut!, guests)
+                      ? reservarUrl(room.id, checkIn!, checkOut!, guests)
                       : null
                   }
                   waHref={roomWaHref(room.name)}
@@ -193,12 +190,12 @@ export default async function QuartosPage({ searchParams }: { searchParams: Sear
 function RoomCard({
   room,
   available,
-  primaryHref,
+  reservarHref,
   waHref,
 }: {
   room: PublicRoomFull
   available: boolean | null  // null = no dates selected
-  primaryHref: string | null // non-null only when available + dates selected
+  reservarHref: string | null // non-null only when available + dates selected
   waHref: string
 }) {
   const isExternal = room.imageUrl.startsWith('http')
@@ -310,14 +307,12 @@ function RoomCard({
           ) : available === true ? (
             // Available + dates selected: primary CTA is Reservar
             <div className="flex gap-2.5">
-              <a
-                href={primaryHref!}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={reservarHref!}
                 className="flex-1 flex items-center justify-center bg-ocean-600 text-white text-[11px] font-bold px-4 py-2.5 rounded-xl hover:bg-ocean-500 transition-colors shadow-sm uppercase tracking-[0.08em]"
               >
                 Reservar
-              </a>
+              </Link>
               <a
                 href={waHref}
                 target="_blank"
@@ -330,13 +325,13 @@ function RoomCard({
               </a>
             </div>
           ) : (
-            // No dates selected: standard browse CTAs
+            // No dates selected: prompt user to pick dates on homepage
             <div className="flex gap-2.5">
               <Link
-                href={`/quartos/${room.slug}`}
+                href="/"
                 className="flex-1 flex items-center justify-center bg-ocean-900 text-white text-[11px] font-bold px-4 py-2.5 rounded-xl hover:bg-ocean-800 transition-colors shadow-sm uppercase tracking-[0.08em]"
               >
-                Ver detalhes
+                Consultar datas
               </Link>
               <a
                 href={waHref}

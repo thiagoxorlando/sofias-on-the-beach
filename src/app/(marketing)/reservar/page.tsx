@@ -1,0 +1,281 @@
+import type { Metadata } from 'next'
+import Image from 'next/image'
+import Link from 'next/link'
+import fs from 'node:fs'
+import path from 'node:path'
+import { createClient } from '@/lib/supabase/server'
+import { ReservationForm } from './ReservationForm'
+
+export const metadata: Metadata = {
+  title: "Reservar — Sofia's on the Beach",
+  robots: { index: false },
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+const MONTHS_PT_LONG = [
+  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+]
+
+function formatDateLong(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return `${d} de ${MONTHS_PT_LONG[m - 1]} de ${y}`
+}
+
+function countNights(checkIn: string, checkOut: string): number {
+  return Math.round(
+    (new Date(checkOut + 'T00:00:00Z').getTime() - new Date(checkIn + 'T00:00:00Z').getTime()) / 86_400_000,
+  )
+}
+
+function formatBRL(value: number): string {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value)
+}
+
+function localImgExists(src: string): boolean {
+  return fs.existsSync(path.join(process.cwd(), 'public', src.replace(/^\//, '')))
+}
+
+type SP = Promise<{
+  room_id?:   string | string[]
+  check_in?:  string | string[]
+  check_out?: string | string[]
+  guests?:    string | string[]
+}>
+
+export default async function ReservarPage({ searchParams }: { searchParams: SP }) {
+  const sp = await searchParams
+
+  const roomId   = typeof sp.room_id   === 'string' ? sp.room_id   : null
+  const checkIn  = typeof sp.check_in  === 'string' && ISO_DATE.test(sp.check_in)  ? sp.check_in  : null
+  const checkOut = typeof sp.check_out === 'string' && ISO_DATE.test(sp.check_out) ? sp.check_out : null
+  const guestsRaw = typeof sp.guests   === 'string' ? parseInt(sp.guests, 10) : NaN
+  const guests   = !isNaN(guestsRaw) && guestsRaw >= 1 ? guestsRaw : 2
+
+  if (!roomId || !checkIn || !checkOut || checkOut <= checkIn) {
+    return <InvalidParams />
+  }
+
+  const nights = countNights(checkIn, checkOut)
+  if (nights < 1) return <InvalidParams />
+
+  // Fetch room data (public read via SSR client)
+  const supabase = await createClient()
+  const { data: room } = await supabase
+    .from('rooms')
+    .select(`
+      id, name, slug, base_price_brl, max_guests,
+      room_categories ( name ),
+      room_images ( url, alt_text, is_cover, sort_order )
+    `)
+    .eq('id', roomId)
+    .eq('is_active', true)
+    .single()
+
+  if (!room) {
+    return <InvalidParams message="Quarto não encontrado ou indisponível." />
+  }
+
+  // Resolve cover image
+  type Img = { url: string; alt_text: string | null; is_cover: boolean; sort_order: number }
+  const imgs = (Array.isArray(room.room_images) ? room.room_images : []) as Img[]
+  const sorted = [...imgs].sort((a, b) => a.sort_order - b.sort_order)
+  const cover = sorted.find((i) => i.is_cover) ?? sorted[0] ?? null
+  const imageUrl = cover?.url ?? `/images/rooms/${room.slug}.jpg`
+  const imageAlt = cover?.alt_text ?? `${room.name} em Búzios`
+  const isExternal = imageUrl.startsWith('http')
+  const showImage = isExternal || localImgExists(imageUrl)
+
+  const catName =
+    room.room_categories && !Array.isArray(room.room_categories)
+      ? (room.room_categories as { name: string }).name
+      : null
+
+  const pricePerNight = room.base_price_brl
+  const total = nights * pricePerNight
+
+  return (
+    <section className="bg-ocean-50 min-h-screen py-12 md:py-20 px-6 md:px-10">
+      <div className="max-w-5xl mx-auto">
+
+        <Link
+          href="/quartos"
+          className="inline-flex items-center gap-2 text-[12px] font-semibold text-ocean-500 hover:text-ocean-800 transition-colors mb-8"
+        >
+          <ArrowLeftIcon />
+          Voltar aos quartos
+        </Link>
+
+        <h1 className="font-serif text-[26px] md:text-[32px] font-bold text-ocean-900 mb-8">
+          Confirmar pré-reserva
+        </h1>
+
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+
+          {/* ── Summary ─────────────────────────────────────────── */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-[20px] border border-ocean-100 overflow-hidden shadow-[0_4px_24px_rgba(0,40,80,0.07)]">
+
+              <div className="relative aspect-[16/9] overflow-hidden">
+                {showImage ? (
+                  <Image
+                    src={imageUrl}
+                    alt={imageAlt}
+                    fill
+                    unoptimized={isExternal}
+                    className="object-cover object-center"
+                    sizes="(max-width: 1024px) 100vw, 40vw"
+                  />
+                ) : (
+                  <div
+                    className="absolute inset-0"
+                    style={{ background: 'linear-gradient(160deg, #dceef9 0%, #c4dff0 55%, #a9cde7 100%)' }}
+                  />
+                )}
+              </div>
+
+              <div className="p-6 space-y-5">
+                <div>
+                  {catName && (
+                    <p className="text-[10px] font-bold text-ocean-500 uppercase tracking-widest mb-1">
+                      {catName}
+                    </p>
+                  )}
+                  <h2 className="font-serif text-[18px] font-bold text-ocean-900">
+                    {room.name}
+                  </h2>
+                </div>
+
+                <div className="space-y-2.5 border-t border-ocean-50 pt-4">
+                  <SummaryRow icon={<CalendarIcon />} label="Check-in"  value={formatDateLong(checkIn)} />
+                  <SummaryRow icon={<CalendarIcon />} label="Check-out" value={formatDateLong(checkOut)} />
+                  <SummaryRow
+                    icon={<MoonIcon />}
+                    label="Noites"
+                    value={`${nights} noite${nights > 1 ? 's' : ''}`}
+                  />
+                  <SummaryRow
+                    icon={<GuestsIcon />}
+                    label="Hóspedes"
+                    value={`${guests} hóspede${guests > 1 ? 's' : ''}`}
+                  />
+                </div>
+
+                <div className="border-t border-ocean-50 pt-4 space-y-2">
+                  <div className="flex items-center justify-between text-[13px]">
+                    <span className="text-ocean-500">
+                      {formatBRL(pricePerNight)} × {nights} noite{nights > 1 ? 's' : ''}
+                    </span>
+                    <span className="text-ocean-700 font-medium">{formatBRL(total)}</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-ocean-100">
+                    <span className="text-[14px] font-bold text-ocean-900">Total</span>
+                    <span className="font-serif text-[20px] font-bold text-ocean-900">
+                      {formatBRL(total)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-[10px] text-ocean-400 font-semibold uppercase tracking-wide">
+                  <LockIcon />
+                  Melhor tarifa · Reserva direta
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Guest form ──────────────────────────────────────── */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-[20px] border border-ocean-100 shadow-[0_4px_24px_rgba(0,40,80,0.07)] p-6 md:p-8">
+              <h2 className="font-serif text-[18px] font-bold text-ocean-900 mb-1">
+                Seus dados
+              </h2>
+              <p className="text-[13px] text-ocean-400 mb-6">
+                Preencha os campos abaixo para confirmar a pré-reserva. Sem cobrança agora.
+              </p>
+              <ReservationForm
+                roomId={roomId}
+                checkIn={checkIn}
+                checkOut={checkOut}
+                guests={guests}
+              />
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function SummaryRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="text-ocean-400 shrink-0">{icon}</span>
+      <span className="text-[12px] text-ocean-400 w-16 shrink-0">{label}</span>
+      <span className="text-[13px] font-medium text-ocean-800 flex-1">{value}</span>
+    </div>
+  )
+}
+
+function InvalidParams({ message = 'Link inválido. Por favor, volte e selecione as datas.' }: { message?: string }) {
+  return (
+    <section className="bg-white py-20 md:py-32 px-6">
+      <div className="max-w-md mx-auto text-center">
+        <h1 className="font-serif text-[26px] font-bold text-ocean-900 mb-4">Dados incompletos</h1>
+        <p className="text-[14px] text-foreground/60 leading-relaxed mb-8">{message}</p>
+        <Link
+          href="/quartos"
+          className="inline-flex items-center gap-2 bg-ocean-900 text-white px-8 py-3.5 rounded-xl text-[13px] font-bold hover:bg-ocean-800 transition-colors"
+        >
+          Ver quartos disponíveis
+        </Link>
+      </div>
+    </section>
+  )
+}
+
+function ArrowLeftIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5" aria-hidden="true">
+      <path d="M19 12H5M12 5l-7 7 7 7" />
+    </svg>
+  )
+}
+
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5" aria-hidden="true">
+      <rect x={3} y={4} width={18} height={18} rx={2} ry={2} />
+      <line x1={3} y1={10} x2={21} y2={10} />
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5" aria-hidden="true">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  )
+}
+
+function GuestsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5" aria-hidden="true">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx={9} cy={7} r={4} />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    </svg>
+  )
+}
+
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 shrink-0" aria-hidden="true">
+      <rect x={3} y={11} width={18} height={11} rx={2} ry={2} />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  )
+}
