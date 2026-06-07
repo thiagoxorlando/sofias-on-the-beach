@@ -1,53 +1,80 @@
 import Link from 'next/link'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export const metadata = { title: "Visão geral — Painel Sofia's" }
 
-const OVERVIEW_CARDS = [
-  {
-    href:     '/dashboard/rooms',
-    label:    'Quartos',
-    desc:     'Acomodações e suítes',
-    color:    'bg-ocean-50 text-ocean-600',
-    icon:     'bed',
-  },
-  {
-    href:     '/dashboard/reservations',
-    label:    'Reservas',
-    desc:     'Calendário e bookings',
-    color:    'bg-blue-50 text-blue-600',
-    icon:     'calendar',
-  },
-  {
-    href:     '/dashboard/guests',
-    label:    'Hóspedes',
-    desc:     'Cadastro e histórico',
-    color:    'bg-indigo-50 text-indigo-600',
-    icon:     'users',
-  },
-  {
-    href:     '/dashboard/availability',
-    label:    'Disponibilidade',
-    desc:     'Bloqueios e calendário',
-    color:    'bg-sky-50 text-sky-600',
-    icon:     'grid',
-  },
-  {
-    href:     '/dashboard/payments',
-    label:    'Financeiro',
-    desc:     'Pagamentos e receita',
-    color:    'bg-emerald-50 text-emerald-600',
-    icon:     'coin',
-  },
-  {
-    href:     '/dashboard/settings',
-    label:    'Configurações',
-    desc:     'Pousada, canais e geral',
-    color:    'bg-slate-50 text-slate-600',
-    icon:     'settings',
-  },
-]
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10)
+}
 
-export default function DashboardOverviewPage() {
+async function loadCounts() {
+  const db = createAdminClient()
+  const today = todayISO()
+
+  const [rooms, upcoming, guests, pendingPayments] = await Promise.all([
+    db.from('rooms').select('id', { count: 'exact', head: true }).eq('is_active', true),
+    db.from('reservations').select('id', { count: 'exact', head: true })
+      .gte('check_out', today).neq('status', 'cancelled'),
+    db.from('guests').select('id', { count: 'exact', head: true }),
+    db.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+  ])
+
+  return {
+    rooms:           rooms.count ?? 0,
+    upcoming:        upcoming.count ?? 0,
+    guests:          guests.count ?? 0,
+    pendingPayments: pendingPayments.count ?? 0,
+  }
+}
+
+export default async function DashboardOverviewPage() {
+  const counts = await loadCounts()
+
+  const OVERVIEW_CARDS = [
+    {
+      href:     '/dashboard/rooms',
+      label:    'Quartos',
+      desc:     `${counts.rooms} acomodaç${counts.rooms === 1 ? 'ão ativa' : 'ões ativas'}`,
+      color:    'bg-ocean-50 text-ocean-600',
+      icon:     'bed',
+    },
+    {
+      href:     '/dashboard/reservations',
+      label:    'Reservas',
+      desc:     `${counts.upcoming} próxima${counts.upcoming === 1 ? '' : 's'} ou em andamento`,
+      color:    'bg-blue-50 text-blue-600',
+      icon:     'calendar',
+    },
+    {
+      href:     '/dashboard/guests',
+      label:    'Hóspedes',
+      desc:     `${counts.guests} cadastrado${counts.guests === 1 ? '' : 's'}`,
+      color:    'bg-indigo-50 text-indigo-600',
+      icon:     'users',
+    },
+    {
+      href:     '/dashboard/availability',
+      label:    'Disponibilidade',
+      desc:     'Bloqueios e calendário',
+      color:    'bg-sky-50 text-sky-600',
+      icon:     'grid',
+    },
+    {
+      href:     '/dashboard/payments',
+      label:    'Financeiro',
+      desc:     `${counts.pendingPayments} pagamento${counts.pendingPayments === 1 ? '' : 's'} pendente${counts.pendingPayments === 1 ? '' : 's'}`,
+      color:    'bg-emerald-50 text-emerald-600',
+      icon:     'coin',
+    },
+    {
+      href:     '/dashboard/settings',
+      label:    'Configurações',
+      desc:     'Pousada, canais e geral',
+      color:    'bg-slate-50 text-slate-600',
+      icon:     'settings',
+    },
+  ]
+
   return (
     <div className="p-6 md:p-10">
 
