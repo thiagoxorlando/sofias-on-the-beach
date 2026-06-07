@@ -4,7 +4,9 @@ import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ReservationStatusBadge, PaymentStatusBadge, PAYMENT_LABELS } from '../_components/badges'
 import { ReservationActions } from './_components/ReservationActions'
+import { ManualPaymentTrigger } from './_components/ManualPaymentTrigger'
 import { NotesPanel } from './_components/NotesPanel'
+import { ReceiptLink } from '../../payments/_components/ReceiptLink'
 
 export const metadata: Metadata = { title: "Detalhe da reserva — Painel Sofia's" }
 
@@ -30,6 +32,14 @@ function nightsBetween(checkIn: string, checkOut: string): number {
   return Math.round(
     (new Date(checkOut + 'T00:00:00Z').getTime() - new Date(checkIn + 'T00:00:00Z').getTime()) / 86_400_000,
   )
+}
+
+const MANUAL_METHOD_LABELS: Record<string, string> = {
+  pix_manual:    'PIX manual',
+  cash:          'Dinheiro',
+  bank_transfer: 'Transferência bancária',
+  card_machine:  'Máquina de cartão',
+  other:         'Outro',
 }
 
 const EVENT_LABELS: Record<string, string> = {
@@ -76,7 +86,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
   const [{ data: payments }, { data: events }, { data: notesData }, { data: blockedDates }] = await Promise.all([
     db
       .from('payments')
-      .select('id, method, status, amount_brl, paid_at, asaas_invoice_url, refund_reason, refunded_at, created_at')
+      .select('id, method, status, amount_brl, paid_at, asaas_invoice_url, refund_reason, refunded_at, created_at, manual_payment_method, manual_payment_note, manual_receipt_path')
       .eq('reservation_id', id)
       .order('created_at', { ascending: false }),
     db
@@ -231,20 +241,43 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                   <Field label="Pago em" value={formatDateTime(relevantPayment.paid_at)} />
                   <Field label="Status"  value={PAYMENT_LABELS[relevantPayment.status] ?? relevantPayment.status} />
                 </div>
+                {relevantPayment.manual_payment_method && (
+                  <div className="bg-ocean-50/60 border border-ocean-100 rounded-xl px-4 py-3 space-y-1.5">
+                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.10em]">Pago manualmente</p>
+                    <p className="text-[13px] font-medium text-ocean-900">
+                      {MANUAL_METHOD_LABELS[relevantPayment.manual_payment_method] ?? relevantPayment.manual_payment_method}
+                      <span className="text-ocean-500"> · {formatBRL(relevantPayment.amount_brl)}</span>
+                      {relevantPayment.paid_at && <span className="text-ocean-500"> · {formatDateTime(relevantPayment.paid_at)}</span>}
+                    </p>
+                    {relevantPayment.manual_payment_note && (
+                      <p className="text-[12px] text-ocean-600 leading-relaxed">{relevantPayment.manual_payment_note}</p>
+                    )}
+                    {relevantPayment.manual_receipt_path && (
+                      <ReceiptLink receiptPath={relevantPayment.manual_receipt_path} />
+                    )}
+                  </div>
+                )}
                 {relevantPayment.refund_reason && (
                   <p className="text-[12px] text-ocean-500">
                     Estorno: {relevantPayment.refund_reason} ({formatDateTime(relevantPayment.refunded_at)})
                   </p>
                 )}
-                {relevantPayment.asaas_invoice_url && (
-                  <a
-                    href={relevantPayment.asaas_invoice_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-ocean-600 hover:text-ocean-900 transition-colors"
-                  >
-                    Ver cobrança no Asaas →
-                  </a>
+                {(relevantPayment.asaas_invoice_url || relevantPayment.status === 'pending' || relevantPayment.status === 'overdue') && (
+                  <div className="flex flex-wrap items-center gap-3">
+                    {relevantPayment.asaas_invoice_url && (
+                      <a
+                        href={relevantPayment.asaas_invoice_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-ocean-600 hover:text-ocean-900 transition-colors"
+                      >
+                        Ver cobrança no Asaas →
+                      </a>
+                    )}
+                    {(relevantPayment.status === 'pending' || relevantPayment.status === 'overdue') && (
+                      <ManualPaymentTrigger paymentId={relevantPayment.id} amount={relevantPayment.amount_brl} />
+                    )}
+                  </div>
                 )}
                 {(payments?.length ?? 0) > 1 && (
                   <details className="text-[12px] text-ocean-500">

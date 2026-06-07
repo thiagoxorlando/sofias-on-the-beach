@@ -300,6 +300,10 @@ export type Database = {
           asaas_pix_qr_code: string | null
           created_at: string
           id: string
+          manual_paid_by: string | null
+          manual_payment_method: string | null
+          manual_payment_note: string | null
+          manual_receipt_path: string | null
           metadata: Json | null
           method: string
           paid_at: string | null
@@ -319,6 +323,10 @@ export type Database = {
           asaas_pix_qr_code?: string | null
           created_at?: string
           id?: string
+          manual_paid_by?: string | null
+          manual_payment_method?: string | null
+          manual_payment_note?: string | null
+          manual_receipt_path?: string | null
           metadata?: Json | null
           method: string
           paid_at?: string | null
@@ -338,6 +346,10 @@ export type Database = {
           asaas_pix_qr_code?: string | null
           created_at?: string
           id?: string
+          manual_paid_by?: string | null
+          manual_payment_method?: string | null
+          manual_payment_note?: string | null
+          manual_receipt_path?: string | null
           metadata?: Json | null
           method?: string
           paid_at?: string | null
@@ -349,6 +361,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payments_manual_paid_by_fkey"
+            columns: ["manual_paid_by"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payments_reservation_id_fkey"
             columns: ["reservation_id"]

@@ -36,16 +36,20 @@ export function ReservationStatusBadge({ status, className = '' }: { status: str
 
 export const PAYMENT_LABELS: Record<string, string> = {
   pending:   'Pendente',
-  confirmed: 'Confirmado',
-  failed:    'Recusado',
+  paid:      'Pago',
+  overdue:   'Vencido',
   refunded:  'Estornado',
+  failed:    'Recusado',
+  cancelled: 'Cancelado',
 }
 
 const PAYMENT_TONES: Record<string, string> = {
   pending:   'bg-amber-50 text-amber-700',
-  confirmed: 'bg-emerald-50 text-emerald-700',
-  failed:    'bg-red-50 text-red-600',
+  paid:      'bg-emerald-50 text-emerald-700',
+  overdue:   'bg-orange-50 text-orange-700',
   refunded:  'bg-slate-100 text-slate-500',
+  failed:    'bg-red-50 text-red-600',
+  cancelled: 'bg-slate-100 text-slate-500',
 }
 
 export function PaymentStatusBadge({ status, className = '' }: { status: string | null; className?: string }) {
