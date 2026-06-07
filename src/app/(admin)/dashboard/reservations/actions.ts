@@ -30,42 +30,6 @@ function revalidateReservation(id: string) {
   revalidatePath(`/dashboard/reservations/${id}`)
 }
 
-// ── Mark as confirmed ─────────────────────────────────────────────────────────
-// Manual confirmation — used when staff confirms payment received outside the
-// online flow (bank transfer, in person, etc.) or overrides a stuck booking.
-
-export async function markConfirmedAction(reservationId: string): Promise<ActionState> {
-  const admin = await requireAdmin()
-  const db = createAdminClient()
-
-  const { data: reservation } = await db
-    .from('reservations')
-    .select('status')
-    .eq('id', reservationId)
-    .single()
-
-  if (!reservation) return { error: 'Reserva não encontrada.' }
-  if (reservation.status !== 'pending_payment') {
-    return { error: 'Só é possível confirmar reservas que estão aguardando pagamento.' }
-  }
-
-  const { error } = await db
-    .from('reservations')
-    .update({ status: 'confirmed' })
-    .eq('id', reservationId)
-
-  if (error) return { error: 'Erro ao confirmar a reserva. Tente novamente.' }
-
-  await logEvent(
-    db, reservationId, 'reservation_confirmed',
-    `Reserva confirmada manualmente por ${admin.full_name}.`,
-    admin.email,
-  )
-
-  revalidateReservation(reservationId)
-  return { success: true }
-}
-
 // ── Cancel (with reason) ──────────────────────────────────────────────────────
 // Frees up the dates by removing the sparse room_availability blocks tied to
 // this reservation — per the "available = row absent" model used site-wide.

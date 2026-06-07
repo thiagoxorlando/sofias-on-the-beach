@@ -7,7 +7,11 @@ const BTN_PRIMARY =
   'inline-flex items-center justify-center rounded-xl bg-ocean-900 text-white px-4 py-2.5 ' +
   'text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 
-export function ManualPaymentTrigger({ paymentId, amount }: { paymentId: string; amount: number }) {
+type Props =
+  | { paymentId: string; reservationId?: never; amount: number }
+  | { paymentId?: never; reservationId: string; amount: number }
+
+export function ManualPaymentTrigger({ paymentId, reservationId, amount }: Props) {
   const [open, setOpen] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
 
@@ -23,6 +27,7 @@ export function ManualPaymentTrigger({ paymentId, amount }: { paymentId: string;
       {open && (
         <ManualPaymentModal
           paymentId={paymentId}
+          reservationId={reservationId}
           amount={amount}
           onClose={() => setOpen(false)}
           onSuccess={() => { setOpen(false); setConfirmed(true) }}

@@ -64,8 +64,18 @@ function revalidatePayment(reservationId: string) {
 // finance has an audit trail for payments confirmed outside Asaas — e.g. PIX
 // sent directly, cash, bank transfer, card machine. Mirrors the webhook's
 // payment → reservation → timeline sequence, but guards the reservation
-// transition like markConfirmedAction (only 'pending_payment' → 'confirmed';
-// the webhook's unconditional update would be wrong for a manual correction).
+// transition (only 'pending_payment' → 'confirmed'; the webhook's unconditional
+// update would be wrong for a manual correction).
+//
+// Two entry shapes, one form: the modal submits either `payment_id` (an
+// existing charge being confirmed — e.g. a pending Asaas charge paid in cash
+// instead) or `reservation_id` (the reservation has NO payment row at all —
+// e.g. a walk-in or staff-arranged stay) and a brand-new payment row is
+// created directly as paid/manual/manual. This is the ONLY path that may turn
+// a reservation "confirmed" from 'pending_payment' — guaranteeing a reservation
+// never reads as paid to the guest without a real `payments.status = 'paid'`
+// row backing it.
+//
 // audit_logs is populated automatically by the SECURITY DEFINER triggers
 // (trg_audit_payments / trg_audit_reservations) — inserting here would
 // duplicate those rows.
@@ -76,14 +86,15 @@ export async function confirmManualPaymentAction(
 ): Promise<ActionState> {
   const admin = await requireAdmin()
 
-  const paymentId    = str(formData, 'payment_id')
-  const manualMethod = str(formData, 'manual_payment_method')
-  const amountRaw    = str(formData, 'amount_brl')
-  const paidAtRaw    = str(formData, 'paid_at')
-  const note         = str(formData, 'note') || null
-  const receipt      = formData.get('receipt') as File | null
+  const paymentId     = str(formData, 'payment_id') || null
+  const reservationId = str(formData, 'reservation_id') || null
+  const manualMethod  = str(formData, 'manual_payment_method')
+  const amountRaw     = str(formData, 'amount_brl')
+  const paidAtRaw     = str(formData, 'paid_at')
+  const note          = str(formData, 'note') || null
+  const receipt       = formData.get('receipt') as File | null
 
-  if (!paymentId) return { error: 'Pagamento inválido.' }
+  if (!paymentId && !reservationId) return { error: 'Pagamento ou reserva inválidos.' }
   if (!isManualMethod(manualMethod)) return { error: 'Selecione a forma de pagamento.' }
 
   const amount = parseFloat(amountRaw.replace(',', '.'))
@@ -105,22 +116,60 @@ export async function confirmManualPaymentAction(
 
   const db = createAdminClient()
 
-  const { data: payment } = await db
-    .from('payments')
-    .select('id, reservation_id, status')
-    .eq('id', paymentId)
-    .maybeSingle()
+  // Resolve the target: either an existing payment row to confirm, or a brand
+  // new one to create for a reservation that currently has none.
+  let targetPaymentId: string
+  let targetReservationId: string
+  let isNewPayment = false
 
-  if (!payment) return { error: 'Pagamento não encontrado.' }
-  if (payment.status === 'paid') return { error: 'Este pagamento já está marcado como pago.' }
-  if (payment.status === 'refunded') return { error: 'Não é possível marcar um pagamento estornado como pago.' }
+  if (paymentId) {
+    const { data: payment } = await db
+      .from('payments')
+      .select('id, reservation_id, status')
+      .eq('id', paymentId)
+      .maybeSingle()
+
+    if (!payment) return { error: 'Pagamento não encontrado.' }
+    if (payment.status === 'paid') return { error: 'Este pagamento já está marcado como pago.' }
+    if (payment.status === 'refunded') return { error: 'Não é possível marcar um pagamento estornado como pago.' }
+
+    targetPaymentId = payment.id
+    targetReservationId = payment.reservation_id
+  } else {
+    const { data: reservation } = await db
+      .from('reservations')
+      .select('id, status')
+      .eq('id', reservationId!)
+      .maybeSingle()
+
+    if (!reservation) return { error: 'Reserva não encontrada.' }
+    if (reservation.status !== 'pending_payment' && reservation.status !== 'confirmed') {
+      return { error: 'Só é possível registrar pagamento manual para reservas aguardando pagamento ou confirmadas.' }
+    }
+
+    // Re-check for a payment row — the UI only offers this path when none
+    // exists, but guard against a stale page / race condition regardless.
+    const { data: existing } = await db
+      .from('payments')
+      .select('id')
+      .eq('reservation_id', reservation.id)
+      .neq('status', 'failed')
+      .neq('status', 'cancelled')
+      .maybeSingle()
+
+    if (existing) return { error: 'Já existe um pagamento para esta reserva. Atualize a página e tente novamente.' }
+
+    targetPaymentId = crypto.randomUUID()
+    targetReservationId = reservation.id
+    isNewPayment = true
+  }
 
   // Upload the receipt before touching the payment row — if this fails we bail
-  // out with nothing changed; if the later DB update fails we clean it back up.
+  // out with nothing changed; if the later DB write fails we clean it back up.
   let receiptPath: string | null = null
   if (hasReceipt) {
     const safeFilename = receipt!.name.toLowerCase().replace(/[^a-z0-9.]+/g, '-')
-    receiptPath = `${payment.reservation_id}/${payment.id}/${Date.now()}-${safeFilename}`
+    receiptPath = `${targetReservationId}/${targetPaymentId}/${Date.now()}-${safeFilename}`
 
     const { error: uploadError } = await db.storage
       .from('payment-receipts')
@@ -132,19 +181,25 @@ export async function confirmManualPaymentAction(
     }
   }
 
-  const { error } = await db
-    .from('payments')
-    .update({
-      status:                'paid',
-      paid_at:               paidAtIso,
-      amount_brl:            amount,
-      method:                'manual',
-      manual_payment_method: manualMethod,
-      manual_payment_note:   note,
-      manual_paid_by:        admin.id,
-      manual_receipt_path:   receiptPath,
-    })
-    .eq('id', payment.id)
+  const manualFields = {
+    status:                'paid' as const,
+    paid_at:               paidAtIso,
+    amount_brl:            amount,
+    manual_payment_method: manualMethod,
+    manual_payment_note:   note,
+    manual_paid_by:        admin.id,
+    manual_receipt_path:   receiptPath,
+  }
+
+  const { error } = isNewPayment
+    ? await db.from('payments').insert({
+        id:             targetPaymentId,
+        reservation_id: targetReservationId,
+        method:         'manual',
+        provider:       'manual',
+        ...manualFields,
+      })
+    : await db.from('payments').update({ method: 'manual', ...manualFields }).eq('id', targetPaymentId)
 
   if (error) {
     console.error('[payments] failed to confirm manual payment:', error)
@@ -153,7 +208,7 @@ export async function confirmManualPaymentAction(
   }
 
   await logEvent(
-    db, payment.reservation_id, 'payment_received',
+    db, targetReservationId, 'payment_received',
     `Pagamento de ${formatBRL(amount)} confirmado manualmente por ${admin.full_name} — ` +
     `${MANUAL_METHOD_LABELS[manualMethod]}, recebido em ${formatDateLabel(paidAtRaw)}.` +
     (note ? ` Obs.: ${note}` : ''),
@@ -163,18 +218,18 @@ export async function confirmManualPaymentAction(
   const { data: reservation } = await db
     .from('reservations')
     .select('status')
-    .eq('id', payment.reservation_id)
+    .eq('id', targetReservationId)
     .maybeSingle()
 
   if (reservation?.status === 'pending_payment') {
     const { error: resError } = await db
       .from('reservations')
       .update({ status: 'confirmed' })
-      .eq('id', payment.reservation_id)
+      .eq('id', targetReservationId)
 
     if (!resError) {
       await logEvent(
-        db, payment.reservation_id, 'reservation_confirmed',
+        db, targetReservationId, 'reservation_confirmed',
         `Reserva confirmada automaticamente após confirmação manual de pagamento por ${admin.full_name}.`,
         admin.email,
       )
@@ -183,7 +238,7 @@ export async function confirmManualPaymentAction(
     }
   }
 
-  revalidatePayment(payment.reservation_id)
+  revalidatePayment(targetReservationId)
   return { success: true }
 }
 

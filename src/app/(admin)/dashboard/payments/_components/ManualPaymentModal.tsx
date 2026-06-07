@@ -36,13 +36,17 @@ function todayISO(): string {
 }
 
 type Props = {
-  paymentId: string
+  // Pass exactly one: `paymentId` to confirm an existing charge, or
+  // `reservationId` to create a brand-new manual payment for a reservation
+  // that currently has none (e.g. walk-ins, staff-arranged stays).
+  paymentId?: string | null
+  reservationId?: string | null
   amount: number
   onClose: () => void
   onSuccess: () => void
 }
 
-export function ManualPaymentModal({ paymentId, amount, onClose, onSuccess }: Props) {
+export function ManualPaymentModal({ paymentId, reservationId, amount, onClose, onSuccess }: Props) {
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(confirmManualPaymentAction, undefined)
   const [fileError, setFileError] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
@@ -84,7 +88,11 @@ export function ManualPaymentModal({ paymentId, amount, onClose, onSuccess }: Pr
         </p>
 
         <form action={formAction} className="space-y-4">
-          <input type="hidden" name="payment_id" value={paymentId} />
+          {paymentId ? (
+            <input type="hidden" name="payment_id" value={paymentId} />
+          ) : (
+            <input type="hidden" name="reservation_id" value={reservationId ?? ''} />
+          )}
 
           <div>
             <label className={LABEL}>Forma de pagamento</label>

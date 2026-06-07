@@ -297,7 +297,12 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                 )}
               </div>
             ) : (
-              <p className="text-[13px] text-ocean-400">Sem pagamento registrado para esta reserva.</p>
+              <div className="space-y-3">
+                <p className="text-[13px] text-ocean-400">Sem pagamento registrado para esta reserva.</p>
+                {(reservation.status === 'pending_payment' || reservation.status === 'confirmed') && (
+                  <ManualPaymentTrigger reservationId={reservation.id} amount={reservation.total_brl} />
+                )}
+              </div>
             )}
           </section>
 

@@ -53,6 +53,7 @@ export default async function ReservaPage({
 
   // Load existing payment for pending_payment status (to restore UI on refresh)
   let existingPayment: InitialPayment = null
+  let hasPaidPayment = false
   if (reservation.status === 'pending_payment') {
     const { data: paymentRow } = await db
       .from('payments')
@@ -68,6 +69,16 @@ export default async function ReservaPage({
         pixCopyPaste: paymentRow.asaas_pix_copy_paste,
       }
     }
+  } else if (reservation.status === 'confirmed') {
+    // A reservation can be confirmed by staff without a paid charge backing it
+    // (walk-ins, comp stays, arrangements settled outside the platform) — never
+    // tell the guest "payment confirmed" unless a payments.status='paid' row exists.
+    const { count } = await db
+      .from('payments')
+      .select('id', { count: 'exact', head: true })
+      .eq('reservation_id', reservation.id)
+      .eq('status', 'paid')
+    hasPaidPayment = (count ?? 0) > 0
   }
 
   // Extract joined room
@@ -205,7 +216,9 @@ export default async function ReservaPage({
               ) : reservation.status === 'confirmed' ? (
                 <div className="bg-emerald-50 rounded-2xl p-5">
                   <p className="text-[14px] text-emerald-700 font-medium leading-relaxed">
-                    Pagamento confirmado. Sua reserva está garantida!
+                    {hasPaidPayment
+                      ? 'Pagamento confirmado. Sua reserva está garantida!'
+                      : 'Reserva confirmada pela equipe. Pagamento será tratado diretamente com a pousada.'}
                   </p>
                 </div>
               ) : (

@@ -2,7 +2,6 @@
 
 import { useActionState, useCallback, useEffect, useState, useTransition } from 'react'
 import {
-  markConfirmedAction,
   markCheckedInAction,
   markCheckedOutAction,
   cancelReservationAction,
@@ -43,11 +42,6 @@ export function ReservationActions({ reservationId, status }: { reservationId: s
   return (
     <div className="flex flex-col items-end gap-2.5">
       <div className="flex flex-wrap items-center justify-end gap-2">
-        {status === 'pending_payment' && (
-          <button type="button" disabled={isPending} onClick={() => run(markConfirmedAction, 'Reserva confirmada.')} className={BTN_PRIMARY}>
-            Marcar como confirmada
-          </button>
-        )}
         {status === 'confirmed' && (
           <button type="button" disabled={isPending} onClick={() => run(markCheckedInAction, 'Check-in registrado.')} className={BTN_PRIMARY}>
             Registrar check-in
