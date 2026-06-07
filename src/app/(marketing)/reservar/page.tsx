@@ -5,6 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { requireGuest } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { calculateRoomPriceForDates } from '@/lib/pricing'
 import { ReservationForm } from './ReservationForm'
 import { PAGE_SURFACE, Container, CARD, CARD_SOFT, BTN_PRIMARY, PLACEHOLDER_GRADIENT } from '@/components/booking/ui'
 
@@ -98,8 +99,14 @@ export default async function ReservarPage({ searchParams }: { searchParams: SP 
       ? (room.room_categories as { name: string }).name
       : null
 
-  const pricePerNight = room.base_price_brl
-  const total = nights * pricePerNight
+  const pricing = await calculateRoomPriceForDates(roomId, checkIn, checkOut)
+  if (!pricing) {
+    return <InvalidParams message="Quarto não encontrado ou indisponível." />
+  }
+  const { total, nightlyPrices } = pricing
+  const uniformPrice = nightlyPrices.every((n) => n.price === nightlyPrices[0].price)
+    ? nightlyPrices[0].price
+    : null
 
   return (
     <section className={`${PAGE_SURFACE} py-12 md:py-20`}>
@@ -172,7 +179,9 @@ export default async function ReservarPage({ searchParams }: { searchParams: SP 
                 <div className="rounded-2xl bg-foam/45 px-5 py-4 space-y-2.5">
                   <div className="flex items-center justify-between text-[13px]">
                     <span className="text-stone">
-                      {formatBRL(pricePerNight)} × {nights} noite{nights > 1 ? 's' : ''}
+                      {uniformPrice !== null
+                        ? `${formatBRL(uniformPrice)} × ${nights} noite${nights > 1 ? 's' : ''}`
+                        : `Tarifas sazonais · ${nights} noite${nights > 1 ? 's' : ''}`}
                     </span>
                     <span className="text-navy font-medium">{formatBRL(total)}</span>
                   </div>

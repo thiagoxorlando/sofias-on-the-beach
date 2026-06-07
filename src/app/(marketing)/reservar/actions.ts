@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { calculateRoomPriceForDates } from '@/lib/pricing'
 
 export type ReservationFormState = { error: string } | undefined
 
@@ -87,17 +88,11 @@ export async function createReservationAction(
     return { error: 'Quarto indisponível para as datas selecionadas. Por favor, escolha outras datas.' }
   }
 
-  // ── Fetch room price ──────────────────────────────────────────────────────
-  const { data: room } = await db
-    .from('rooms')
-    .select('id, base_price_brl')
-    .eq('id', roomId)
-    .eq('is_active', true)
-    .single()
+  // ── Calculate price (seasonal room_rates where applicable, base price otherwise) ──
+  const pricing = await calculateRoomPriceForDates(roomId, checkIn, checkOut)
+  if (!pricing) return { error: 'Quarto não encontrado ou inativo.' }
 
-  if (!room) return { error: 'Quarto não encontrado ou inativo.' }
-
-  const total = nights * room.base_price_brl
+  const total = pricing.total
 
   // ── Update guest record with latest form data ────────────────────────────
   const guestId = guestCheck.id

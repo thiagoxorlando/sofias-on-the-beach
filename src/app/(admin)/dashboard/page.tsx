@@ -11,12 +11,14 @@ async function loadCounts() {
   const db = createAdminClient()
   const today = todayISO()
 
-  const [rooms, upcoming, guests, pendingPayments] = await Promise.all([
+  const [rooms, upcoming, guests, pendingPayments, manualBlocks] = await Promise.all([
     db.from('rooms').select('id', { count: 'exact', head: true }).eq('is_active', true),
     db.from('reservations').select('id', { count: 'exact', head: true })
       .gte('check_out', today).neq('status', 'cancelled'),
     db.from('guests').select('id', { count: 'exact', head: true }),
     db.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    db.from('room_availability').select('id', { count: 'exact', head: true })
+      .gte('date', today).is('reservation_id', null),
   ])
 
   return {
@@ -24,6 +26,7 @@ async function loadCounts() {
     upcoming:        upcoming.count ?? 0,
     guests:          guests.count ?? 0,
     pendingPayments: pendingPayments.count ?? 0,
+    manualBlocks:    manualBlocks.count ?? 0,
   }
 }
 
@@ -55,7 +58,7 @@ export default async function DashboardOverviewPage() {
     {
       href:     '/dashboard/availability',
       label:    'Disponibilidade',
-      desc:     'Bloqueios e calendário',
+      desc:     `${counts.manualBlocks} data${counts.manualBlocks === 1 ? '' : 's'} bloqueada${counts.manualBlocks === 1 ? '' : 's'} manualmente`,
       color:    'bg-sky-50 text-sky-600',
       icon:     'grid',
     },
