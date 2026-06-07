@@ -3,8 +3,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import fs from 'node:fs'
 import path from 'node:path'
-import { createClient } from '@/lib/supabase/server'
+import { requireGuest } from '@/lib/auth'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { ReservationForm } from './ReservationForm'
+import { PAGE_SURFACE, Container, CARD, CARD_SOFT, BTN_PRIMARY, PLACEHOLDER_GRADIENT } from '@/components/booking/ui'
 
 export const metadata: Metadata = {
   title: "Reservar — Sofia's on the Beach",
@@ -60,9 +62,13 @@ export default async function ReservarPage({ searchParams }: { searchParams: SP 
   const nights = countNights(checkIn, checkOut)
   if (nights < 1) return <InvalidParams />
 
-  // Fetch room data (public read via SSR client)
-  const supabase = await createClient()
-  const { data: room } = await supabase
+  // Auth + role check — blocks admin accounts, unauthenticated users, and users without a guest record
+  const nextPath = `/reservar?room_id=${roomId}&check_in=${checkIn}&check_out=${checkOut}&guests=${guests}`
+  const guest = await requireGuest(nextPath)
+
+  // Fetch room data
+  const adminDb = createAdminClient()
+  const { data: room } = await adminDb
     .from('rooms')
     .select(`
       id, name, slug, base_price_brl, max_guests,
@@ -96,28 +102,31 @@ export default async function ReservarPage({ searchParams }: { searchParams: SP 
   const total = nights * pricePerNight
 
   return (
-    <section className="bg-ocean-50 min-h-screen py-12 md:py-20 px-6 md:px-10">
-      <div className="max-w-5xl mx-auto">
+    <section className={`${PAGE_SURFACE} py-12 md:py-20`}>
+      <Container size="wide">
 
         <Link
           href="/quartos"
-          className="inline-flex items-center gap-2 text-[12px] font-semibold text-ocean-500 hover:text-ocean-800 transition-colors mb-8"
+          className="inline-flex items-center gap-2 text-[12px] font-semibold text-stone hover:text-navy-deep transition-colors mb-8"
         >
           <ArrowLeftIcon />
           Voltar aos quartos
         </Link>
 
-        <h1 className="font-serif text-[26px] md:text-[32px] font-bold text-ocean-900 mb-8">
+        <h1
+          className="font-serif font-bold text-navy-deep leading-[1.08] mb-10 md:mb-12"
+          style={{ fontSize: 'clamp(30px, 3.6vw, 44px)' }}
+        >
           Confirmar pré-reserva
         </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-10 items-start">
 
           {/* ── Summary ─────────────────────────────────────────── */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-[20px] border border-ocean-100 overflow-hidden shadow-[0_4px_24px_rgba(0,40,80,0.07)]">
+          <div className="lg:col-span-2 lg:sticky lg:top-28">
+            <div className={`${CARD} overflow-hidden`}>
 
-              <div className="relative aspect-[16/9] overflow-hidden">
+              <div className="relative aspect-[4/3] overflow-hidden">
                 {showImage ? (
                   <Image
                     src={imageUrl}
@@ -128,26 +137,24 @@ export default async function ReservarPage({ searchParams }: { searchParams: SP 
                     sizes="(max-width: 1024px) 100vw, 40vw"
                   />
                 ) : (
-                  <div
-                    className="absolute inset-0"
-                    style={{ background: 'linear-gradient(160deg, #dceef9 0%, #c4dff0 55%, #a9cde7 100%)' }}
-                  />
+                  <div className="absolute inset-0" style={{ background: PLACEHOLDER_GRADIENT }} />
                 )}
-              </div>
-
-              <div className="p-6 space-y-5">
-                <div>
+                <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/30 to-transparent" />
+                <div className="absolute bottom-5 left-6 right-6">
                   {catName && (
-                    <p className="text-[10px] font-bold text-ocean-500 uppercase tracking-widest mb-1">
+                    <p className="text-[10px] font-bold text-ivory/75 uppercase tracking-widest mb-1.5">
                       {catName}
                     </p>
                   )}
-                  <h2 className="font-serif text-[18px] font-bold text-ocean-900">
+                  <h2 className="font-serif text-[22px] md:text-[24px] font-bold text-ivory leading-snug">
                     {room.name}
                   </h2>
                 </div>
+              </div>
 
-                <div className="space-y-2.5 border-t border-ocean-50 pt-4">
+              <div className="p-7 md:p-8 space-y-6">
+
+                <div className="space-y-3">
                   <SummaryRow icon={<CalendarIcon />} label="Check-in"  value={formatDateLong(checkIn)} />
                   <SummaryRow icon={<CalendarIcon />} label="Check-out" value={formatDateLong(checkOut)} />
                   <SummaryRow
@@ -162,22 +169,22 @@ export default async function ReservarPage({ searchParams }: { searchParams: SP 
                   />
                 </div>
 
-                <div className="border-t border-ocean-50 pt-4 space-y-2">
+                <div className="rounded-2xl bg-foam/45 px-5 py-4 space-y-2.5">
                   <div className="flex items-center justify-between text-[13px]">
-                    <span className="text-ocean-500">
+                    <span className="text-stone">
                       {formatBRL(pricePerNight)} × {nights} noite{nights > 1 ? 's' : ''}
                     </span>
-                    <span className="text-ocean-700 font-medium">{formatBRL(total)}</span>
+                    <span className="text-navy font-medium">{formatBRL(total)}</span>
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-ocean-100">
-                    <span className="text-[14px] font-bold text-ocean-900">Total</span>
-                    <span className="font-serif text-[20px] font-bold text-ocean-900">
+                  <div className="flex items-center justify-between pt-2.5 border-t border-mist/35">
+                    <span className="text-[14px] font-bold text-navy-deep">Total</span>
+                    <span className="font-serif text-[22px] font-bold text-navy-deep">
                       {formatBRL(total)}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-[10px] text-ocean-400 font-semibold uppercase tracking-wide">
+                <div className="flex items-center gap-1.5 text-[10px] text-stone font-semibold uppercase tracking-wide">
                   <LockIcon />
                   Melhor tarifa · Reserva direta
                 </div>
@@ -187,24 +194,26 @@ export default async function ReservarPage({ searchParams }: { searchParams: SP 
 
           {/* ── Guest form ──────────────────────────────────────── */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-[20px] border border-ocean-100 shadow-[0_4px_24px_rgba(0,40,80,0.07)] p-6 md:p-8">
-              <h2 className="font-serif text-[18px] font-bold text-ocean-900 mb-1">
+            <div className={`${CARD_SOFT} p-8 md:p-10`}>
+              <h2 className="font-serif text-[22px] md:text-[24px] font-bold text-navy-deep mb-2">
                 Seus dados
               </h2>
-              <p className="text-[13px] text-ocean-400 mb-6">
-                Preencha os campos abaixo para confirmar a pré-reserva. Sem cobrança agora.
+              <p className="text-[14px] text-stone mb-8">
+                Confirme seus dados para finalizar a pré-reserva. Sem cobrança agora.
               </p>
               <ReservationForm
                 roomId={roomId}
                 checkIn={checkIn}
                 checkOut={checkOut}
                 guests={guests}
+                guestName={guest.full_name}
+                guestPhone={guest.phone ?? ''}
               />
             </div>
           </div>
 
         </div>
-      </div>
+      </Container>
     </section>
   )
 }
@@ -212,9 +221,9 @@ export default async function ReservarPage({ searchParams }: { searchParams: SP 
 function SummaryRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-center gap-2.5">
-      <span className="text-ocean-400 shrink-0">{icon}</span>
-      <span className="text-[12px] text-ocean-400 w-16 shrink-0">{label}</span>
-      <span className="text-[13px] font-medium text-ocean-800 flex-1">{value}</span>
+      <span className="text-navy/45 shrink-0">{icon}</span>
+      <span className="text-[12px] text-stone w-16 shrink-0">{label}</span>
+      <span className="text-[13px] font-medium text-navy flex-1">{value}</span>
     </div>
   )
 }
@@ -223,12 +232,9 @@ function InvalidParams({ message = 'Link inválido. Por favor, volte e selecione
   return (
     <section className="bg-white py-20 md:py-32 px-6">
       <div className="max-w-md mx-auto text-center">
-        <h1 className="font-serif text-[26px] font-bold text-ocean-900 mb-4">Dados incompletos</h1>
-        <p className="text-[14px] text-foreground/60 leading-relaxed mb-8">{message}</p>
-        <Link
-          href="/quartos"
-          className="inline-flex items-center gap-2 bg-ocean-900 text-white px-8 py-3.5 rounded-xl text-[13px] font-bold hover:bg-ocean-800 transition-colors"
-        >
+        <h1 className="font-serif text-[26px] font-bold text-navy-deep mb-4">Dados incompletos</h1>
+        <p className="text-[14px] text-stone leading-relaxed mb-8">{message}</p>
+        <Link href="/quartos" className={`px-8 py-3.5 text-[13px] ${BTN_PRIMARY}`}>
           Ver quartos disponíveis
         </Link>
       </div>

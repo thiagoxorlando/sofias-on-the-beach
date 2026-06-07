@@ -1,36 +1,26 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { createReservationAction } from './actions'
-
-const INPUT =
-  'w-full px-4 py-3 rounded-xl border border-ocean-100 bg-white text-[14px] text-foreground placeholder:text-foreground/30 outline-none focus:border-ocean-400 focus:ring-1 focus:ring-ocean-200 transition-colors resize-none'
+import { useActionState } from 'react'
+import { createReservationAction, type ReservationFormState } from './actions'
+import { LABEL, INPUT, BTN_PRIMARY } from '@/components/booking/ui'
 
 type Props = {
-  roomId: string
-  checkIn: string
-  checkOut: string
-  guests: number
+  roomId:     string
+  checkIn:    string
+  checkOut:   string
+  guests:     number
+  guestName:  string   // pre-filled from guests record
+  guestPhone: string   // pre-filled from guests record
 }
 
-export function ReservationForm({ roomId, checkIn, checkOut, guests }: Props) {
-  const [isPending, startTransition] = useTransition()
-  const [error, setError] = useState<string | null>(null)
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setError(null)
-    const fd = new FormData(e.currentTarget)
-    startTransition(async () => {
-      const result = await createReservationAction(undefined, fd)
-      if (result && 'error' in result) setError(result.error)
-      // redirect() in the action handles navigation on success
-    })
-  }
+export function ReservationForm({ roomId, checkIn, checkOut, guests, guestName, guestPhone }: Props) {
+  const [state, formAction, isPending] = useActionState<ReservationFormState, FormData>(
+    createReservationAction,
+    undefined,
+  )
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Booking params as hidden fields */}
+    <form action={formAction} className="space-y-5">
       <input type="hidden" name="room_id"   value={roomId} />
       <input type="hidden" name="check_in"  value={checkIn} />
       <input type="hidden" name="check_out" value={checkOut} />
@@ -38,14 +28,13 @@ export function ReservationForm({ roomId, checkIn, checkOut, guests }: Props) {
 
       <div className="space-y-4">
         <div>
-          <label className="block text-[11px] font-bold text-ocean-700 uppercase tracking-[0.12em] mb-1.5">
-            Nome completo *
-          </label>
+          <label className={LABEL}>Nome completo *</label>
           <input
             name="full_name"
             required
             type="text"
             autoComplete="name"
+            defaultValue={guestName}
             className={INPUT}
             placeholder="Como consta no documento"
             disabled={isPending}
@@ -53,28 +42,29 @@ export function ReservationForm({ roomId, checkIn, checkOut, guests }: Props) {
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold text-ocean-700 uppercase tracking-[0.12em] mb-1.5">
-            E-mail *
-          </label>
+          <label className={LABEL}>Nome de quem ficará hospedado *</label>
           <input
-            name="email"
+            name="guest_staying_name"
             required
-            type="email"
-            autoComplete="email"
+            type="text"
+            autoComplete="off"
+            defaultValue={guestName}
             className={INPUT}
-            placeholder="seu@email.com"
+            placeholder="Nome completo de quem vai se hospedar"
             disabled={isPending}
           />
+          <p className="text-[11px] text-stone mt-1.5 leading-relaxed">
+            Pode ser diferente do titular da conta — informe quem realmente vai ficar na acomodação.
+          </p>
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold text-ocean-700 uppercase tracking-[0.12em] mb-1.5">
-            Telefone / WhatsApp
-          </label>
+          <label className={LABEL}>Telefone / WhatsApp</label>
           <input
             name="phone"
             type="tel"
             autoComplete="tel"
+            defaultValue={guestPhone}
             className={INPUT}
             placeholder="+55 22 99999-9999"
             disabled={isPending}
@@ -82,34 +72,32 @@ export function ReservationForm({ roomId, checkIn, checkOut, guests }: Props) {
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold text-ocean-700 uppercase tracking-[0.12em] mb-1.5">
-            Pedidos especiais
-          </label>
+          <label className={LABEL}>Pedidos especiais</label>
           <textarea
             name="special_requests"
             rows={3}
-            className={INPUT}
+            className={`${INPUT} resize-none`}
             placeholder="Ex: cama extra, chegada tarde, aniversário…"
             disabled={isPending}
           />
         </div>
       </div>
 
-      {error && (
-        <div className="px-4 py-3 bg-red-50 border border-red-100 rounded-xl">
-          <p className="text-[13px] text-red-600 font-medium">{error}</p>
+      {state?.error && (
+        <div className="px-5 py-3.5 bg-red-50 rounded-2xl">
+          <p className="text-[13px] text-red-600 font-medium">{state.error}</p>
         </div>
       )}
 
       <button
         type="submit"
         disabled={isPending}
-        className="w-full bg-ocean-900 text-white py-4 rounded-xl font-bold text-[13px] hover:bg-ocean-800 transition-colors shadow-sm uppercase tracking-[0.10em] disabled:opacity-60 disabled:cursor-not-allowed"
+        className={`w-full py-4 text-[13px] ${BTN_PRIMARY}`}
       >
         {isPending ? 'Criando reserva…' : 'Confirmar pré-reserva'}
       </button>
 
-      <p className="text-[11px] text-ocean-400 text-center">
+      <p className="text-[11px] text-stone text-center">
         Sem cobrança agora · Confirmação por e-mail · Atendimento pelo WhatsApp
       </p>
     </form>

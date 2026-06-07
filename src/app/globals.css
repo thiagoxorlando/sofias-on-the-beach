@@ -47,6 +47,18 @@
   --color-sand-400: var(--sofia-sand-400);
   --color-sand-500: var(--sofia-sand-500);
 
+  /* Coastal Ivory & Deep Navy — premium guest-facing palette
+     (entrar, criar-conta, minha-conta, quartos, reservar, reserva) */
+  --color-ivory:      var(--coastal-ivory);
+  --color-ivory-soft: var(--coastal-ivory-soft);
+  --color-foam:       var(--coastal-foam);
+  --color-mist:      var(--coastal-mist);
+  --color-warm-sand: var(--coastal-warm-sand);
+  --color-driftwood: var(--coastal-driftwood);
+  --color-stone:     var(--coastal-stone);
+  --color-navy:      var(--coastal-navy);
+  --color-navy-deep: var(--coastal-navy-deep);
+
   /* Radius scale */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -92,6 +104,23 @@
   --sofia-sand-300: oklch(0.845 0.068 70);
   --sofia-sand-400: oklch(0.750 0.095 65);
   --sofia-sand-500: oklch(0.548 0.090 52);     /* ≈ #9B6A3D warm wood */
+
+  /* ============================================
+     COASTAL IVORY & DEEP NAVY
+     Premium direction used across guest-facing booking & account
+     pages (entrar, criar-conta, minha-conta, quartos, reservar,
+     reserva). Distinct from the brighter Greek-blue marketing
+     palette above — softer, more editorial, hotel-resort register.
+  ============================================ */
+  --coastal-ivory:      #F7FBFC;  /* page backgrounds — cool ocean-mist white, matches landing-page brand */
+  --coastal-ivory-soft: #FFFFFF;  /* card surfaces — clean white, lifted off the page by shadow alone */
+  --coastal-foam:       #DDEDEE;  /* soft tints / section backgrounds */
+  --coastal-mist:      #AFCBD6;  /* muted ocean blue accents */
+  --coastal-warm-sand: #E7D8BD;  /* warm neutral accents */
+  --coastal-driftwood: #C9B79A;  /* borders / quiet accents */
+  --coastal-stone:     #6E7480;  /* secondary / muted text */
+  --coastal-navy:      #0B2235;  /* headings, primary surfaces */
+  --coastal-navy-deep: #061A2A;  /* deepest contrast, primary CTAs */
 
   /* ============================================
      SHADCN SEMANTIC TOKENS

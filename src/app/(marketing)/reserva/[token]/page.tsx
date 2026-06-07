@@ -4,6 +4,9 @@ import Link from 'next/link'
 import fs from 'node:fs'
 import path from 'node:path'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { PaymentSection } from './PaymentSection'
+import type { InitialPayment } from './PaymentSection'
+import { PAGE_SURFACE, Container, CARD, Eyebrow, BTN_PRIMARY, BTN_SECONDARY, StatusBadge } from '@/components/booking/ui'
 
 export const metadata: Metadata = {
   title: "Pré-reserva criada — Sofia's on the Beach",
@@ -26,17 +29,6 @@ function localImgExists(src: string): boolean {
   return fs.existsSync(path.join(process.cwd(), 'public', src.replace(/^\//, '')))
 }
 
-function formatStatus(status: string): string {
-  const map: Record<string, string> = {
-    pending_payment: 'Aguardando pagamento',
-    confirmed:       'Confirmada',
-    cancelled:       'Cancelada',
-    checked_in:      'Check-in realizado',
-    checked_out:     'Check-out realizado',
-  }
-  return map[status] ?? status
-}
-
 export default async function ReservaPage({
   params,
 }: {
@@ -57,6 +49,25 @@ export default async function ReservaPage({
 
   if (!reservation) {
     return <NotFound />
+  }
+
+  // Load existing payment for pending_payment status (to restore UI on refresh)
+  let existingPayment: InitialPayment = null
+  if (reservation.status === 'pending_payment') {
+    const { data: paymentRow } = await db
+      .from('payments')
+      .select('method, asaas_invoice_url, asaas_pix_qr_code, asaas_pix_copy_paste, status')
+      .eq('reservation_id', reservation.id)
+      .neq('status', 'failed')
+      .maybeSingle()
+    if (paymentRow) {
+      existingPayment = {
+        method:       (paymentRow.method as 'pix' | 'card'),
+        invoiceUrl:   paymentRow.asaas_invoice_url,
+        pixQrCode:    paymentRow.asaas_pix_qr_code,
+        pixCopyPaste: paymentRow.asaas_pix_copy_paste,
+      }
+    }
   }
 
   // Extract joined room
@@ -93,59 +104,71 @@ export default async function ReservaPage({
   const waHref = `https://wa.me/${WA_NUMBER}?text=${waMsg}`
 
   return (
-    <section className="bg-ocean-50 min-h-screen py-12 md:py-20 px-6 md:px-10">
-      <div className="max-w-2xl mx-auto">
+    <section className={`${PAGE_SURFACE} py-12 md:py-20`}>
+      <Container size="medium">
 
-        {/* Success header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-100 mb-4">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 mb-5">
             <CheckCircleIcon />
           </div>
-          <h1 className="font-serif text-[28px] md:text-[34px] font-bold text-ocean-900 mb-2">
+          <Eyebrow className="mb-2 justify-center flex">Reserva registrada</Eyebrow>
+          <h1 className="font-serif font-bold text-navy-deep mb-3" style={{ fontSize: 'clamp(30px, 3.6vw, 42px)' }}>
             Pré-reserva criada!
           </h1>
-          <p className="text-[14px] text-ocean-500">
-            Sua reserva foi registrada com sucesso. Aguarde a confirmação.
+          <p className="text-[15px] text-stone max-w-md mx-auto leading-relaxed">
+            Sua reserva foi registrada com sucesso. Aguarde a confirmação da nossa equipe.
           </p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-[22px] border border-ocean-100 shadow-[0_4px_24px_rgba(0,40,80,0.08)] overflow-hidden">
+        <div className={`${CARD} overflow-hidden`}>
 
-          {/* Room photo strip */}
+          {/* Room photo */}
           {showImage && imageUrl && (
-            <div className="relative h-36 overflow-hidden">
+            <div className="relative h-56 md:h-64 overflow-hidden">
               <Image
                 src={imageUrl}
                 alt={cover?.alt_text ?? roomData?.name ?? ''}
                 fill
                 unoptimized={isExternal}
                 className="object-cover object-center"
-                sizes="(max-width: 672px) 100vw, 672px"
+                sizes="(max-width: 800px) 100vw, 800px"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/55 via-navy-deep/10 to-transparent" />
+              <div className="absolute bottom-5 left-7 right-7 flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-bold text-ivory/70 uppercase tracking-widest mb-1">
+                    Código da reserva
+                  </p>
+                  <p className="font-serif text-[24px] font-bold text-ivory tracking-wide">
+                    {reservation.token}
+                  </p>
+                </div>
+                <StatusBadge status={reservation.status} />
+              </div>
             </div>
           )}
 
-          <div className="p-6 md:p-8 space-y-6">
+          <div className="p-7 md:p-9 space-y-7">
 
-            {/* Token + status */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-widest mb-1">
-                  Código da reserva
-                </p>
-                <p className="font-serif text-[22px] font-bold text-ocean-900 tracking-wide">
-                  {reservation.token}
-                </p>
+            {/* Token + status — shown only when there's no photo to host it */}
+            {!(showImage && imageUrl) && (
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <p className="text-[10px] font-bold text-stone/80 uppercase tracking-widest mb-1">
+                    Código da reserva
+                  </p>
+                  <p className="font-serif text-[24px] font-bold text-navy-deep tracking-wide">
+                    {reservation.token}
+                  </p>
+                </div>
+                <StatusBadge status={reservation.status} />
               </div>
-              <span className="inline-flex items-center px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700 uppercase tracking-wide">
-                {formatStatus(reservation.status)}
-              </span>
-            </div>
+            )}
 
             {/* Booking details */}
-            <div className="border-t border-ocean-50 pt-5 space-y-3">
+            <div className="rounded-2xl bg-foam/40 px-6 py-5 space-y-3">
               {roomData && (
                 <Row label="Acomodação" value={roomData.name} />
               )}
@@ -155,9 +178,9 @@ export default async function ReservaPage({
                 label="Duração"
                 value={`${nights} noite${nights > 1 ? 's' : ''} · ${reservation.adults} hóspede${reservation.adults > 1 ? 's' : ''}`}
               />
-              <div className="flex justify-between items-center gap-4 pt-2 border-t border-ocean-50">
-                <span className="text-[14px] font-bold text-ocean-900">Total estimado</span>
-                <span className="font-serif text-[20px] font-bold text-ocean-900">
+              <div className="flex justify-between items-center gap-4 pt-3 border-t border-mist/35">
+                <span className="text-[14px] font-bold text-navy-deep">Total estimado</span>
+                <span className="font-serif text-[22px] font-bold text-navy-deep">
                   {formatBRL(reservation.total_brl)}
                 </span>
               </div>
@@ -165,38 +188,48 @@ export default async function ReservaPage({
 
             {/* Guest */}
             {guestData && (
-              <div className="border-t border-ocean-50 pt-5 space-y-3">
-                <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-widest">Hóspede</p>
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold text-stone/80 uppercase tracking-widest">Hóspede</p>
                 <Row label="Nome"  value={guestData.full_name} />
                 <Row label="E-mail" value={guestData.email} />
               </div>
             )}
 
-            {/* Info message */}
-            <div className="border-t border-ocean-50 pt-5">
-              <div className="bg-ocean-50 rounded-xl p-4">
-                <p className="text-[13px] text-ocean-700 leading-relaxed">
-                  Sua pré-reserva foi criada. O pagamento será ativado na próxima etapa.
-                  Nossa equipe entrará em contato em breve para confirmar.
-                </p>
-              </div>
+            {/* Payment section / status message */}
+            <div>
+              {reservation.status === 'pending_payment' ? (
+                <PaymentSection
+                  reservationToken={reservation.token}
+                  initialPayment={existingPayment}
+                />
+              ) : reservation.status === 'confirmed' ? (
+                <div className="bg-emerald-50 rounded-2xl p-5">
+                  <p className="text-[14px] text-emerald-700 font-medium leading-relaxed">
+                    Pagamento confirmado. Sua reserva está garantida!
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-foam/50 rounded-2xl p-5">
+                  <p className="text-[14px] text-navy leading-relaxed">
+                    Sua pré-reserva foi criada. O pagamento será ativado na próxima etapa.
+                    Nossa equipe entrará em contato em breve para confirmar.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 pt-1">
               <a
                 href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-2 bg-ocean-900 text-white py-3.5 rounded-xl text-[13px] font-bold hover:bg-ocean-800 transition-colors shadow-sm"
+                className={`flex-1 gap-2 py-3.5 text-[13px] ${BTN_PRIMARY}`}
               >
                 <WAIcon />
                 Falar no WhatsApp
               </a>
-              <Link
-                href="/quartos"
-                className="flex items-center justify-center border border-ocean-200 text-ocean-700 py-3.5 px-6 rounded-xl text-[13px] font-semibold hover:border-ocean-400 hover:text-ocean-900 transition-colors"
-              >
+              <Link href="/quartos" className={`py-3.5 px-6 text-[13px] ${BTN_SECONDARY}`}>
                 Ver outros quartos
               </Link>
             </div>
@@ -204,7 +237,7 @@ export default async function ReservaPage({
           </div>
         </div>
 
-      </div>
+      </Container>
     </section>
   )
 }
@@ -212,26 +245,23 @@ export default async function ReservaPage({
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-start gap-4">
-      <span className="text-[13px] text-ocean-400 shrink-0">{label}</span>
-      <span className="text-[13px] font-semibold text-ocean-800 text-right">{value}</span>
+      <span className="text-[13px] text-stone shrink-0">{label}</span>
+      <span className="text-[14px] font-semibold text-navy text-right">{value}</span>
     </div>
   )
 }
 
 function NotFound() {
   return (
-    <section className="bg-white py-20 md:py-32 px-6">
+    <section className="bg-ivory min-h-[60vh] flex items-center py-20 md:py-32 px-6">
       <div className="max-w-md mx-auto text-center">
-        <h1 className="font-serif text-[26px] font-bold text-ocean-900 mb-4">
+        <h1 className="font-serif text-[28px] font-bold text-navy-deep mb-4">
           Reserva não encontrada
         </h1>
-        <p className="text-[14px] text-foreground/60 mb-8">
+        <p className="text-[14px] text-stone mb-8">
           Verifique o código ou entre em contato pelo WhatsApp.
         </p>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 bg-ocean-900 text-white px-8 py-3.5 rounded-xl text-[13px] font-bold hover:bg-ocean-800 transition-colors"
-        >
+        <Link href="/" className={`px-8 py-3.5 text-[13px] ${BTN_PRIMARY}`}>
           Voltar ao início
         </Link>
       </div>

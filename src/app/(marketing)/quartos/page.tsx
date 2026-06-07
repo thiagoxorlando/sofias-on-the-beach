@@ -5,7 +5,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { getAllActiveRooms } from '@/lib/publicRooms'
 import { getBlockedRoomIds } from '@/lib/availability'
+import { RoomSearchBar } from './RoomSearchBar'
 import type { PublicRoomFull } from '@/lib/publicRooms'
+import { CARD, BTN_PRIMARY, BTN_SECONDARY, Eyebrow, PLACEHOLDER_GRADIENT } from '@/components/booking/ui'
 
 export const metadata: Metadata = {
   title: "Quartos e Suítes — Sofia's on the Beach | Búzios",
@@ -97,62 +99,66 @@ export default async function QuartosPage({ searchParams }: { searchParams: Sear
   return (
     <>
       {/* ── Intro ──────────────────────────────────────────────────── */}
-      <section className="bg-ocean-50 py-14 md:py-20 px-6 md:px-10">
-        <div className="max-w-7xl mx-auto">
-          <p className="text-[11px] font-bold text-ocean-600 uppercase tracking-[0.30em] mb-3">
-            Conforto com vista
-          </p>
+      <section className="bg-ivory pt-14 md:pt-20 pb-10 md:pb-14 px-6 md:px-10">
+        <div className="max-w-[1240px] mx-auto">
+          <Eyebrow className="mb-3">Conforto com vista</Eyebrow>
           <h1
-            className="font-serif font-bold text-ocean-900 leading-[1.1] mb-5"
-            style={{ fontSize: 'clamp(30px, 3.5vw, 52px)' }}
+            className="font-serif font-bold text-navy-deep leading-[1.08] mb-5"
+            style={{ fontSize: 'clamp(34px, 4.2vw, 56px)' }}
           >
             Quartos e suítes
           </h1>
-          <div className="w-10 h-[3px] rounded-full bg-ocean-500 mb-5" />
+          <div className="w-10 h-[3px] rounded-full bg-warm-sand mb-5" />
           <p
-            className="text-foreground/60 leading-relaxed"
-            style={{ fontSize: 'clamp(14px, 1.1vw, 16px)' }}
+            className="text-stone leading-relaxed mb-10 max-w-xl"
+            style={{ fontSize: 'clamp(15px, 1.1vw, 17px)' }}
           >
-            Escolha sua acomodação à beira-mar em Búzios.
+            Escolha sua acomodação à beira-mar em Búzios — cada suíte foi pensada para que a vista do mar seja sempre protagonista.
           </p>
+
+          <RoomSearchBar
+            initialCheckIn={checkIn}
+            initialCheckOut={checkOut}
+            initialGuests={guests}
+          />
         </div>
       </section>
 
       {/* ── Grid ───────────────────────────────────────────────────── */}
-      <section className="bg-white py-14 md:py-20 px-6 md:px-10">
-        <div className="max-w-7xl mx-auto">
+      <section className="bg-ivory pt-6 pb-16 md:pb-24 px-6 md:px-10">
+        <div className="max-w-[1240px] mx-auto">
 
           {/* Date validation error */}
           {dateError && (
-            <div className="mb-6 px-5 py-3 bg-red-50 border border-red-100 rounded-xl">
+            <div className="mb-6 px-5 py-4 bg-red-50 rounded-2xl">
               <p className="text-[13px] text-red-600 font-medium">{dateError}</p>
             </div>
           )}
 
           {/* Active filter banner */}
           {hasValidDates && (
-            <div className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2 px-5 py-3.5 bg-ocean-50 border border-ocean-100 rounded-xl">
-              <div className="flex items-center gap-2 text-[13px] text-ocean-800">
+            <div className="mb-10 flex flex-wrap items-center gap-x-5 gap-y-2 px-6 py-4 bg-white border border-foam rounded-2xl shadow-[0_8px_28px_-12px_rgba(0,40,80,0.12)]">
+              <div className="flex items-center gap-2 text-[13px] text-navy">
                 <CalendarSmIcon />
                 <span>
                   <strong>{formatDatePt(checkIn!)}</strong>
-                  <span className="mx-1.5 text-ocean-400">→</span>
+                  <span className="mx-1.5 text-stone">→</span>
                   <strong>{formatDatePt(checkOut!)}</strong>
                 </span>
                 {guests && (
-                  <span className="text-ocean-500">
+                  <span className="text-stone">
                     · {guests} hóspede{guests > 1 ? 's' : ''}
                   </span>
                 )}
               </div>
               {rooms.length > 0 && (
-                <span className="text-[12px] text-ocean-500">
+                <span className="text-[12px] text-stone">
                   {availableCount} de {rooms.length} disponíve{availableCount !== 1 ? 'is' : 'l'}
                 </span>
               )}
               <Link
                 href="/quartos"
-                className="ml-auto text-[11px] font-semibold text-ocean-400 hover:text-ocean-700 underline underline-offset-2 transition-colors"
+                className="ml-auto text-[11px] font-semibold text-stone hover:text-navy-deep underline underline-offset-2 transition-colors"
               >
                 Limpar filtro
               </Link>
@@ -163,7 +169,7 @@ export default async function QuartosPage({ searchParams }: { searchParams: Sear
           {rooms.length === 0 ? (
             <EmptyState guests={guests} hasFilter={!!guests || hasValidDates} />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-9">
               {rooms.map((room) => (
                 <RoomCard
                   key={room.id}
@@ -208,39 +214,36 @@ function RoomCard({
 
   return (
     <article
-      className={`bg-white rounded-[22px] overflow-hidden border shadow-[0_4px_24px_rgba(0,40,80,0.07)] flex flex-col transition-all duration-300 ${
+      className={`${CARD} overflow-hidden flex flex-col transition-all duration-300 ${
         isUnavailable
-          ? 'border-ocean-100/40 opacity-60'
-          : 'border-ocean-100/60 group hover:shadow-[0_12px_48px_rgba(0,40,80,0.13)] hover:-translate-y-1'
+          ? 'opacity-60'
+          : 'group hover:shadow-[0_36px_100px_-22px_rgba(0,40,80,0.26)] hover:-translate-y-1.5'
       }`}
     >
       {/* Photo */}
-      <div className="relative aspect-[16/10] overflow-hidden shrink-0">
+      <div className="relative aspect-[4/3] overflow-hidden shrink-0">
         {showImage ? (
           <Image
             src={room.imageUrl}
             alt={room.imageAlt}
             fill
             unoptimized={isExternal}
-            className={`object-cover object-center transition-transform duration-700 ${!isUnavailable ? 'group-hover:scale-[1.03]' : ''}`}
+            className={`object-cover object-center transition-transform duration-700 ${!isUnavailable ? 'group-hover:scale-[1.04]' : ''}`}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         ) : (
-          <div
-            className="absolute inset-0"
-            style={{ background: 'linear-gradient(160deg, #dceef9 0%, #c4dff0 55%, #a9cde7 100%)' }}
-          />
+          <div className="absolute inset-0" style={{ background: PLACEHOLDER_GRADIENT }} />
         )}
         {room.categoryName && (
-          <div className="absolute top-3.5 left-3.5 z-10">
-            <span className="bg-ocean-900 text-white text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm">
+          <div className="absolute top-4 left-4 z-10">
+            <span className="bg-navy-deep text-ivory text-[10px] font-bold uppercase tracking-widest px-3.5 py-2 rounded-full shadow-[0_8px_20px_-6px_rgba(0,40,80,0.35)]">
               {room.categoryName}
             </span>
           </div>
         )}
         {isUnavailable && (
-          <div className="absolute inset-0 bg-white/20 flex items-end justify-start p-3.5 z-10">
-            <span className="bg-slate-700/80 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full">
+          <div className="absolute inset-0 bg-navy-deep/15 flex items-end justify-start p-4 z-10">
+            <span className="bg-navy-deep/85 text-white text-[10px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-full">
               Indisponível nas datas
             </span>
           </div>
@@ -248,19 +251,19 @@ function RoomCard({
       </div>
 
       {/* Body */}
-      <div className="p-6 md:p-7 flex flex-col flex-1">
-        <h2 className="font-serif text-[19px] font-bold text-ocean-900 leading-snug mb-2">
+      <div className="p-7 md:p-8 flex flex-col flex-1">
+        <h2 className="font-serif text-[22px] md:text-[24px] font-bold text-navy-deep leading-snug mb-2.5">
           {room.name}
         </h2>
 
         {room.description && (
-          <p className="text-[13px] text-foreground/58 leading-relaxed mb-4">
+          <p className="text-[14px] text-stone leading-relaxed mb-5">
             {room.description}
           </p>
         )}
 
         {/* Guests + size */}
-        <div className="flex items-center gap-5 text-[12px] text-ocean-600 font-medium mb-4">
+        <div className="flex items-center gap-5 text-[12px] text-navy/70 font-medium mb-5">
           <span className="flex items-center gap-1.5">
             <GuestsIcon />
             Até {room.maxGuests} hóspede{room.maxGuests > 1 ? 's' : ''}
@@ -275,32 +278,32 @@ function RoomCard({
 
         {/* Amenity list */}
         {displayFeatures.length > 0 && (
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-5">
+          <div className="flex flex-wrap gap-x-4 gap-y-2 mb-6">
             {displayFeatures.map((f) => (
               <div key={f} className="flex items-center gap-1.5">
                 <CheckIcon />
-                <span className="text-[11px] text-foreground/60">{f}</span>
+                <span className="text-[12px] text-stone">{f}</span>
               </div>
             ))}
           </div>
         )}
 
         {/* Price + CTAs */}
-        <div className="mt-auto pt-4 border-t border-ocean-100">
-          <div className="leading-none mb-3.5">
-            <p className="text-[10px] text-muted-foreground mb-0.5">A partir de</p>
+        <div className="mt-auto pt-5">
+          <div className="leading-none mb-4">
+            <p className="text-[11px] text-stone/80 mb-1">A partir de</p>
             <p>
-              <span className="font-serif text-[20px] font-bold text-ocean-900">
+              <span className="font-serif text-[24px] font-bold text-navy-deep">
                 {formatBRL(room.priceFrom)}
               </span>
-              <span className="text-[10px] text-muted-foreground"> / noite</span>
+              <span className="text-[11px] text-stone/80"> / noite</span>
             </p>
           </div>
 
           {isUnavailable ? (
             // Blocked: show unavailable state, no actions
-            <div className="flex items-center justify-center py-2.5 rounded-xl bg-slate-50 border border-slate-200">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.06em]">
+            <div className="flex items-center justify-center py-3 rounded-2xl bg-foam/55">
+              <span className="text-[11px] font-semibold text-stone uppercase tracking-[0.06em]">
                 Indisponível nas datas
               </span>
             </div>
@@ -309,7 +312,7 @@ function RoomCard({
             <div className="flex gap-2.5">
               <Link
                 href={reservarHref!}
-                className="flex-1 flex items-center justify-center bg-ocean-600 text-white text-[11px] font-bold px-4 py-2.5 rounded-xl hover:bg-ocean-500 transition-colors shadow-sm uppercase tracking-[0.08em]"
+                className={`flex-1 px-4 py-2.5 text-[11px] uppercase tracking-[0.08em] ${BTN_PRIMARY}`}
               >
                 Reservar
               </Link>
@@ -318,18 +321,18 @@ function RoomCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`Perguntar sobre ${room.name} pelo WhatsApp`}
-                className="flex items-center justify-center gap-1.5 border border-ocean-200 text-ocean-700 text-[11px] font-semibold px-4 py-2.5 rounded-xl hover:border-ocean-400 hover:text-ocean-900 transition-colors"
+                className={`px-4 py-2.5 text-[11px] ${BTN_SECONDARY}`}
               >
                 <WAIcon />
                 <span className="hidden sm:inline">WhatsApp</span>
               </a>
             </div>
           ) : (
-            // No dates selected: prompt user to pick dates on homepage
+            // No dates selected: prompt user to the search bar at the top of this page
             <div className="flex gap-2.5">
               <Link
-                href="/"
-                className="flex-1 flex items-center justify-center bg-ocean-900 text-white text-[11px] font-bold px-4 py-2.5 rounded-xl hover:bg-ocean-800 transition-colors shadow-sm uppercase tracking-[0.08em]"
+                href="/quartos#busca"
+                className={`flex-1 px-4 py-2.5 text-[11px] uppercase tracking-[0.08em] ${BTN_PRIMARY}`}
               >
                 Consultar datas
               </Link>
@@ -338,7 +341,7 @@ function RoomCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`Falar sobre ${room.name} pelo WhatsApp`}
-                className="flex items-center justify-center gap-1.5 border border-ocean-200 text-ocean-700 text-[11px] font-semibold px-4 py-2.5 rounded-xl hover:border-ocean-400 hover:text-ocean-900 transition-colors"
+                className={`px-4 py-2.5 text-[11px] ${BTN_SECONDARY}`}
               >
                 <WAIcon />
                 <span className="hidden sm:inline">WhatsApp</span>
@@ -359,22 +362,19 @@ function EmptyState({ guests, hasFilter }: { guests: number | null; hasFilter: b
   )}`
   return (
     <div className="text-center py-20">
-      <p className="font-serif text-[22px] font-bold text-ocean-900 mb-3">
+      <p className="font-serif text-[22px] font-bold text-navy-deep mb-3">
         {hasFilter && guests
           ? `Nenhuma suíte disponível para ${guests} hóspede${guests > 1 ? 's' : ''}.`
           : 'Nenhuma suíte disponível no momento.'}
       </p>
-      <p className="text-[14px] text-foreground/55 mb-8 max-w-sm mx-auto leading-relaxed">
+      <p className="text-[14px] text-stone mb-8 max-w-sm mx-auto leading-relaxed">
         {hasFilter
           ? 'Tente ajustar as datas ou o número de hóspedes, ou entre em contato pelo WhatsApp.'
           : 'Entre em contato e nossa equipe terá o prazer em ajudá-lo.'}
       </p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
         {hasFilter && (
-          <Link
-            href="/quartos"
-            className="inline-flex items-center justify-center border border-ocean-200 text-ocean-700 px-7 py-3.5 rounded-xl text-[13px] font-semibold hover:border-ocean-400 hover:text-ocean-900 transition-colors"
-          >
+          <Link href="/quartos" className={`px-7 py-3.5 text-[13px] ${BTN_SECONDARY}`}>
             Ver todas as suítes
           </Link>
         )}
@@ -382,7 +382,7 @@ function EmptyState({ guests, hasFilter }: { guests: number | null; hasFilter: b
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 bg-ocean-900 text-white px-8 py-3.5 rounded-xl text-[14px] font-bold hover:bg-ocean-800 transition-colors shadow-sm"
+          className={`gap-2 px-8 py-3.5 text-[14px] ${BTN_PRIMARY}`}
         >
           <WAIcon className="w-4 h-4" />
           Falar no WhatsApp
@@ -396,7 +396,7 @@ function EmptyState({ guests, hasFilter }: { guests: number | null; hasFilter: b
 
 function CalendarSmIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-ocean-500 shrink-0" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-navy/55 shrink-0" aria-hidden="true">
       <rect x={3} y={4} width={18} height={18} rx={2} ry={2} />
       <line x1={16} y1={2} x2={16} y2={6} />
       <line x1={8} y1={2} x2={8} y2={6} />
@@ -407,7 +407,7 @@ function CalendarSmIcon() {
 
 function CheckIcon() {
   return (
-    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 text-ocean-500 shrink-0" aria-hidden="true">
+    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 text-navy/50 shrink-0" aria-hidden="true">
       <polyline points="2 6 5 9 10 3" />
     </svg>
   )

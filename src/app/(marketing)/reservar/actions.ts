@@ -1,15 +1,15 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export type ReservationFormState = { error: string } | undefined
 
 function generateToken(): string {
-  const year = new Date().getFullYear()
-  // Unambiguous chars: no I/O/0/1 confusion
+  const year  = new Date().getFullYear()
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  const code = Array.from({ length: 4 }, () =>
+  const code  = Array.from({ length: 4 }, () =>
     chars[Math.floor(Math.random() * chars.length)],
   ).join('')
   return `SOF-${year}-${code}`
@@ -19,32 +19,61 @@ export async function createReservationAction(
   _prev: ReservationFormState,
   formData: FormData,
 ): Promise<ReservationFormState> {
+  // ── Auth + role check ─────────────────────────────────────────────────────
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.email) return { error: 'Sessão expirada. Faça login novamente.' }
+
+  const db = createAdminClient()
+
+  // Block admin/staff accounts from booking
+  const { data: adminCheck } = await db
+    .from('admin_users')
+    .select('id')
+    .eq('id', user.id)
+    .eq('is_active', true)
+    .maybeSingle()
+  if (adminCheck) return { error: 'Contas de funcionários não podem fazer reservas pelo site.' }
+
+  // Verify a guest record exists for this auth user
+  const { data: guestCheck } = await db
+    .from('guests')
+    .select('id')
+    .eq('email', user.email)
+    .maybeSingle()
+  if (!guestCheck) return { error: 'Conta de hóspede não encontrada. Por favor, crie uma conta.' }
+
+  // ── Parse form inputs ─────────────────────────────────────────────────────
   const roomId     = ((formData.get('room_id')          as string) ?? '').trim()
   const checkIn    = ((formData.get('check_in')         as string) ?? '').trim()
   const checkOut   = ((formData.get('check_out')        as string) ?? '').trim()
   const guestsRaw  = parseInt((formData.get('guests')   as string) ?? '1', 10)
   const guests     = isNaN(guestsRaw) ? 1 : Math.max(1, guestsRaw)
-  const fullName   = ((formData.get('full_name')        as string) ?? '').trim()
-  const email      = ((formData.get('email')            as string) ?? '').trim().toLowerCase()
-  const phone      = ((formData.get('phone')            as string) ?? '').trim() || null
-  const specialReq = ((formData.get('special_requests') as string) ?? '').trim() || null
+  const fullName    = ((formData.get('full_name')          as string) ?? '').trim()
+  const stayingName = ((formData.get('guest_staying_name') as string) ?? '').trim()
+  const phone       = ((formData.get('phone')              as string) ?? '').trim() || null
+  const specialReq  = ((formData.get('special_requests')   as string) ?? '').trim() || null
 
+  // ── Validate ──────────────────────────────────────────────────────────────
   const ISO = /^\d{4}-\d{2}-\d{2}$/
-  if (!roomId)                                               return { error: 'Quarto inválido.' }
-  if (!checkIn  || !ISO.test(checkIn))                      return { error: 'Data de check-in inválida.' }
-  if (!checkOut || !ISO.test(checkOut))                     return { error: 'Data de check-out inválida.' }
-  if (checkOut <= checkIn)                                  return { error: 'A data de check-out deve ser após o check-in.' }
-  if (!fullName)                                            return { error: 'Nome completo é obrigatório.' }
-  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: 'E-mail inválido.' }
+  if (!roomId)                      return { error: 'Quarto inválido.' }
+  if (!checkIn  || !ISO.test(checkIn))  return { error: 'Data de check-in inválida.' }
+  if (!checkOut || !ISO.test(checkOut)) return { error: 'Data de check-out inválida.' }
+  if (checkOut <= checkIn)          return { error: 'A data de check-out deve ser após o check-in.' }
+  if (!fullName)                    return { error: 'Nome completo é obrigatório.' }
+  if (!stayingName)                 return { error: 'Informe o nome de quem ficará hospedado.' }
+
+  // The schema has no dedicated "primary guest" column — record who is actually
+  // staying inside special_requests, since that is the only free-text field available.
+  const stayingNote = `Hóspede que ficará na acomodação: ${stayingName}`
+  const specialRequestsValue = specialReq ? `${stayingNote}\n\n${specialReq}` : stayingNote
 
   const nights = Math.round(
     (new Date(checkOut + 'T00:00:00Z').getTime() - new Date(checkIn + 'T00:00:00Z').getTime()) / 86_400_000,
   )
   if (nights < 1) return { error: 'Período mínimo é de 1 noite.' }
 
-  const db = createAdminClient()
-
-  // Re-verify the room is still free for these dates
+  // ── Re-verify availability ────────────────────────────────────────────────
   const { data: blocked } = await db
     .from('room_availability')
     .select('id')
@@ -58,7 +87,7 @@ export async function createReservationAction(
     return { error: 'Quarto indisponível para as datas selecionadas. Por favor, escolha outras datas.' }
   }
 
-  // Fetch room to get the current price
+  // ── Fetch room price ──────────────────────────────────────────────────────
   const { data: room } = await db
     .from('rooms')
     .select('id, base_price_brl')
@@ -70,28 +99,11 @@ export async function createReservationAction(
 
   const total = nights * room.base_price_brl
 
-  // Find or create guest record by email
-  const { data: existing } = await db
-    .from('guests')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle()
+  // ── Update guest record with latest form data ────────────────────────────
+  const guestId = guestCheck.id
+  await db.from('guests').update({ full_name: fullName, phone }).eq('id', guestId)
 
-  let guestId: string
-  if (existing) {
-    await db.from('guests').update({ full_name: fullName, phone }).eq('id', existing.id)
-    guestId = existing.id
-  } else {
-    const { data: created, error: guestErr } = await db
-      .from('guests')
-      .insert({ email, full_name: fullName, phone, nationality: 'BR' })
-      .select('id')
-      .single()
-    if (guestErr || !created) return { error: 'Erro ao registrar hóspede. Tente novamente.' }
-    guestId = created.id
-  }
-
-  // Generate token with collision retry
+  // ── Generate unique token ─────────────────────────────────────────────────
   let token = generateToken()
   for (let attempt = 0; attempt < 3; attempt++) {
     const { data: dup } = await db
@@ -103,7 +115,7 @@ export async function createReservationAction(
     token = generateToken()
   }
 
-  // Create reservation
+  // ── Create reservation ────────────────────────────────────────────────────
   const { data: res, error: resErr } = await db
     .from('reservations')
     .insert({
@@ -119,20 +131,17 @@ export async function createReservationAction(
       status:           'pending_payment',
       source:           'direct',
       token,
-      special_requests: specialReq,
+      special_requests: specialRequestsValue,
     })
     .select('id')
     .single()
 
   if (resErr || !res) return { error: 'Erro ao criar reserva. Tente novamente.' }
 
-  // Block each date from check-in up to (but not including) check-out
+  // ── Block dates ───────────────────────────────────────────────────────────
   const datesToBlock: {
-    room_id: string
-    date: string
-    is_available: boolean
-    blocked_reason: string
-    reservation_id: string
+    room_id: string; date: string; is_available: boolean
+    blocked_reason: string; reservation_id: string
   }[] = []
   const cur = new Date(checkIn + 'T00:00:00Z')
   const end = new Date(checkOut + 'T00:00:00Z')
@@ -150,7 +159,7 @@ export async function createReservationAction(
     await db.from('room_availability').insert(datesToBlock)
   }
 
-  // Audit event
+  // ── Audit event ───────────────────────────────────────────────────────────
   await db.from('reservation_events').insert({
     reservation_id: res.id,
     event_type:     'reservation_created',

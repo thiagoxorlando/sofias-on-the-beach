@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, User } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 const navLinks = [
   { href: '/',             label: 'Início' },
@@ -14,8 +15,27 @@ const navLinks = [
 ]
 
 export function Header() {
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuOpen, setMenuOpen]   = useState(false)
+  const [loggedIn, setLoggedIn]   = useState(false)
+  const [fullName, setFullName]   = useState<string | null>(null)
   const pathname = usePathname()
+
+  useEffect(() => {
+    const supabase = createClient()
+    function syncSession(session: { user?: { user_metadata?: Record<string, unknown> } } | null) {
+      setLoggedIn(!!session)
+      const name = session?.user?.user_metadata?.full_name
+      setFullName(typeof name === 'string' && name.trim() ? name : null)
+    }
+    supabase.auth.getSession().then(({ data: { session } }) => syncSession(session))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      syncSession(session)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const firstName = fullName?.trim().split(/\s+/)[0] ?? null
+  const accountLabel = firstName ?? 'Minha conta'
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-ocean-100">
@@ -58,13 +78,31 @@ export function Header() {
           })}
         </nav>
 
-        {/* Desktop CTA */}
-        <Link
-          href="/quartos"
-          className="hidden md:inline-flex items-center bg-ocean-900 text-white px-7 py-3 rounded-xl text-[14px] font-bold uppercase tracking-wide hover:bg-ocean-800 transition-colors shadow-sm shrink-0"
-        >
-          Reservar agora
-        </Link>
+        {/* Desktop CTAs */}
+        <div className="hidden md:flex items-center gap-3 shrink-0">
+          {loggedIn ? (
+            <Link
+              href="/minha-conta"
+              className="flex items-center gap-1.5 text-[13px] font-semibold text-ocean-700 hover:text-ocean-900 transition-colors"
+            >
+              <User size={15} className="text-ocean-500" />
+              {accountLabel}
+            </Link>
+          ) : (
+            <Link
+              href="/entrar"
+              className="text-[13px] font-semibold text-ocean-700 hover:text-ocean-900 transition-colors"
+            >
+              Acessar
+            </Link>
+          )}
+          <Link
+            href="/quartos"
+            className="inline-flex items-center bg-ocean-900 text-white px-7 py-3 rounded-xl text-[14px] font-bold uppercase tracking-wide hover:bg-ocean-800 transition-colors shadow-sm"
+          >
+            Reservar agora
+          </Link>
+        </div>
 
         {/* Mobile hamburger */}
         <button
@@ -88,7 +126,7 @@ export function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`py-3.5 text-sm font-medium border-b border-ocean-50 last:border-0 transition-colors ${
+                  className={`py-3.5 text-sm font-medium border-b border-ocean-50 transition-colors ${
                     active ? 'text-primary' : 'text-foreground/60'
                   }`}
                   onClick={() => setMenuOpen(false)}
@@ -97,6 +135,14 @@ export function Header() {
                 </Link>
               )
             })}
+            <Link
+              href={loggedIn ? '/minha-conta' : '/entrar'}
+              className="py-3.5 text-sm font-semibold text-ocean-700 border-b border-ocean-50 flex items-center gap-2"
+              onClick={() => setMenuOpen(false)}
+            >
+              <User size={14} className="text-ocean-500" />
+              {loggedIn ? accountLabel : 'Acessar'}
+            </Link>
             <div className="py-4">
               <Link
                 href="/quartos"

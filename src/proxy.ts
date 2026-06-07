@@ -37,6 +37,20 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
+  // Redirect unauthenticated guests away from the reservation page
+  if (!user && request.nextUrl.pathname === '/reservar') {
+    const next = encodeURIComponent(request.nextUrl.pathname + request.nextUrl.search)
+    const loginUrl = new URL(`/entrar?next=${next}`, request.nextUrl.origin)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // Redirect unauthenticated users away from the guest account area
+  if (!user && request.nextUrl.pathname.startsWith('/minha-conta')) {
+    const next = encodeURIComponent(request.nextUrl.pathname + request.nextUrl.search)
+    const loginUrl = new URL(`/entrar?next=${next}`, request.nextUrl.origin)
+    return NextResponse.redirect(loginUrl)
+  }
+
   return supabaseResponse
 }
 
