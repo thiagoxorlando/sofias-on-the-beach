@@ -8,6 +8,7 @@ import { ReservationStatusBadge, PaymentStatusBadge, PAYMENT_LABELS } from '../_
 import { ReservationActions } from './_components/ReservationActions'
 import { ManualPaymentTrigger } from './_components/ManualPaymentTrigger'
 import { NotesPanel } from './_components/NotesPanel'
+import { ChargesPanel, type ChargeRow } from './_components/ChargesPanel'
 import { ReceiptLink } from '../../payments/_components/ReceiptLink'
 
 export const metadata: Metadata = { title: "Detalhe da reserva — Painel Sofia's" }
@@ -56,7 +57,7 @@ const EVENT_LABELS: Record<string, string> = {
 
 type GuestJoin = { id: string; full_name: string; email: string; phone: string | null; cpf: string | null; nationality: string; total_stays: number }
 type CategoryJoin = { name: string }
-type RoomJoin = { id: string; name: string; slug: string; max_guests: number; base_price_brl: number; room_categories: CategoryJoin | CategoryJoin[] | null }
+type RoomJoin = { id: string; name: string; slug: string; max_guests: number; base_price_brl: number; housekeeping_status: string; room_categories: CategoryJoin | CategoryJoin[] | null }
 
 function one<T>(rel: T | T[] | null): T | null {
   if (!rel) return null
@@ -85,7 +86,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
       base_amount_brl, discount_brl, total_brl, special_requests,
       cancellation_reason, cancelled_at, checked_in_at, checked_out_at, created_at,
       guests ( id, full_name, email, phone, cpf, nationality, total_stays ),
-      rooms ( id, name, slug, max_guests, base_price_brl, room_categories ( name ) )
+      rooms ( id, name, slug, max_guests, base_price_brl, housekeeping_status, room_categories ( name ) )
     `)
     .eq('id', id)
     .maybeSingle()
@@ -96,7 +97,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
   const room  = one(reservation.rooms as RoomJoin | RoomJoin[] | null)
   const category = room ? one(room.room_categories) : null
 
-  const [{ data: payments }, { data: events }, { data: notesData }, { data: blockedDates }] = await Promise.all([
+  const [{ data: payments }, { data: events }, { data: notesData }, { data: blockedDates }, { data: chargesData }] = await Promise.all([
     db
       .from('payments')
       .select('id, method, status, amount_brl, paid_at, asaas_invoice_url, refund_reason, refunded_at, created_at, manual_payment_method, manual_payment_note, manual_receipt_path')
@@ -117,7 +118,30 @@ export default async function ReservationDetailPage({ params }: { params: Promis
       .select('date, blocked_reason')
       .eq('reservation_id', id)
       .order('date', { ascending: true }),
+    db
+      .from('reservation_charges')
+      .select('id, category, description, quantity, unit_amount_brl, total_amount_brl, status, created_at')
+      .eq('reservation_id', id)
+      .order('created_at', { ascending: false }),
   ])
+
+  const charges: ChargeRow[] = (chargesData ?? []).map((c) => ({
+    id: c.id,
+    category: c.category,
+    description: c.description,
+    quantity: c.quantity,
+    unitAmount: c.unit_amount_brl,
+    totalAmount: c.total_amount_brl,
+    status: c.status,
+    createdAtLabel: formatDateTime(c.created_at),
+  }))
+
+  // Mirrors requireChargeAccess()/requireChargeSettlementAccess() in
+  // charges-actions.ts — keeps the buttons shown in sync with what the
+  // server actions will actually allow.
+  const canAddCharges = canAccessModule(admin.role, 'reception')
+  const canMarkChargesPaid = canAccessModule(admin.role, 'reception') || canAccessModule(admin.role, 'payments')
+  const canWaiveCharges = canAccessModule(admin.role, 'reception')
 
   const notes = (notesData ?? []).map((n) => ({
     id: n.id,
@@ -128,6 +152,17 @@ export default async function ReservationDetailPage({ params }: { params: Promis
 
   const relevantPayment = (payments ?? []).find((p) => p.status !== 'failed') ?? payments?.[0] ?? null
   const nights = nightsBetween(reservation.check_in, reservation.check_out)
+
+  // Same checklist shown on the reception dashboard before check-in.
+  const checkInWarnings: string[] = []
+  if (reservation.status === 'confirmed') {
+    if (relevantPayment?.status !== 'paid') checkInWarnings.push('Pagamento ainda não confirmado.')
+    if (room && room.housekeeping_status !== 'ready') {
+      checkInWarnings.push(`Quarto ainda não está pronto (status: ${room.housekeeping_status}).`)
+    }
+    if (reservation.special_requests) checkInWarnings.push('Hóspede tem pedidos especiais — confira antes de liberar o check-in.')
+  }
+
   const waMsg = encodeURIComponent(`Olá ${guest?.full_name ?? ''}! Aqui é da Sofia's on the Beach, sobre a sua reserva ${reservation.token}.`)
   const waHref = guest?.phone ? `https://wa.me/${guest.phone.replace(/\D/g, '')}?text=${waMsg}` : null
 
@@ -151,9 +186,17 @@ export default async function ReservationDetailPage({ params }: { params: Promis
               Criada em {formatDateTime(reservation.created_at)}
             </p>
           </div>
-          {canManageReservation && (
-            <ReservationActions reservationId={reservation.id} status={reservation.status} />
-          )}
+          <div className="flex flex-col items-end gap-2.5">
+            <Link
+              href={`/dashboard/reservations/${reservation.id}/print`}
+              className="inline-flex items-center justify-center rounded-xl border border-ocean-200 text-ocean-700 px-4 py-2.5 text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-50 transition-colors"
+            >
+              Imprimir ficha
+            </Link>
+            {canManageReservation && (
+              <ReservationActions reservationId={reservation.id} status={reservation.status} checkInWarnings={checkInWarnings} />
+            )}
+          </div>
         </div>
       </div>
 
@@ -369,6 +412,19 @@ export default async function ReservationDetailPage({ params }: { params: Promis
             ) : (
               <p className="text-[13px] text-ocean-400">Nenhuma data bloqueada para esta reserva.</p>
             )}
+          </section>
+
+          {/* Extra charges ledger */}
+          <section className={CARD}>
+            <h2 className="font-serif text-[15px] font-bold text-ocean-900 mb-4">Cobranças extras</h2>
+            <ChargesPanel
+              reservationId={reservation.id}
+              originalTotal={reservation.total_brl}
+              charges={charges}
+              canAdd={canAddCharges}
+              canMarkPaid={canMarkChargesPaid}
+              canWaive={canWaiveCharges}
+            />
           </section>
 
           {/* Internal notes */}

@@ -31,11 +31,13 @@ export function ReceptionActionBar({
   action,
   waHref,
   note,
+  checkInWarnings,
 }: {
   reservationId: string
   action: ActionKind
   waHref: string | null
   note: string | null
+  checkInWarnings?: string[]
 }) {
   const [isPending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ kind: 'error' | 'success'; text: string } | null>(null)
@@ -52,6 +54,16 @@ export function ReceptionActionBar({
 
   return (
     <div className="space-y-2.5">
+      {action === 'check_in' && checkInWarnings && checkInWarnings.length > 0 && (
+        <ul className="space-y-1 bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5">
+          {checkInWarnings.map((w) => (
+            <li key={w} className="text-[12px] text-amber-700 flex items-start gap-1.5">
+              <span className="mt-0.5">⚠</span>
+              <span>{w}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         {action === 'check_in' && (
           <button type="button" disabled={isPending} onClick={() => run(markCheckedInAction, 'Check-in registrado.')} className={BTN_PRIMARY}>
@@ -71,6 +83,9 @@ export function ReceptionActionBar({
         <button type="button" onClick={() => setShowNote((v) => !v)} className={BTN_SECONDARY}>
           {showNote ? 'Fechar nota' : 'Adicionar nota'}
         </button>
+        <Link href={`/dashboard/reservations/${reservationId}/print`} className={LINK}>
+          Imprimir ficha
+        </Link>
         <Link href={`/dashboard/reservations/${reservationId}`} className={LINK}>
           Ver reserva →
         </Link>

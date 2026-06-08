@@ -24,7 +24,7 @@ const TEXTAREA =
   'w-full border border-ocean-200 rounded-xl px-3.5 py-3 text-[13px] text-ocean-900 placeholder:text-ocean-400 bg-white ' +
   'focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent resize-none'
 
-export function ReservationActions({ reservationId, status }: { reservationId: string; status: string }) {
+export function ReservationActions({ reservationId, status, checkInWarnings }: { reservationId: string; status: string; checkInWarnings?: string[] }) {
   const [isPending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ kind: 'error' | 'success'; text: string } | null>(null)
   const [showCancelForm, setShowCancelForm] = useState(false)
@@ -41,6 +41,16 @@ export function ReservationActions({ reservationId, status }: { reservationId: s
 
   return (
     <div className="flex flex-col items-end gap-2.5">
+      {status === 'confirmed' && checkInWarnings && checkInWarnings.length > 0 && (
+        <ul className="w-full max-w-sm space-y-1 bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5">
+          {checkInWarnings.map((w) => (
+            <li key={w} className="text-[12px] text-amber-700 flex items-start gap-1.5">
+              <span className="mt-0.5">⚠</span>
+              <span>{w}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="flex flex-wrap items-center justify-end gap-2">
         {status === 'confirmed' && (
           <button type="button" disabled={isPending} onClick={() => run(markCheckedInAction, 'Check-in registrado.')} className={BTN_PRIMARY}>

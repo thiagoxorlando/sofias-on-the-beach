@@ -105,13 +105,22 @@ export async function markCheckedInAction(reservationId: string): Promise<Action
 
   const { data: reservation } = await db
     .from('reservations')
-    .select('status')
+    .select('status, room_id, rooms ( housekeeping_status )')
     .eq('id', reservationId)
     .single()
 
   if (!reservation) return { error: 'Reserva não encontrada.' }
   if (reservation.status !== 'confirmed') {
     return { error: 'Só é possível registrar check-in de reservas confirmadas.' }
+  }
+
+  // Front desk shouldn't hand over a dirty room. Roles that manage operations
+  // (super_admin/admin/manager) can override with a deliberate confirmation;
+  // reception/staff are blocked outright and must wait for housekeeping.
+  const room = Array.isArray(reservation.rooms) ? reservation.rooms[0] : reservation.rooms
+  const canOverrideRoomReadiness = ['super_admin', 'admin', 'manager'].includes(admin.role)
+  if (room && room.housekeeping_status !== 'ready' && !canOverrideRoomReadiness) {
+    return { error: 'O quarto ainda não está pronto (governança precisa concluir a limpeza/inspeção) antes do check-in.' }
   }
 
   const { error } = await db
