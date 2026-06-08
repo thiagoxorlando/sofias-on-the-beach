@@ -220,13 +220,20 @@ export default async function ReceptionPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <AdminStatCard label="Check-ins hoje" value={checkIns.length} tone="navy" />
-        <AdminStatCard label="Check-outs hoje" value={checkOuts.length} tone="info" />
-        <AdminStatCard label="Hospedados agora" value={staying.length} tone="success" />
+        <AdminStatCard label="Check-ins hoje" value={checkIns.length} tone="navy"
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke="#061A2A" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1={15} y1={12} x2={3} y2={12} /></svg>}
+        />
+        <AdminStatCard label="Check-outs hoje" value={checkOuts.length} tone="info"
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1={21} y1={12} x2={9} y2={12} /></svg>}
+        />
+        <AdminStatCard label="Hospedados agora" value={staying.length} tone="success"
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx={9} cy={7} r={4} /></svg>}
+        />
         <AdminStatCard
           label="Atenção necessária"
           value={attention.length}
           tone={attention.length > 0 ? 'warning' : 'neutral'}
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke={attention.length > 0 ? '#D97706' : '#94A3B8'} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1={12} y1={9} x2={12} y2={13} /><line x1={12} y1={17} x2={12.01} y2={17} /></svg>}
         />
       </div>
 

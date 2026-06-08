@@ -59,6 +59,13 @@
   --color-navy:      var(--coastal-navy);
   --color-navy-deep: var(--coastal-navy-deep);
 
+  /* Admin panel */
+  --color-admin-sidebar:     var(--admin-sidebar);
+  --color-admin-sidebar-hi:  var(--admin-sidebar-hi);
+  --color-admin-sidebar-act: var(--admin-sidebar-act);
+  --color-admin-page:        var(--admin-page);
+  --color-admin-border:      var(--admin-border);
+
   /* Radius scale */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -121,6 +128,13 @@
   --coastal-stone:     #6E7480;  /* secondary / muted text */
   --coastal-navy:      #0B2235;  /* headings, primary surfaces */
   --coastal-navy-deep: #061A2A;  /* deepest contrast, primary CTAs */
+
+  /* Admin panel */
+  --admin-sidebar:     #061A2A;  /* dark navy sidebar background */
+  --admin-sidebar-hi:  #0C2E48;  /* hover state on nav items */
+  --admin-sidebar-act: #0B3A75;  /* active/selected nav item */
+  --admin-page:        #F6F9FC;  /* content area background */
+  --admin-border:      #E5EDF5;  /* card and input borders */
 
   /* ============================================
      SHADCN SEMANTIC TOKENS

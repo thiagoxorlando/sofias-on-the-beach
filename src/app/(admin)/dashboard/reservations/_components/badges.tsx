@@ -14,7 +14,7 @@ const STATUS_TONES: Record<string, string> = {
   pending_payment: 'bg-amber-50 text-amber-700',
   confirmed:       'bg-emerald-50 text-emerald-700',
   cancelled:       'bg-red-50 text-red-600',
-  checked_in:      'bg-ocean-100 text-ocean-700',
+  checked_in:      'bg-sky-50 text-sky-700',
   checked_out:     'bg-slate-100 text-slate-500',
 }
 

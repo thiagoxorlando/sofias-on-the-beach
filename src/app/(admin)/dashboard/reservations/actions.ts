@@ -195,6 +195,124 @@ export async function markCheckedOutAction(reservationId: string): Promise<Actio
   return { success: true }
 }
 
+// ── Delete reservation ────────────────────────────────────────────────────────
+// Permanently removes a reservation and its non-financial related rows.
+// Guards: only super_admin/admin/manager — reception cannot delete.
+// Safety: blocked if any paid/refunded payment, any paid charge, or status
+// is checked_in/checked_out (operational history must be preserved).
+// FK order: payments (RESTRICT) + promotion_uses (RESTRICT) deleted first;
+// then the reservation DELETE cascades notes/events/charges and SET NULLs
+// room_availability (freeing dates), housekeeping_logs, price_requests.
+// Audit: trg_audit_reservations DB trigger fires automatically — no manual log.
+
+export async function deleteReservationAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const admin = await requireModule('reservations')
+
+  if (!['super_admin', 'admin', 'manager'].includes(admin.role)) {
+    return { error: 'Apenas administradores e gerentes podem excluir reservas.' }
+  }
+
+  const reservationId = str(formData, 'reservation_id')
+  const confirmToken  = str(formData, 'confirm_token')
+
+  if (!reservationId) return { error: 'Reserva inválida.' }
+  if (!confirmToken)  return { error: 'Digite o código da reserva para confirmar.' }
+
+  const db = createAdminClient()
+
+  const { data: reservation } = await db
+    .from('reservations')
+    .select('id, token, status')
+    .eq('id', reservationId)
+    .maybeSingle()
+
+  if (!reservation) return { error: 'Reserva não encontrada.' }
+
+  if (confirmToken.toUpperCase() !== reservation.token.toUpperCase()) {
+    return { error: 'Código incorreto. Digite o código da reserva exatamente como exibido.' }
+  }
+
+  // super_admin bypasses all safety checks — admin/manager are still blocked
+  // when financial or operational history exists.
+  const isSuperAdmin = admin.role === 'super_admin'
+
+  const { data: payments } = await db
+    .from('payments')
+    .select('id, status')
+    .eq('reservation_id', reservationId)
+
+  if (!isSuperAdmin) {
+    if (['checked_in', 'checked_out'].includes(reservation.status)) {
+      return {
+        error:
+          'Esta reserva possui histórico financeiro ou operacional. ' +
+          'Para preservar os registros, cancele a reserva em vez de excluir.',
+      }
+    }
+
+    const hasPaidPayment = (payments ?? []).some(
+      (p) => p.status === 'paid' || p.status === 'refunded',
+    )
+    if (hasPaidPayment) {
+      return {
+        error:
+          'Esta reserva possui histórico financeiro ou operacional. ' +
+          'Para preservar os registros, cancele a reserva em vez de excluir.',
+      }
+    }
+
+    const { data: charges } = await db
+      .from('reservation_charges')
+      .select('id, status')
+      .eq('reservation_id', reservationId)
+
+    const hasPaidCharge = (charges ?? []).some((c) => c.status === 'paid')
+    if (hasPaidCharge) {
+      return {
+        error:
+          'Esta reserva possui histórico financeiro ou operacional. ' +
+          'Para preservar os registros, cancele a reserva em vez de excluir.',
+      }
+    }
+  }
+
+  // Remove FK-RESTRICT children before the reservation row
+  if ((payments ?? []).length > 0) {
+    const { error: payErr } = await db
+      .from('payments')
+      .delete()
+      .eq('reservation_id', reservationId)
+    if (payErr) {
+      console.error('[delete-reservation] payments delete failed:', payErr)
+      return { error: 'Erro ao remover pagamentos associados. Tente novamente.' }
+    }
+  }
+
+  // promotion_uses is RESTRICT — delete silently (may be empty)
+  await db.from('promotion_uses').delete().eq('reservation_id', reservationId)
+
+  const { error: delErr } = await db
+    .from('reservations')
+    .delete()
+    .eq('id', reservationId)
+
+  if (delErr) {
+    console.error('[delete-reservation] reservation delete failed:', delErr)
+    return { error: 'Erro ao excluir a reserva. Tente novamente.' }
+  }
+
+  revalidatePath('/dashboard/reservations')
+  revalidatePath(`/dashboard/reservations/${reservationId}`)
+  revalidatePath('/dashboard/availability')
+  revalidatePath('/dashboard/reception')
+  revalidatePath('/dashboard/guests')
+
+  return { success: true }
+}
+
 // ── Internal notes ────────────────────────────────────────────────────────────
 
 export async function addReservationNoteAction(

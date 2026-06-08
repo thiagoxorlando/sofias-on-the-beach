@@ -187,11 +187,21 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
-        <AdminStatCard label="Total de reservas" value={summary.total} tone="navy" />
-        <AdminStatCard label="Aguardando pagamento" value={summary.awaitingPay} tone="warning" />
-        <AdminStatCard label="Confirmadas" value={summary.confirmed} tone="success" />
-        <AdminStatCard label="Check-in hoje" value={summary.checkInToday} tone="info" />
-        <AdminStatCard label="Check-out hoje" value={summary.checkOutToday} tone="info" />
+        <AdminStatCard label="Total de reservas" value={summary.total} tone="navy"
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke="#061A2A" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><rect x={3} y={4} width={18} height={18} rx={2} /><line x1={16} y1={2} x2={16} y2={6} /><line x1={8} y1={2} x2={8} y2={6} /><line x1={3} y1={10} x2={21} y2={10} /></svg>}
+        />
+        <AdminStatCard label="Aguardando pagamento" value={summary.awaitingPay} tone="warning"
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><circle cx={12} cy={12} r={9} /><line x1={12} y1={8} x2={12} y2={12} /><line x1={12} y1={16} x2={12.01} y2={16} /></svg>}
+        />
+        <AdminStatCard label="Confirmadas" value={summary.confirmed} tone="success"
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>}
+        />
+        <AdminStatCard label="Check-in hoje" value={summary.checkInToday} tone="info"
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1={15} y1={12} x2={3} y2={12} /></svg>}
+        />
+        <AdminStatCard label="Check-out hoje" value={summary.checkOutToday} tone="info"
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1={21} y1={12} x2={9} y2={12} /></svg>}
+        />
       </div>
 
       <ReservationsFilters />
@@ -215,7 +225,7 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
                 meta={row.token}
                 fields={[
                   { label: 'Quarto', value: row.roomName },
-                  { label: 'Check-in / Check-out', value: <>{formatDate(row.checkIn)} <span className="text-ocean-300">→</span> {formatDate(row.checkOut)}</> },
+                  { label: 'Check-in / Check-out', value: <>{formatDate(row.checkIn)} <span className="text-slate-400">→</span> {formatDate(row.checkOut)}</> },
                   { label: 'Hóspedes', value: `${row.adults}${row.children > 0 ? ` + ${row.children}` : ''}` },
                   { label: 'Total', value: formatBRL(row.total) },
                 ]}
@@ -231,8 +241,8 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3.5 rounded-[18px] border border-ocean-100 bg-white">
-              <p className="text-[12px] text-ocean-500">
+            <div className="flex items-center justify-between px-4 py-3.5 rounded-[18px] border border-admin-border bg-white">
+              <p className="text-[12px] text-slate-500">
                 Página {safePage} de {totalPages}
               </p>
               <div className="flex items-center gap-2">
@@ -250,13 +260,13 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
 function PageLink({ href, disabled, children }: { href: string; disabled: boolean; children: React.ReactNode }) {
   if (disabled) {
     return (
-      <span className="text-[12px] font-semibold text-ocean-300 px-3 py-1.5 cursor-not-allowed">
+      <span className="text-[12px] font-semibold text-slate-300 px-3 py-1.5 cursor-not-allowed">
         {children}
       </span>
     )
   }
   return (
-    <Link href={href} className="text-[12px] font-semibold text-ocean-600 hover:text-ocean-900 px-3 py-1.5 rounded-lg hover:bg-white transition-colors">
+    <Link href={href} className="text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors">
       {children}
     </Link>
   )

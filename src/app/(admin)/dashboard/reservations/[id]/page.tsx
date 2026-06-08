@@ -10,6 +10,7 @@ import { ManualPaymentTrigger } from './_components/ManualPaymentTrigger'
 import { NotesPanel } from './_components/NotesPanel'
 import { ChargesPanel, type ChargeRow } from './_components/ChargesPanel'
 import { ReceiptLink } from '../../payments/_components/ReceiptLink'
+import { DeleteReservationDanger } from './_components/DeleteReservationDanger'
 
 export const metadata: Metadata = { title: "Detalhe da reserva — Painel Sofia's" }
 
@@ -75,6 +76,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
     redirect('/dashboard')
   }
   const canManageReservation = canAccessModule(admin.role, 'reservations')
+  const canDelete = ['super_admin', 'admin', 'manager'].includes(admin.role)
 
   const { id } = await params
   const db = createAdminClient()
@@ -435,6 +437,13 @@ export default async function ReservationDetailPage({ params }: { params: Promis
 
         </div>
       </div>
+
+      {canDelete && (
+        <div className="mt-5 max-w-sm">
+          <DeleteReservationDanger reservationId={reservation.id} token={reservation.token} />
+        </div>
+      )}
+
     </div>
   )
 }
