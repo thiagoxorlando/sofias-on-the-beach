@@ -3,6 +3,13 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireModule } from '@/lib/auth'
 import { GuestsSearch } from './_components/GuestsSearch'
+import {
+  AdminPageHeader,
+  AdminStatCard,
+  AdminListCard,
+  AdminEmptyState,
+  AdminActionButton,
+} from '@/components/admin/AdminUI'
 
 export const metadata: Metadata = { title: "Hóspedes — Painel Sofia's" }
 
@@ -128,6 +135,15 @@ export default async function GuestsPage({ searchParams }: { searchParams: SP })
       })
     : all
 
+  const now = new Date()
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const summary = {
+    total:        all.length,
+    withNextStay: all.filter((row) => row.nextStay !== null).length,
+    totalSpent:   all.reduce((sum, row) => sum + row.totalSpent, 0),
+    newThisMonth: all.filter((row) => row.createdAt.slice(0, 7) === monthStart).length,
+  }
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
   const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
@@ -141,72 +157,59 @@ export default async function GuestsPage({ searchParams }: { searchParams: SP })
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
-      <div className="mb-6">
-        <h1 className="font-serif text-[28px] font-bold text-ocean-900">Hóspedes</h1>
-        <p className="text-[14px] text-ocean-500 mt-1">
-          {filtered.length} hóspede{filtered.length !== 1 ? 's' : ''} encontrado{filtered.length !== 1 ? 's' : ''}
-          {filtered.length !== all.length ? ` de ${all.length} no total` : ''}
-        </p>
+    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-7xl space-y-6">
+
+      <AdminPageHeader
+        eyebrow="Relacionamento"
+        title="Hóspedes"
+        subtitle={`${filtered.length} hóspede${filtered.length !== 1 ? 's' : ''} encontrado${filtered.length !== 1 ? 's' : ''}${filtered.length !== all.length ? ` de ${all.length} no total` : ''}.`}
+      />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <AdminStatCard label="Total de hóspedes" value={summary.total} tone="navy" />
+        <AdminStatCard label="Com próxima estadia" value={summary.withNextStay} tone="success" />
+        <AdminStatCard label="Total gasto registrado" value={formatBRL(summary.totalSpent)} tone="info" />
+        <AdminStatCard label="Novos este mês" value={summary.newThisMonth} tone="neutral" />
       </div>
 
       <GuestsSearch />
 
       {pageRows.length === 0 ? (
-        <div className="bg-white rounded-[18px] border border-ocean-100 py-14 text-center text-[13px] text-ocean-400">
-          Nenhum hóspede encontrado com os filtros atuais.
-        </div>
+        <AdminEmptyState>Nenhum hóspede encontrado com os filtros atuais.</AdminEmptyState>
       ) : (
-        <div className="bg-white rounded-[18px] border border-ocean-100 overflow-hidden">
-          <div className="divide-y divide-ocean-50">
+        <>
+          <div className="space-y-3">
             {pageRows.map((row) => (
-              <div key={row.id} className="px-4 sm:px-5 py-4 hover:bg-ocean-50/30 transition-colors">
-
-                {/* Row 1 — identity */}
-                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="font-semibold text-ocean-900 text-[14px]">{row.fullName}</span>
-                  <span className="text-[12px] text-ocean-400">{row.email}</span>
-                  {row.phone && <span className="text-[12px] text-ocean-400">{row.phone}</span>}
-                  {row.cpf && <span className="text-[12px] text-ocean-400">CPF {row.cpf}</span>}
-                  <span className="sm:ml-auto text-[11px] text-ocean-400">cadastrado em {formatDateTime(row.createdAt)}</span>
-                </div>
-
-                {/* Row 2 — stats */}
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mt-3 pt-3 border-t border-ocean-50">
-                  <div>
-                    <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-0.5">Reservas</p>
-                    <p className="text-[13px] font-medium text-ocean-900">{row.reservationCount}</p>
+              <AdminListCard
+                key={row.id}
+                title={row.fullName}
+                titleMeta={`${row.email}${row.phone ? ` · ${row.phone}` : ''}${row.cpf ? ` · CPF ${row.cpf}` : ''} · cadastrado em ${formatDateTime(row.createdAt)}`}
+                fields={[
+                  { label: 'Reservas', value: String(row.reservationCount) },
+                  { label: 'Total gasto', value: formatBRL(row.totalSpent) },
+                  { label: 'Última estadia', value: row.lastStay ? formatDate(row.lastStay) : '—' },
+                  {
+                    label: 'Próxima estadia',
+                    value: (
+                      <span className={row.nextStay ? 'text-emerald-700' : 'text-ocean-400'}>
+                        {row.nextStay ? formatDate(row.nextStay) : '—'}
+                      </span>
+                    ),
+                  },
+                ]}
+                actions={
+                  <div className="flex items-center justify-end">
+                    <AdminActionButton href={`/dashboard/guests/${row.id}`} variant="link">
+                      Ver detalhes →
+                    </AdminActionButton>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-0.5">Total gasto</p>
-                    <p className="text-[13px] font-bold text-ocean-900 whitespace-nowrap">{formatBRL(row.totalSpent)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-0.5">Última estadia</p>
-                    <p className="text-[13px] font-medium text-ocean-700 whitespace-nowrap">
-                      {row.lastStay ? formatDate(row.lastStay) : '—'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-0.5">Próxima estadia</p>
-                    <p className={`text-[13px] font-medium whitespace-nowrap ${row.nextStay ? 'text-emerald-700' : 'text-ocean-400'}`}>
-                      {row.nextStay ? formatDate(row.nextStay) : '—'}
-                    </p>
-                  </div>
-                  <Link
-                    href={`/dashboard/guests/${row.id}`}
-                    className="sm:ml-auto text-ocean-600 hover:text-ocean-900 text-[12px] font-semibold transition-colors whitespace-nowrap"
-                  >
-                    Ver detalhes →
-                  </Link>
-                </div>
-
-              </div>
+                }
+              />
             ))}
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3.5 border-t border-ocean-100 bg-ocean-50/30">
+            <div className="flex items-center justify-between px-4 py-3.5 rounded-[18px] border border-ocean-100 bg-white">
               <p className="text-[12px] text-ocean-500">
                 Página {safePage} de {totalPages}
               </p>
@@ -216,7 +219,7 @@ export default async function GuestsPage({ searchParams }: { searchParams: SP })
               </div>
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   )

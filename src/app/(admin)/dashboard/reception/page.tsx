@@ -3,10 +3,15 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireModule } from '@/lib/auth'
 import { ReservationStatusBadge, PaymentStatusBadge } from '../reservations/_components/badges'
 import { ReceptionActionBar } from './_components/ReceptionActionBar'
+import {
+  AdminPageHeader,
+  AdminSection,
+  AdminStatCard,
+  AdminListCard,
+  AdminEmptyState,
+} from '@/components/admin/AdminUI'
 
 export const metadata: Metadata = { title: "Recepção — Painel Sofia's" }
-
-const CARD = 'bg-white rounded-[18px] border border-ocean-100 p-5'
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10)
@@ -24,7 +29,7 @@ function formatDate(dateStr: string): string {
 }
 
 type GuestJoin = { full_name: string; email: string; phone: string | null }
-type RoomJoin = { name: string }
+type RoomJoin = { name: string; housekeeping_status: string }
 type PaymentJoin = { status: string; created_at: string }
 
 type ReservationRow = {
@@ -56,7 +61,9 @@ type Row = {
   guestEmail: string
   guestPhone: string | null
   roomName: string
+  roomHousekeepingStatus: string | null
   paymentStatus: string | null
+  latestNote: string | null
 }
 
 function one<T>(rel: T | T[] | null): T | null {
@@ -77,11 +84,11 @@ function formatBRL(value: number): string {
 const SELECT = `
   id, token, status, check_in, check_out, adults, children, total_brl, special_requests,
   guests ( full_name, email, phone ),
-  rooms ( name ),
+  rooms ( name, housekeeping_status ),
   payments ( status, created_at )
 `
 
-function toRow(r: ReservationRow): Row {
+function toRow(r: ReservationRow, latestNote: string | null): Row {
   const guest = one(r.guests)
   const room = one(r.rooms)
   return {
@@ -98,8 +105,50 @@ function toRow(r: ReservationRow): Row {
     guestEmail: guest?.email ?? '—',
     guestPhone: guest?.phone ?? null,
     roomName: room?.name ?? '—',
+    roomHousekeepingStatus: room?.housekeeping_status ?? null,
     paymentStatus: latestPaymentStatus(r.payments),
+    latestNote,
   }
+}
+
+const HOUSEKEEPING_READY_LABEL: Record<string, string> = {
+  dirty:     'sujo',
+  cleaning:  'em limpeza',
+  clean:     'limpo (aguardando inspeção)',
+  inspected: 'inspecionado',
+  ready:     'pronto',
+}
+
+type AttentionRow = { row: Row; reasons: string[] }
+
+function attentionFor(checkIns: Row[], staying: Row[]): AttentionRow[] {
+  const out: AttentionRow[] = []
+  for (const row of checkIns) {
+    const reasons: string[] = []
+    if (row.paymentStatus !== 'paid') {
+      reasons.push('Pagamento ainda não confirmado para a chegada de hoje')
+    }
+    if (row.roomHousekeepingStatus && row.roomHousekeepingStatus !== 'ready') {
+      reasons.push(`Quarto ainda não está pronto (${HOUSEKEEPING_READY_LABEL[row.roomHousekeepingStatus] ?? row.roomHousekeepingStatus})`)
+    }
+    if (reasons.length > 0) out.push({ row, reasons })
+  }
+  for (const row of staying) {
+    if (row.specialRequests) {
+      out.push({ row, reasons: ['Hóspede com pedido especial em aberto'] })
+    }
+  }
+  return out
+}
+
+function checkInWarningsFor(row: Row): string[] {
+  const warnings: string[] = []
+  if (row.paymentStatus !== 'paid') warnings.push('Pagamento ainda não confirmado.')
+  if (row.roomHousekeepingStatus && row.roomHousekeepingStatus !== 'ready') {
+    warnings.push(`Quarto ainda não está pronto (${HOUSEKEEPING_READY_LABEL[row.roomHousekeepingStatus] ?? row.roomHousekeepingStatus}).`)
+  }
+  if (row.specialRequests) warnings.push('Hóspede tem pedidos especiais — confira antes de liberar o check-in.')
+  return warnings
 }
 
 function waHrefFor(row: Row): string | null {
@@ -135,22 +184,78 @@ export default async function ReceptionPage() {
       .returns<ReservationRow[]>(),
   ])
 
-  const checkIns = (checkInsData ?? []).map(toRow)
-  const checkOuts = (checkOutsData ?? []).map(toRow)
-  const staying = (stayingData ?? []).map(toRow)
-  const upcoming = (upcomingData ?? []).map(toRow)
+  const allReservations = [
+    ...(checkInsData ?? []), ...(checkOutsData ?? []), ...(stayingData ?? []), ...(upcomingData ?? []),
+  ]
+  const reservationIds = [...new Set(allReservations.map((r) => r.id))]
+
+  const { data: notesData } = reservationIds.length > 0
+    ? await db
+        .from('reservation_notes')
+        .select('reservation_id, note, created_at')
+        .in('reservation_id', reservationIds)
+        .order('created_at', { ascending: false })
+    : { data: [] as { reservation_id: string; note: string; created_at: string }[] }
+
+  const latestNoteByReservation = new Map<string, string>()
+  for (const n of notesData ?? []) {
+    if (!latestNoteByReservation.has(n.reservation_id)) latestNoteByReservation.set(n.reservation_id, n.note)
+  }
+  const noteFor = (id: string) => latestNoteByReservation.get(id) ?? null
+
+  const checkIns = (checkInsData ?? []).map((r) => toRow(r, noteFor(r.id)))
+  const checkOuts = (checkOutsData ?? []).map((r) => toRow(r, noteFor(r.id)))
+  const staying = (stayingData ?? []).map((r) => toRow(r, noteFor(r.id)))
+  const upcoming = (upcomingData ?? []).map((r) => toRow(r, noteFor(r.id)))
+  const attention = attentionFor(checkIns, staying)
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-5xl space-y-8">
 
-      {/* Header */}
-      <div>
-        <p className="text-[11px] font-bold text-ocean-600 uppercase tracking-[0.28em] mb-1.5">Operação diária</p>
-        <h1 className="font-serif text-[26px] md:text-[30px] font-bold text-ocean-900">Recepção</h1>
-        <p className="text-[13px] text-ocean-500 mt-1.5">
-          Chegadas, saídas e hóspedes na pousada — hoje, {formatDate(today)}.
-        </p>
+      <AdminPageHeader
+        eyebrow="Operação diária"
+        title="Recepção"
+        subtitle={`Chegadas, saídas e hóspedes na pousada — hoje, ${formatDate(today)}.`}
+      />
+
+      {/* Summary */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <AdminStatCard label="Check-ins hoje" value={checkIns.length} tone="navy" />
+        <AdminStatCard label="Check-outs hoje" value={checkOuts.length} tone="info" />
+        <AdminStatCard label="Hospedados agora" value={staying.length} tone="success" />
+        <AdminStatCard
+          label="Atenção necessária"
+          value={attention.length}
+          tone={attention.length > 0 ? 'warning' : 'neutral'}
+        />
       </div>
+
+      {attention.length > 0 && (
+        <AdminSection title="Atenção necessária" count={attention.length}>
+          <div className="space-y-3">
+            {attention.map(({ row, reasons }) => (
+              <AdminListCard
+                key={row.id}
+                tone="warning"
+                title={row.guestName}
+                titleMeta={`${row.roomName} · ${formatDate(row.checkIn)} → ${formatDate(row.checkOut)}`}
+                badges={<ReservationStatusBadge status={row.status} />}
+                meta={row.token}
+                notes={reasons.map((reason) => ({ label: 'Atenção', text: reason }))}
+                actions={
+                  <ReceptionActionBar
+                    reservationId={row.id}
+                    action={row.status === 'confirmed' && row.checkIn === today ? 'check_in' : null}
+                    waHref={waHrefFor(row)}
+                    note={null}
+                    checkInWarnings={checkInWarningsFor(row)}
+                  />
+                }
+              />
+            ))}
+          </div>
+        </AdminSection>
+      )}
 
       <ReceptionSection
         title="Check-ins de hoje"
@@ -162,6 +267,7 @@ export default async function ReceptionPage() {
             action={row.status === 'confirmed' ? 'check_in' : null}
             waHref={waHrefFor(row)}
             note={row.status !== 'confirmed' ? 'Aguardando confirmação de pagamento para liberar o check-in.' : null}
+            checkInWarnings={checkInWarningsFor(row)}
           />
         )}
       />
@@ -216,76 +322,34 @@ function ReceptionSection({
   renderAction: (row: Row) => React.ReactNode
 }) {
   return (
-    <section>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-serif text-[18px] font-bold text-ocean-900">{title}</h2>
-        <span className="text-[12px] font-semibold text-ocean-400">{rows.length}</span>
-      </div>
+    <AdminSection title={title} count={rows.length}>
       {rows.length === 0 ? (
-        <div className={`${CARD} text-center text-[13px] text-ocean-400 py-8`}>
-          {emptyText}
-        </div>
+        <AdminEmptyState>{emptyText}</AdminEmptyState>
       ) : (
         <div className="space-y-3">
           {rows.map((row) => (
-            <ReceptionCard key={row.id} row={row} action={renderAction(row)} />
+            <AdminListCard
+              key={row.id}
+              title={row.guestName}
+              titleMeta={`${row.guestEmail}${row.guestPhone ? ` · ${row.guestPhone}` : ''}`}
+              badges={<ReservationStatusBadge status={row.status} />}
+              meta={row.token}
+              fields={[
+                { label: 'Quarto', value: row.roomName },
+                { label: 'Período', value: `${formatDate(row.checkIn)} → ${formatDate(row.checkOut)}` },
+                { label: 'Hóspedes', value: `${row.adults}${row.children > 0 ? ` + ${row.children}` : ''}` },
+                { label: 'Total', value: formatBRL(row.total) },
+                { label: 'Pagamento', value: <PaymentStatusBadge status={row.paymentStatus} /> },
+              ]}
+              notes={[
+                ...(row.specialRequests ? [{ label: 'Pedido especial', text: row.specialRequests }] : []),
+                ...(row.latestNote ? [{ label: 'Última nota', text: row.latestNote }] : []),
+              ]}
+              actions={renderAction(row)}
+            />
           ))}
         </div>
       )}
-    </section>
-  )
-}
-
-function ReceptionCard({ row, action }: { row: Row; action: React.ReactNode }) {
-  return (
-    <div className={CARD}>
-
-      {/* Guest + token */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-semibold text-ocean-900 text-[14px]">{row.guestName}</p>
-            <ReservationStatusBadge status={row.status} />
-          </div>
-          <p className="text-[12px] text-ocean-400 mt-0.5 truncate">
-            {row.guestEmail}{row.guestPhone ? ` · ${row.guestPhone}` : ''}
-          </p>
-        </div>
-        <span className="font-mono text-[11px] text-ocean-500 shrink-0">{row.token}</span>
-      </div>
-
-      {/* Booking facts */}
-      <div className="flex flex-wrap items-start gap-x-6 gap-y-3 mt-3.5 pt-3.5 border-t border-ocean-50">
-        <Field label="Quarto" value={row.roomName} />
-        <Field label="Período" value={`${formatDate(row.checkIn)} → ${formatDate(row.checkOut)}`} />
-        <Field label="Hóspedes" value={`${row.adults}${row.children > 0 ? ` + ${row.children}` : ''}`} />
-        <Field label="Total" value={formatBRL(row.total)} />
-        <div>
-          <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-1">Pagamento</p>
-          <PaymentStatusBadge status={row.paymentStatus} />
-        </div>
-      </div>
-
-      {/* Special requests */}
-      {row.specialRequests && (
-        <p className="text-[12px] text-ocean-600 bg-ocean-50/60 rounded-xl px-3.5 py-2.5 mt-3.5 leading-relaxed">
-          <span className="font-semibold">Pedido especial:</span> {row.specialRequests}
-        </p>
-      )}
-
-      {/* Actions */}
-      <div className="mt-3.5 pt-3.5 border-t border-ocean-50">
-        {action}
-      </div>
-    </div>
-  )
-}
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0">
-      <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-0.5">{label}</p>
-      <p className="text-[13px] font-medium text-ocean-900 whitespace-nowrap">{value}</p>
-    </div>
+    </AdminSection>
   )
 }

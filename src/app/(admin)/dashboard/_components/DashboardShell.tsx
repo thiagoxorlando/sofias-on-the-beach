@@ -51,7 +51,7 @@ export function DashboardShell({
   const navLinks = NAV_LINKS.filter((link) => visibleModules.includes(link.module))
 
   return (
-    <div className="flex h-screen overflow-hidden bg-ocean-50/30">
+    <div className="flex h-screen overflow-hidden bg-ocean-50/30 print:block print:h-auto print:overflow-visible print:bg-white">
 
       {/* Mobile backdrop */}
       {sidebarOpen && (
@@ -65,12 +65,12 @@ export function DashboardShell({
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-white border-r border-ocean-100 transition-transform duration-200',
-          'md:relative md:translate-x-0',
+          'md:relative md:translate-x-0 print:hidden',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
         {/* Brand */}
-        <div className="px-5 py-5 border-b border-ocean-100 shrink-0">
+        <div className="px-6 py-6 border-b border-ocean-100 shrink-0">
           <Link
             href="/dashboard"
             className="flex items-center gap-3"
@@ -81,15 +81,15 @@ export function DashboardShell({
               <p className="font-serif text-[17px] font-bold text-ocean-900 leading-none">
                 SOFIA&apos;S
               </p>
-              <p className="text-[8px] font-semibold text-ocean-500 uppercase tracking-[0.16em] mt-0.5">
-                painel de gestão
+              <p className="text-[11px] text-ocean-400 mt-1">
+                Painel de gestão
               </p>
             </div>
           </Link>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
           {navLinks.map((link) => {
             const isActive =
               link.href === '/dashboard'
@@ -101,10 +101,10 @@ export function DashboardShell({
                 href={link.href}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-colors',
+                  'flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-medium transition-colors',
                   isActive
-                    ? 'bg-ocean-900 text-white'
-                    : 'text-ocean-700 hover:bg-ocean-50 hover:text-ocean-900',
+                    ? 'bg-ocean-900 text-white shadow-sm shadow-ocean-900/10'
+                    : 'text-ocean-600 hover:bg-ocean-50 hover:text-ocean-900',
                 )}
               >
                 <NavIcon name={link.icon} active={isActive} />
@@ -116,21 +116,24 @@ export function DashboardShell({
 
         {/* User + logout */}
         <div className="px-4 py-4 border-t border-ocean-100 shrink-0">
-          <div className="mb-3 px-1">
+          <div className="mb-3 px-2.5 py-2.5 rounded-xl bg-ocean-50/60">
             <p className="text-[12px] font-semibold text-ocean-900 truncate">
               {adminUser.full_name}
             </p>
-            <p className="text-[11px] text-ocean-500 truncate mt-0.5">
-              {adminUser.email}
-            </p>
-            <p className="text-[10px] text-ocean-400 uppercase tracking-[0.10em] mt-0.5">
-              {ROLE_LABEL[adminUser.role] ?? adminUser.role}
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <p className="text-[11px] text-ocean-500 truncate">
+                {adminUser.email}
+              </p>
+              <span className="text-ocean-300">·</span>
+              <p className="text-[11px] text-ocean-500 shrink-0">
+                {ROLE_LABEL[adminUser.role] ?? adminUser.role}
+              </p>
+            </div>
           </div>
           <form action={signOutAction}>
             <button
               type="submit"
-              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-[12px] font-medium text-ocean-700 hover:bg-ocean-50 hover:text-ocean-900 transition-colors"
+              className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-[12px] font-medium text-ocean-600 hover:bg-ocean-50 hover:text-ocean-900 transition-colors"
             >
               <LogOutIcon />
               Sair da conta
@@ -140,10 +143,10 @@ export function DashboardShell({
       </aside>
 
       {/* ── Main area ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible print:block">
 
         {/* Mobile top bar */}
-        <header className="h-14 bg-white border-b border-ocean-100 flex items-center gap-3 px-4 md:hidden shrink-0">
+        <header className="h-14 bg-white border-b border-ocean-100 flex items-center gap-3 px-4 md:hidden shrink-0 print:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
             className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-ocean-50 transition-colors"
@@ -167,7 +170,7 @@ export function DashboardShell({
         </header>
 
         {/* Scrollable page content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto print:overflow-visible">
           {children}
         </main>
       </div>

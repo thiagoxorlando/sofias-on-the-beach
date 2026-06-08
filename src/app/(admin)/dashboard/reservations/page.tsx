@@ -4,6 +4,13 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireModule } from '@/lib/auth'
 import { ReservationsFilters } from './_components/ReservationsFilters'
 import { ReservationStatusBadge, PaymentStatusBadge } from './_components/badges'
+import {
+  AdminPageHeader,
+  AdminStatCard,
+  AdminListCard,
+  AdminEmptyState,
+  AdminActionButton,
+} from '@/components/admin/AdminUI'
 
 export const metadata: Metadata = { title: "Reservas — Painel Sofia's" }
 
@@ -69,6 +76,10 @@ function formatDateTime(iso: string): string {
 
 function formatBRL(value: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value)
+}
+
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10)
 }
 
 type SP = Promise<{
@@ -141,6 +152,15 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
     return true
   })
 
+  const today = todayISO()
+  const summary = {
+    total:        all.length,
+    awaitingPay:  all.filter((r) => r.status === 'pending_payment').length,
+    confirmed:    all.filter((r) => r.status === 'confirmed').length,
+    checkInToday:  all.filter((r) => r.checkIn === today && (r.status === 'confirmed' || r.status === 'pending_payment')).length,
+    checkOutToday: all.filter((r) => r.checkOut === today && (r.status === 'checked_in' || r.status === 'confirmed')).length,
+  }
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
   const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
@@ -158,76 +178,60 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
-      <div className="mb-6">
-        <h1 className="font-serif text-[28px] font-bold text-ocean-900">Reservas</h1>
-        <p className="text-[14px] text-ocean-500 mt-1">
-          {filtered.length} reserva{filtered.length !== 1 ? 's' : ''} encontrada{filtered.length !== 1 ? 's' : ''}
-          {filtered.length !== all.length ? ` de ${all.length} no total` : ''}
-        </p>
+    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-7xl space-y-6">
+
+      <AdminPageHeader
+        eyebrow="Operação"
+        title="Reservas"
+        subtitle={`${filtered.length} reserva${filtered.length !== 1 ? 's' : ''} encontrada${filtered.length !== 1 ? 's' : ''}${filtered.length !== all.length ? ` de ${all.length} no total` : ''}.`}
+      />
+
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+        <AdminStatCard label="Total de reservas" value={summary.total} tone="navy" />
+        <AdminStatCard label="Aguardando pagamento" value={summary.awaitingPay} tone="warning" />
+        <AdminStatCard label="Confirmadas" value={summary.confirmed} tone="success" />
+        <AdminStatCard label="Check-in hoje" value={summary.checkInToday} tone="info" />
+        <AdminStatCard label="Check-out hoje" value={summary.checkOutToday} tone="info" />
       </div>
 
       <ReservationsFilters />
 
       {pageRows.length === 0 ? (
-        <div className="bg-white rounded-[18px] border border-ocean-100 py-14 text-center text-[13px] text-ocean-400">
-          Nenhuma reserva encontrada com os filtros atuais.
-        </div>
+        <AdminEmptyState>Nenhuma reserva encontrada com os filtros atuais.</AdminEmptyState>
       ) : (
-        <div className="bg-white rounded-[18px] border border-ocean-100 overflow-hidden">
-          <div className="divide-y divide-ocean-50">
+        <>
+          <div className="space-y-3">
             {pageRows.map((row) => (
-              <div key={row.id} className="px-4 sm:px-5 py-4 hover:bg-ocean-50/30 transition-colors">
-
-                {/* Row 1 — guest */}
-                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="font-semibold text-ocean-900 text-[14px]">{row.guestName}</span>
-                  <span className="text-[12px] text-ocean-400">{row.guestEmail}</span>
-                  {row.guestPhone && <span className="text-[12px] text-ocean-400">{row.guestPhone}</span>}
-                  <span className="sm:ml-auto font-mono text-[11px] text-ocean-500">{row.token}</span>
-                  <span className="text-[11px] text-ocean-400">· criada em {formatDateTime(row.createdAt)}</span>
-                </div>
-
-                {/* Row 2 — booking */}
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mt-3 pt-3 border-t border-ocean-50">
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-0.5">Quarto</p>
-                    <p className="text-[13px] font-medium text-ocean-900 truncate">{row.roomName}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-0.5">Check-in / Check-out</p>
-                    <p className="text-[13px] font-medium text-ocean-700 whitespace-nowrap">
-                      {formatDate(row.checkIn)} <span className="text-ocean-300">→</span> {formatDate(row.checkOut)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-0.5">Hóspedes</p>
-                    <p className="text-[13px] font-medium text-ocean-700">
-                      {row.adults}{row.children > 0 ? ` + ${row.children}` : ''}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-0.5">Total</p>
-                    <p className="text-[13px] font-bold text-ocean-900 whitespace-nowrap">{formatBRL(row.total)}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
+              <AdminListCard
+                key={row.id}
+                title={row.guestName}
+                titleMeta={`${row.guestEmail}${row.guestPhone ? ` · ${row.guestPhone}` : ''} · criada em ${formatDateTime(row.createdAt)}`}
+                badges={
+                  <>
                     <ReservationStatusBadge status={row.status} />
                     <PaymentStatusBadge status={row.paymentStatus} />
+                  </>
+                }
+                meta={row.token}
+                fields={[
+                  { label: 'Quarto', value: row.roomName },
+                  { label: 'Check-in / Check-out', value: <>{formatDate(row.checkIn)} <span className="text-ocean-300">→</span> {formatDate(row.checkOut)}</> },
+                  { label: 'Hóspedes', value: `${row.adults}${row.children > 0 ? ` + ${row.children}` : ''}` },
+                  { label: 'Total', value: formatBRL(row.total) },
+                ]}
+                actions={
+                  <div className="flex items-center justify-end">
+                    <AdminActionButton href={`/dashboard/reservations/${row.id}`} variant="link">
+                      Ver detalhes →
+                    </AdminActionButton>
                   </div>
-                  <Link
-                    href={`/dashboard/reservations/${row.id}`}
-                    className="sm:ml-auto text-ocean-600 hover:text-ocean-900 text-[12px] font-semibold transition-colors whitespace-nowrap"
-                  >
-                    Ver detalhes →
-                  </Link>
-                </div>
-
-              </div>
+                }
+              />
             ))}
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3.5 border-t border-ocean-100 bg-ocean-50/30">
+            <div className="flex items-center justify-between px-4 py-3.5 rounded-[18px] border border-ocean-100 bg-white">
               <p className="text-[12px] text-ocean-500">
                 Página {safePage} de {totalPages}
               </p>
@@ -237,7 +241,7 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
               </div>
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   )
