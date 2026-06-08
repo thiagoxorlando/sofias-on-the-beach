@@ -724,6 +724,82 @@ export type Database = {
           },
         ]
       }
+      maintenance_tickets: {
+        Row: {
+          assigned_to: string | null
+          blocked_end_date: string | null
+          blocked_start_date: string | null
+          blocks_room: boolean
+          created_at: string
+          description: string | null
+          id: string
+          photo_paths: string[]
+          priority: string
+          reported_by: string | null
+          resolved_at: string | null
+          room_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          blocked_end_date?: string | null
+          blocked_start_date?: string | null
+          blocks_room?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          photo_paths?: string[]
+          priority?: string
+          reported_by?: string | null
+          resolved_at?: string | null
+          room_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          blocked_end_date?: string | null
+          blocked_start_date?: string | null
+          blocks_room?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          photo_paths?: string[]
+          priority?: string
+          reported_by?: string | null
+          resolved_at?: string | null
+          room_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_tickets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_tickets_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_tickets_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_availability: {
         Row: {
           blocked_reason: string
@@ -731,6 +807,7 @@ export type Database = {
           date: string
           id: string
           is_available: boolean
+          maintenance_ticket_id: string | null
           reservation_id: string | null
           room_id: string
           updated_at: string
@@ -741,6 +818,7 @@ export type Database = {
           date: string
           id?: string
           is_available?: boolean
+          maintenance_ticket_id?: string | null
           reservation_id?: string | null
           room_id: string
           updated_at?: string
@@ -751,11 +829,19 @@ export type Database = {
           date?: string
           id?: string
           is_available?: boolean
+          maintenance_ticket_id?: string | null
           reservation_id?: string | null
           room_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "room_availability_maintenance_ticket_id_fkey"
+            columns: ["maintenance_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_tickets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "room_availability_reservation_id_fkey"
             columns: ["reservation_id"]

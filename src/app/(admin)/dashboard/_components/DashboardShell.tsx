@@ -30,6 +30,7 @@ const NAV_LINKS: { href: string; label: string; icon: string; module: Module }[]
   { href: '/dashboard/reservations',  label: 'Reservas',        icon: 'calendar', module: 'reservations' },
   { href: '/dashboard/reception',     label: 'Recepção',        icon: 'reception', module: 'reception'   },
   { href: '/dashboard/housekeeping',  label: 'Governança',      icon: 'housekeeping', module: 'housekeeping' },
+  { href: '/dashboard/maintenance',   label: 'Manutenção',      icon: 'maintenance', module: 'maintenance'  },
   { href: '/dashboard/guests',        label: 'Hóspedes',        icon: 'users',    module: 'guests'       },
   { href: '/dashboard/availability',  label: 'Disponibilidade', icon: 'grid',     module: 'availability' },
   { href: '/dashboard/payments',      label: 'Financeiro',      icon: 'coin',     module: 'payments'     },
@@ -184,6 +185,7 @@ function NavIcon({ name, active }: { name: string; active: boolean }) {
     case 'calendar': return <CalendarIcon className={cls} />
     case 'reception': return <BellDeskIcon className={cls} />
     case 'housekeeping': return <SparkleIcon className={cls} />
+    case 'maintenance': return <WrenchIcon className={cls} />
     case 'users':    return <UsersIcon    className={cls} />
     case 'grid':     return <GridIcon     className={cls} />
     case 'coin':     return <CoinIcon     className={cls} />
@@ -247,6 +249,14 @@ function SparkleIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
       <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" />
+    </svg>
+  )
+}
+
+function WrenchIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.4 2.4-2.6-.6-.6-2.6z" />
     </svg>
   )
 }
