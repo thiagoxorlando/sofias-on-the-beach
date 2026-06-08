@@ -24,9 +24,8 @@ const bullets = [
   'Região tranquila e segura, perfeita para relaxar',
 ]
 
-export function LocationSection() {
-  const phone = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5522999999999'
-  const waHref = `https://wa.me/${phone}?text=${WA_MSG}`
+export function LocationSection({ whatsapp }: { whatsapp: string }) {
+  const waHref = `https://wa.me/${whatsapp}?text=${WA_MSG}`
 
   return (
     <section className="bg-white py-14 md:py-28 overflow-hidden">
@@ -79,7 +78,7 @@ export function LocationSection() {
 
           {/* ── Right: arch image + floating card ── */}
           <div className="flex justify-center md:justify-end">
-            <div className="relative w-[280px] md:w-[390px]">
+            <div className="relative w-full max-w-[280px] md:max-w-[390px]">
 
               {/* Arch image frame */}
               <div className="relative h-[380px] md:h-[520px] rounded-t-full rounded-b-[28px] overflow-hidden shadow-[0_24px_64px_rgba(0,43,74,0.18)]">

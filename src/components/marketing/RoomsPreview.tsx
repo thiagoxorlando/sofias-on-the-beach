@@ -36,7 +36,8 @@ export async function RoomsPreview() {
         {/* Room cards — rendered from publicRooms data */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {rooms.map((room) => {
-            const hasImg = imgExists(room.imageUrl)
+            const isExternal = room.imageUrl.startsWith('http')
+            const hasImg = isExternal || imgExists(room.imageUrl)
             const filename = room.imageUrl.split('/').pop() ?? ''
             return (
               <div
@@ -50,6 +51,7 @@ export async function RoomsPreview() {
                       src={room.imageUrl}
                       alt={room.imageAlt}
                       fill
+                      unoptimized={isExternal}
                       className="object-cover object-center group-hover:scale-[1.03] transition-transform duration-700"
                       sizes="(max-width: 768px) 100vw, 33vw"
                     />

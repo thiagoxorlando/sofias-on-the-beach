@@ -173,7 +173,7 @@ function RateAction({ range }: { range: SelectionRange }) {
       <input type="hidden" name="start_date" value={range.startDate} />
       <input type="hidden" name="end_date" value={range.endDate} />
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Valor da diária (R$)">
           <input type="number" name="price_per_night" required min={1} step={1} placeholder="Ex.: 850" className={INPUT} />
         </Field>

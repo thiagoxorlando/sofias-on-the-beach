@@ -5,6 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { getAllActiveRooms } from '@/lib/publicRooms'
 import { getBlockedRoomIds } from '@/lib/availability'
+import { getSiteSettings } from '@/lib/settings'
 import { RoomSearchBar } from './RoomSearchBar'
 import type { PublicRoomFull } from '@/lib/publicRooms'
 import { CARD, BTN_PRIMARY, BTN_SECONDARY, Eyebrow, PLACEHOLDER_GRADIENT } from '@/components/booking/ui'
@@ -16,7 +17,6 @@ export const metadata: Metadata = {
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
-const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5522999999999'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -38,11 +38,11 @@ function formatDatePt(dateStr: string): string {
   return `${d} ${MONTHS_PT[m - 1]}`
 }
 
-function roomWaHref(roomName: string): string {
+function roomWaHref(roomName: string, whatsapp: string): string {
   const msg = encodeURIComponent(
     `Olá! Tenho interesse no ${roomName} na pousada Sofia's on the Beach. Podem me ajudar com disponibilidade?`,
   )
-  return `https://wa.me/${WA_NUMBER}?text=${msg}`
+  return `https://wa.me/${whatsapp}?text=${msg}`
 }
 
 function reservarUrl(roomId: string, checkIn: string, checkOut: string, guests: number): string {
@@ -55,6 +55,7 @@ type SearchParams = Promise<{ check_in?: string | string[]; check_out?: string |
 
 export default async function QuartosPage({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams
+  const settings = await getSiteSettings()
 
   const rawCheckIn  = typeof sp.check_in  === 'string' ? sp.check_in  : null
   const rawCheckOut = typeof sp.check_out === 'string' ? sp.check_out : null
@@ -167,7 +168,7 @@ export default async function QuartosPage({ searchParams }: { searchParams: Sear
 
           {/* Empty state */}
           {rooms.length === 0 ? (
-            <EmptyState guests={guests} hasFilter={!!guests || hasValidDates} />
+            <EmptyState guests={guests} hasFilter={!!guests || hasValidDates} whatsapp={settings.whatsapp} />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-9">
               {rooms.map((room) => (
@@ -180,7 +181,7 @@ export default async function QuartosPage({ searchParams }: { searchParams: Sear
                       ? reservarUrl(room.id, checkIn!, checkOut!, guests)
                       : null
                   }
-                  waHref={roomWaHref(room.name)}
+                  waHref={roomWaHref(room.name, settings.whatsapp)}
                 />
               ))}
             </div>
@@ -356,8 +357,8 @@ function RoomCard({
 
 // ── Empty state ────────────────────────────────────────────────────────────────
 
-function EmptyState({ guests, hasFilter }: { guests: number | null; hasFilter: boolean }) {
-  const href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(
+function EmptyState({ guests, hasFilter, whatsapp }: { guests: number | null; hasFilter: boolean; whatsapp: string }) {
+  const href = `https://wa.me/${whatsapp}?text=${encodeURIComponent(
     "Olá! Gostaria de saber sobre disponibilidade na pousada Sofia's on the Beach.",
   )}`
   return (

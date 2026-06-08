@@ -4,6 +4,7 @@ import Link from 'next/link'
 import fs from 'node:fs'
 import path from 'node:path'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getSiteSettings } from '@/lib/settings'
 import { PaymentSection } from './PaymentSection'
 import type { InitialPayment } from './PaymentSection'
 import { PAGE_SURFACE, Container, CARD, Eyebrow, BTN_PRIMARY, BTN_SECONDARY, StatusBadge } from '@/components/booking/ui'
@@ -12,8 +13,6 @@ export const metadata: Metadata = {
   title: "Pré-reserva criada — Sofia's on the Beach",
   robots: { index: false },
 }
-
-const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5522999999999'
 
 const MONTHS_PT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 function formatDate(dateStr: string): string {
@@ -109,10 +108,11 @@ export default async function ReservaPage({
       new Date(reservation.check_in + 'T00:00:00Z').getTime()) / 86_400_000,
   )
 
+  const settings = await getSiteSettings()
   const waMsg = encodeURIComponent(
     `Olá! Fiz uma pré-reserva no site com o código ${reservation.token}. Gostaria de confirmar.`,
   )
-  const waHref = `https://wa.me/${WA_NUMBER}?text=${waMsg}`
+  const waHref = `https://wa.me/${settings.whatsapp}?text=${waMsg}`
 
   return (
     <section className={`${PAGE_SURFACE} py-12 md:py-20`}>
@@ -212,6 +212,7 @@ export default async function ReservaPage({
                 <PaymentSection
                   reservationToken={reservation.token}
                   initialPayment={existingPayment}
+                  whatsapp={settings.whatsapp}
                 />
               ) : reservation.status === 'confirmed' ? (
                 <div className="bg-emerald-50 rounded-2xl p-5">

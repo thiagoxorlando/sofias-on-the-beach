@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { getSiteSettings } from '@/lib/settings'
 
 export const metadata: Metadata = {
   title: "Detalhes do quarto — Sofia's on the Beach",
@@ -7,16 +8,15 @@ export const metadata: Metadata = {
     "Acomodação na pousada boutique Sofia's on the Beach à beira-mar em Búzios.",
 }
 
-const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5522999999999'
-
 export default async function RoomDetailPage({
   params,
 }: {
   params: Promise<{ slug: string }>
 }) {
   await params
+  const settings = await getSiteSettings()
 
-  const waHref = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(
+  const waHref = `https://wa.me/${settings.whatsapp}?text=${encodeURIComponent(
     "Olá! Gostaria de reservar na pousada Sofia's on the Beach. Podem me ajudar com disponibilidade?",
   )}`
 

@@ -104,7 +104,7 @@ export function ManualPaymentModal({ paymentId, reservationId, amount, onClose, 
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className={LABEL}>Valor pago (R$)</label>
               <input

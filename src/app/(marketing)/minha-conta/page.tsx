@@ -5,6 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { requireGuest } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getSiteSettings } from '@/lib/settings'
 import { signOutAction } from './actions'
 import {
   PAGE_SURFACE, Container, CARD, CARD_SOFT, CARD_INTERACTIVE, Eyebrow,
@@ -15,8 +16,6 @@ export const metadata: Metadata = {
   title: "Minha conta — Sofia's on the Beach",
   robots: { index: false },
 }
-
-const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5522999999999'
 
 const MONTHS_PT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 function fmt(dateStr: string): string {
@@ -51,6 +50,7 @@ type UpcomingView = {
 
 export default async function MinhaContaPage() {
   const guest = await requireGuest('/minha-conta')
+  const settings = await getSiteSettings()
   const db = createAdminClient()
   const today = new Date().toISOString().split('T')[0]
 
@@ -104,7 +104,7 @@ export default async function MinhaContaPage() {
 
   const firstName = guest.full_name.trim().split(/\s+/)[0]
   const reservationsCount = totalCount ?? 0
-  const waHref = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('Olá! Gostaria de falar sobre minha reserva.')}`
+  const waHref = `https://wa.me/${settings.whatsapp}?text=${encodeURIComponent('Olá! Gostaria de falar sobre minha reserva.')}`
 
   return (
     <section className={`${PAGE_SURFACE} py-12 md:py-20`}>

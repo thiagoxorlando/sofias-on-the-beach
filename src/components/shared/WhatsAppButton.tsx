@@ -1,10 +1,7 @@
-const MSG = encodeURIComponent(
-  "Olá! Gostaria de saber mais sobre a pousada Sofia's on the Beach."
-)
+import type { SiteSettings } from '@/lib/settings'
 
-export function WhatsAppButton() {
-  const phone = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5522999999999'
-  const href = `https://wa.me/${phone}?text=${MSG}`
+export function WhatsAppButton({ settings }: { settings: Pick<SiteSettings, 'whatsapp' | 'whatsappMessageTemplate'> }) {
+  const href = `https://wa.me/${settings.whatsapp}?text=${encodeURIComponent(settings.whatsappMessageTemplate)}`
 
   return (
     <a

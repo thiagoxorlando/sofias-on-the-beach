@@ -1,11 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { BTN_PRIMARY } from '@/components/booking/ui'
 
-function todayStr() {
+// `new Date()` resolves differently on the server vs. the client, so reading
+// it during render would mismatch the SSR HTML and trigger a hydration error.
+// useSyncExternalStore lets us hand React a stable server snapshot (`null`)
+// and only switch to today's real date once we're safely on the client.
+function subscribeNever() {
+  return () => {}
+}
+function getTodayISO() {
   return new Date().toISOString().split('T')[0]
+}
+function getServerToday() {
+  return null
 }
 
 type Props = {
@@ -20,6 +30,7 @@ export function RoomSearchBar({ initialCheckIn, initialCheckOut, initialGuests }
   const [checkOut, setCheckOut] = useState(initialCheckOut ?? '')
   const [guests, setGuests]     = useState(initialGuests ?? 2)
   const [error, setError]       = useState<string | null>(null)
+  const today = useSyncExternalStore(subscribeNever, getTodayISO, getServerToday)
 
   function handleCheckInChange(val: string) {
     setCheckIn(val)
@@ -39,8 +50,6 @@ export function RoomSearchBar({ initialCheckIn, initialCheckOut, initialGuests }
     router.push(`/quartos?check_in=${checkIn}&check_out=${checkOut}&guests=${guests}`)
   }
 
-  const today = todayStr()
-
   return (
     <div id="busca" className="scroll-mt-28">
       <div className="bg-white rounded-[26px] shadow-[0_24px_70px_-22px_rgba(0,40,80,0.18)] border border-foam overflow-hidden">
@@ -56,7 +65,7 @@ export function RoomSearchBar({ initialCheckIn, initialCheckOut, initialGuests }
               <input
                 type="date"
                 value={checkIn}
-                min={today}
+                min={today ?? undefined}
                 onChange={(e) => handleCheckInChange(e.target.value)}
                 className="text-sm font-medium text-navy-deep/75 bg-transparent border-0 outline-none w-full cursor-pointer"
               />
@@ -73,7 +82,7 @@ export function RoomSearchBar({ initialCheckIn, initialCheckOut, initialGuests }
               <input
                 type="date"
                 value={checkOut}
-                min={checkIn || today}
+                min={checkIn || today || undefined}
                 onChange={(e) => setCheckOut(e.target.value)}
                 className="text-sm font-medium text-navy-deep/75 bg-transparent border-0 outline-none w-full cursor-pointer"
               />

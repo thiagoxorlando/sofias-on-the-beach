@@ -1,10 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 
-function todayStr() {
+// `new Date()` resolves differently on the server vs. the client, so reading
+// it during render would mismatch the SSR HTML and trigger a hydration error.
+// useSyncExternalStore lets us hand React a stable server snapshot (`null`)
+// and only switch to today's real date once we're safely on the client.
+function subscribeNever() {
+  return () => {}
+}
+function getTodayISO() {
   return new Date().toISOString().split('T')[0]
+}
+function getServerToday() {
+  return null
 }
 
 export function BookingWidget() {
@@ -13,6 +23,7 @@ export function BookingWidget() {
   const [checkOut, setCheckOut] = useState('')
   const [guests, setGuests] = useState(2)
   const [error, setError] = useState<string | null>(null)
+  const today = useSyncExternalStore(subscribeNever, getTodayISO, getServerToday)
 
   function handleCheckInChange(val: string) {
     setCheckIn(val)
@@ -32,8 +43,6 @@ export function BookingWidget() {
     router.push(`/quartos?check_in=${checkIn}&check_out=${checkOut}&guests=${guests}`)
   }
 
-  const today = todayStr()
-
   return (
     <div>
       <div className="bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,40,80,0.14)] border border-ocean-100 overflow-hidden">
@@ -49,7 +58,7 @@ export function BookingWidget() {
               <input
                 type="date"
                 value={checkIn}
-                min={today}
+                min={today ?? undefined}
                 onChange={(e) => handleCheckInChange(e.target.value)}
                 className="text-sm font-medium text-foreground/70 bg-transparent border-0 outline-none w-full cursor-pointer"
               />
@@ -66,7 +75,7 @@ export function BookingWidget() {
               <input
                 type="date"
                 value={checkOut}
-                min={checkIn || today}
+                min={checkIn || today || undefined}
                 onChange={(e) => setCheckOut(e.target.value)}
                 className="text-sm font-medium text-foreground/70 bg-transparent border-0 outline-none w-full cursor-pointer"
               />

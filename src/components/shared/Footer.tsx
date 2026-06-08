@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { SiteSettings } from '@/lib/settings'
 
 const navLinks = [
   { href: '/', label: 'Início' },
@@ -19,10 +20,10 @@ const WA_MSG = encodeURIComponent(
   "Olá! Gostaria de reservar na pousada Sofia's on the Beach."
 )
 
-export function Footer() {
-  const phone = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5522999999999'
-  const waHref = `https://wa.me/${phone}?text=${WA_MSG}`
+export function Footer({ settings }: { settings: SiteSettings }) {
+  const waHref = `https://wa.me/${settings.whatsapp}?text=${WA_MSG}`
   const year = new Date().getFullYear()
+  const hasAddress = settings.address.trim() !== ''
 
   return (
     <footer className="bg-ocean-900 border-t border-white/10">
@@ -75,25 +76,27 @@ export function Footer() {
               Contato
             </p>
             <ul className="space-y-3.5">
-              <li className="flex items-center gap-2.5">
-                <PhoneIcon />
-                <span className="text-[13px] text-ocean-300">(22) 99886-1234</span>
-              </li>
+              {settings.phone && (
+                <li className="flex items-center gap-2.5">
+                  <PhoneIcon />
+                  <span className="text-[13px] text-ocean-300">{settings.phone}</span>
+                </li>
+              )}
               <li className="flex items-start gap-2.5">
                 <MailIcon />
                 <a
-                  href="mailto:contato@sofiasonthebeach.com.br"
+                  href={`mailto:${settings.publicEmail}`}
                   className="text-[13px] text-ocean-300 hover:text-white transition-colors leading-snug"
                   style={{ wordBreak: 'break-all' }}
                 >
-                  contato@sofiasonthebeach.com.br
+                  {settings.publicEmail}
                 </a>
               </li>
               <li className="flex items-start gap-2.5">
                 <MapPinIcon />
                 <span className="text-[12px] text-ocean-500 leading-snug">
-                  Praia da Armação, 900<br />
-                  Búzios — RJ, 28950-000
+                  {hasAddress && <>{settings.address}<br /></>}
+                  {settings.city} — {settings.state}
                 </span>
               </li>
             </ul>
@@ -105,20 +108,28 @@ export function Footer() {
               Siga-nos
             </p>
             <div className="flex items-center gap-3">
-              <a
-                href="#"
-                aria-label="Instagram"
-                className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-ocean-300 hover:text-white hover:border-white/40 transition-colors"
-              >
-                <InstagramIcon />
-              </a>
-              <a
-                href="#"
-                aria-label="Facebook"
-                className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-ocean-300 hover:text-white hover:border-white/40 transition-colors"
-              >
-                <FacebookIcon />
-              </a>
+              {settings.instagramUrl && (
+                <a
+                  href={settings.instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-ocean-300 hover:text-white hover:border-white/40 transition-colors"
+                >
+                  <InstagramIcon />
+                </a>
+              )}
+              {settings.facebookUrl && (
+                <a
+                  href={settings.facebookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-ocean-300 hover:text-white hover:border-white/40 transition-colors"
+                >
+                  <FacebookIcon />
+                </a>
+              )}
               <a
                 href={waHref}
                 target="_blank"

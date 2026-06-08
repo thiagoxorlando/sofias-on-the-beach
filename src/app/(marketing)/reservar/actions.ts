@@ -74,6 +74,35 @@ export async function createReservationAction(
   )
   if (nights < 1) return { error: 'Período mínimo é de 1 noite.' }
 
+  // ── Validate minimum-stay rules (CLAUDE.md: must be checked before creating
+  // a reservation — see the minimum_stay_rules table comment for the overlap rule) ──
+  const { data: roomForRules } = await db
+    .from('rooms')
+    .select('category_id')
+    .eq('id', roomId)
+    .maybeSingle()
+
+  const { data: stayRules } = await db
+    .from('minimum_stay_rules')
+    .select('name, minimum_nights, applies_to, applies_to_ids')
+    .eq('is_active', true)
+    .lt('start_date', checkOut)
+    .gt('end_date', checkIn)
+
+  for (const rule of stayRules ?? []) {
+    const ids = rule.applies_to_ids ?? []
+    const applies =
+      rule.applies_to === 'all' ||
+      (rule.applies_to === 'specific_rooms' && ids.includes(roomId)) ||
+      (rule.applies_to === 'specific_categories' && !!roomForRules?.category_id && ids.includes(roomForRules.category_id))
+
+    if (applies && nights < rule.minimum_nights) {
+      return {
+        error: `Estadia mínima de ${rule.minimum_nights} noites para o período "${rule.name}". Escolha um período mais longo ou outras datas.`,
+      }
+    }
+  }
+
   // ── Re-verify availability ────────────────────────────────────────────────
   const { data: blocked } = await db
     .from('room_availability')

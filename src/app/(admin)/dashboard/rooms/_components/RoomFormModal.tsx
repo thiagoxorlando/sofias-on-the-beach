@@ -172,7 +172,7 @@ export function RoomFormModal({ mode, initial, images, categories, onClose }: Pr
           />
         </FormField>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField label="Preço base (R$) *">
             <input
               name="base_price_brl"

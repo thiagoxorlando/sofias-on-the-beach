@@ -13,10 +13,9 @@ function heroExists(): boolean {
   return fs.existsSync(path.join(process.cwd(), 'public', HERO_IMG.replace(/^\//, '')))
 }
 
-export function HeroSection() {
+export function HeroSection({ whatsapp }: { whatsapp: string }) {
   const hasImage = heroExists()
-  const phone = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5522999999999'
-  const waHref = `https://wa.me/${phone}?text=${WA_MSG}`
+  const waHref = `https://wa.me/${whatsapp}?text=${WA_MSG}`
 
   return (
     <>
@@ -34,7 +33,7 @@ export function HeroSection() {
               fill
               priority
               className="object-cover object-center"
-              sizes="100vw"
+              sizes="(min-width: 768px) 100vw, 0px"
             />
           ) : (
             <div
@@ -125,7 +124,7 @@ export function HeroSection() {
       ────────────────────────────────────────────────── */}
       <section
         className="md:hidden relative overflow-hidden"
-        style={{ height: 'calc(100svh - 64px)', minHeight: '620px' }}
+        style={{ height: 'calc(100svh - 64px)', minHeight: '680px' }}
       >
         {/* Background */}
         <div className="absolute inset-0">
@@ -135,8 +134,8 @@ export function HeroSection() {
               alt="Vista da varanda da pousada com mar de Búzios ao fundo"
               fill
               priority
-              className="object-cover object-[center_35%]"
-              sizes="100vw"
+              className="object-cover object-center"
+              sizes="(max-width: 767px) 100vw, 0px"
             />
           ) : (
             <div
@@ -149,27 +148,31 @@ export function HeroSection() {
           )}
         </div>
 
-        {/* Bottom gradient */}
+        {/* Dark gradient overlay — full-height so the text block reads clearly
+            wherever it sits, strongest toward the bottom where the CTAs are */}
         <div
-          className="absolute inset-x-0 bottom-0 h-[65%] pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              'linear-gradient(to top, rgba(0,12,28,0.84) 0%, rgba(0,12,28,0.52) 44%, transparent 100%)',
+              'linear-gradient(180deg, rgba(0,10,24,0.24) 0%, rgba(0,10,24,0.40) 42%, rgba(0,10,24,0.76) 70%, rgba(0,8,20,0.92) 100%)',
           }}
         />
 
-        {/* Bottom content */}
-        <div className="absolute bottom-0 inset-x-0 px-6 pb-[calc(6rem+env(safe-area-inset-bottom))]">
-          <p className="text-[10px] font-bold text-white/60 uppercase tracking-[0.3em] mb-3">
+        {/* Content — raised off the bottom edge, clear of the floating WhatsApp button */}
+        <div className="absolute inset-x-0 bottom-[calc(7rem+env(safe-area-inset-bottom))] px-6">
+          <p className="text-[10px] font-bold text-white/65 uppercase tracking-[0.32em] mb-3">
             Beira-mar · Búzios · RJ
           </p>
-          <h1 className="font-serif text-[30px] font-bold text-white leading-[1.1] mb-5">
+          <h1 className="font-serif text-4xl font-bold text-white leading-[1.12] mb-3">
             Acorde de frente para o mar em Búzios
           </h1>
+          <p className="font-serif italic text-white/80 text-[15px] mb-6">
+            Seu refúgio. Sua vista. Seu tempo.
+          </p>
           <div className="flex flex-col gap-2.5">
             <Link
               href="/quartos"
-              className="flex items-center justify-center gap-2.5 bg-white text-ocean-900 py-3.5 rounded-xl font-bold text-[13px] uppercase tracking-[0.08em]"
+              className="flex items-center justify-center gap-2.5 bg-white text-ocean-900 py-3 rounded-xl font-bold text-[13px] uppercase tracking-[0.08em] shadow-[0_8px_28px_rgba(0,0,0,0.20)]"
             >
               <CalendarIcon />
               Consultar disponibilidade
@@ -178,9 +181,9 @@ export function HeroSection() {
               href={waHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2.5 border-2 border-white/40 text-white py-3.5 rounded-xl font-bold text-[13px] uppercase tracking-[0.08em]"
+              className="flex items-center justify-center gap-2.5 border border-white/30 bg-white/10 backdrop-blur-sm text-white py-3 rounded-xl font-semibold text-[13px] uppercase tracking-[0.08em]"
             >
-              <WhatsAppIcon className="w-[16px] h-[16px] text-[#25D366] shrink-0" />
+              <WhatsAppIcon className="w-[15px] h-[15px] text-[#25D366] shrink-0" />
               Falar no WhatsApp
             </a>
           </div>

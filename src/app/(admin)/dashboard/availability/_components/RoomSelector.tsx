@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 
 const SELECT =
-  'border border-ocean-200 rounded-xl px-4 py-3 text-[14px] font-semibold text-ocean-900 bg-white min-w-[260px] ' +
+  'border border-ocean-200 rounded-xl px-4 py-3 text-[14px] font-semibold text-ocean-900 bg-white w-full sm:w-auto sm:min-w-[260px] ' +
   'focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent'
 
 export type RoomOption = {

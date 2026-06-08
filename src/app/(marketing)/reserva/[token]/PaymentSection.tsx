@@ -5,8 +5,6 @@ import { generatePixPaymentAction, generateCardPaymentAction } from './paymentAc
 import { PAYMENT_UNAVAILABLE_MESSAGE } from './paymentMessages'
 import { LABEL, INPUT, BTN_PRIMARY, BTN_SECONDARY } from '@/components/booking/ui'
 
-const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5522999999999'
-
 export type InitialPayment = {
   method:       'pix' | 'card'
   invoiceUrl:   string | null
@@ -26,9 +24,11 @@ type View = 'choice' | 'card-form'
 export function PaymentSection({
   reservationToken,
   initialPayment,
+  whatsapp,
 }: {
   reservationToken: string
   initialPayment:   InitialPayment
+  whatsapp:         string
 }) {
   const [payment, setPayment] = useState<PaymentData | null>(initialPayment)
   const [view, setView]       = useState<View>('choice')
@@ -164,6 +164,7 @@ export function PaymentSection({
     return (
       <CardForm
         reservationToken={reservationToken}
+        whatsapp={whatsapp}
         onBack={() => { setView('choice'); setError(null) }}
         onResult={(data) => setPayment(data)}
       />
@@ -177,7 +178,7 @@ export function PaymentSection({
         Escolha o método de pagamento
       </p>
 
-      {error && <PaymentErrorNotice message={error} reservationToken={reservationToken} />}
+      {error && <PaymentErrorNotice message={error} reservationToken={reservationToken} whatsapp={whatsapp} />}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <button
@@ -230,12 +231,12 @@ export function PaymentSection({
 // When the gateway is unavailable, guests get a calm WhatsApp hand-off instead
 // of a technical failure message they can't act on.
 
-function PaymentErrorNotice({ message, reservationToken }: { message: string; reservationToken: string }) {
+function PaymentErrorNotice({ message, reservationToken, whatsapp }: { message: string; reservationToken: string; whatsapp: string }) {
   if (message === PAYMENT_UNAVAILABLE_MESSAGE) {
     const waMsg = encodeURIComponent(
       `Olá! Estou tentando pagar a reserva ${reservationToken}, mas o pagamento online não está disponível no momento. Podem me ajudar?`,
     )
-    const waHref = `https://wa.me/${WA_NUMBER}?text=${waMsg}`
+    const waHref = `https://wa.me/${whatsapp}?text=${waMsg}`
     return (
       <div className="flex flex-col sm:flex-row sm:items-center gap-5 bg-white border border-foam rounded-[24px] px-6 py-6 shadow-[0_18px_54px_-20px_rgba(0,40,80,0.14)]">
         <div className="shrink-0 w-12 h-12 rounded-full bg-mist/40 flex items-center justify-center text-navy-deep">
@@ -269,10 +270,12 @@ function PaymentErrorNotice({ message, reservationToken }: { message: string; re
 
 function CardForm({
   reservationToken,
+  whatsapp,
   onBack,
   onResult,
 }: {
   reservationToken: string
+  whatsapp: string
   onBack: () => void
   onResult: (data: { method: 'card'; invoiceUrl: string | null; pixQrCode: null; pixCopyPaste: null }) => void
 }) {
@@ -442,7 +445,7 @@ function CardForm({
         </div>
       </div>
 
-      {error && <PaymentErrorNotice message={error} reservationToken={reservationToken} />}
+      {error && <PaymentErrorNotice message={error} reservationToken={reservationToken} whatsapp={whatsapp} />}
 
       <button
         type="submit"

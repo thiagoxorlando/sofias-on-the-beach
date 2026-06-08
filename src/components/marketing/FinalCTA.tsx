@@ -4,9 +4,8 @@ const WA_MSG = encodeURIComponent(
   "Olá! Gostaria de consultar disponibilidade na pousada Sofia's on the Beach."
 )
 
-export function FinalCTA() {
-  const phone = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5522999999999'
-  const waHref = `https://wa.me/${phone}?text=${WA_MSG}`
+export function FinalCTA({ whatsapp }: { whatsapp: string }) {
+  const waHref = `https://wa.me/${whatsapp}?text=${WA_MSG}`
 
   return (
     <section className="relative bg-ocean-900 py-16 md:py-20 px-6 md:px-10 overflow-hidden">
