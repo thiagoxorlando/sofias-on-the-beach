@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireModule } from '@/lib/auth'
 
 export const metadata = { title: "Visão geral — Painel Sofia's" }
 
@@ -31,6 +32,8 @@ async function loadCounts() {
 }
 
 export default async function DashboardOverviewPage() {
+  await requireModule('overview')
+
   const counts = await loadCounts()
 
   const OVERVIEW_CARDS = [

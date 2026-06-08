@@ -6,10 +6,13 @@ function imgExists(src: string): boolean {
   return fs.existsSync(path.join(process.cwd(), 'public', src.replace(/^\//, '')))
 }
 
-const _LOC_PRIMARY = '/images/location/buzios-beachfront.jpg'
+const _LOC_PRIMARY = '/images/hero/beach-window-view.png'
+const _LOC_SECONDARY = '/images/location/buzios-beachfront.jpg'
 const _LOC_FALLBACK = '/images/experience/praia-em-frente.jpg'
 const LOCATION_IMG: string | null = imgExists(_LOC_PRIMARY)
   ? _LOC_PRIMARY
+  : imgExists(_LOC_SECONDARY)
+  ? _LOC_SECONDARY
   : imgExists(_LOC_FALLBACK)
   ? _LOC_FALLBACK
   : null

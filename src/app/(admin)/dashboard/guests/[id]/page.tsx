@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireModule } from '@/lib/auth'
 import { ReservationStatusBadge, PaymentStatusBadge } from '../../reservations/_components/badges'
 import { GuestNotesPanel } from './_components/GuestNotesPanel'
 
@@ -66,6 +67,8 @@ type ReservationJoin = {
 }
 
 export default async function GuestDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireModule('guests')
+
   const { id } = await params
   const db = createAdminClient()
 

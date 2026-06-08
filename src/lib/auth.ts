@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import { canAccessModule, type Module } from '@/lib/permissions'
 
 export type GuestSession = {
   id: string
@@ -65,6 +66,24 @@ export async function getCurrentGuest(): Promise<GuestSession | null> {
 export async function requireAdmin(): Promise<AdminSession> {
   const admin = await getCurrentAdmin()
   if (!admin) redirect('/login')
+  return admin
+}
+
+// Guards a server-rendered admin page behind module access. Reuses
+// requireAdmin() for the session/active checks (so /login redirects and
+// deactivated-account handling stay exactly as they are), then enforces the
+// role→module map from src/lib/permissions.ts on top.
+//
+// 'overview' (the /dashboard landing page) never redirects on denial — it's
+// the universal post-login destination, and redirecting away from it could
+// loop for roles whose dedicated dashboards don't exist yet (reception,
+// housekeeping, maintenance, finance). Every other module redirects back to
+// /dashboard, which always succeeds.
+export async function requireModule(module: Module): Promise<AdminSession> {
+  const admin = await requireAdmin()
+  if (!canAccessModule(admin.role, module) && module !== 'overview') {
+    redirect('/dashboard')
+  }
   return admin
 }
 

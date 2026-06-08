@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { signOutAction } from '../actions'
+import { getVisibleModules, type Module } from '@/lib/permissions'
 
 type AdminUser = {
   email: string
@@ -13,19 +14,25 @@ type AdminUser = {
 }
 
 const ROLE_LABEL: Record<string, string> = {
-  super_admin: 'Super Admin',
-  admin:       'Administrador',
-  staff:       'Equipe',
+  super_admin:  'Super Admin',
+  admin:        'Administrador',
+  manager:      'Gerente',
+  reception:    'Recepção',
+  housekeeping: 'Governança',
+  maintenance:  'Manutenção',
+  finance:      'Financeiro',
+  staff:        'Equipe',
 }
 
-const NAV_LINKS = [
-  { href: '/dashboard',               label: 'Visão geral',     icon: 'home'         },
-  { href: '/dashboard/rooms',         label: 'Quartos',         icon: 'bed'          },
-  { href: '/dashboard/reservations',  label: 'Reservas',        icon: 'calendar'     },
-  { href: '/dashboard/guests',        label: 'Hóspedes',        icon: 'users'        },
-  { href: '/dashboard/availability',  label: 'Disponibilidade', icon: 'grid'         },
-  { href: '/dashboard/payments',      label: 'Financeiro',      icon: 'coin'         },
-  { href: '/dashboard/settings',      label: 'Configurações',   icon: 'settings'     },
+const NAV_LINKS: { href: string; label: string; icon: string; module: Module }[] = [
+  { href: '/dashboard',               label: 'Visão geral',     icon: 'home',     module: 'overview'     },
+  { href: '/dashboard/rooms',         label: 'Quartos',         icon: 'bed',      module: 'rooms'        },
+  { href: '/dashboard/reservations',  label: 'Reservas',        icon: 'calendar', module: 'reservations' },
+  { href: '/dashboard/reception',     label: 'Recepção',        icon: 'reception', module: 'reception'   },
+  { href: '/dashboard/guests',        label: 'Hóspedes',        icon: 'users',    module: 'guests'       },
+  { href: '/dashboard/availability',  label: 'Disponibilidade', icon: 'grid',     module: 'availability' },
+  { href: '/dashboard/payments',      label: 'Financeiro',      icon: 'coin',     module: 'payments'     },
+  { href: '/dashboard/settings',      label: 'Configurações',   icon: 'settings', module: 'settings'     },
 ]
 
 export function DashboardShell({
@@ -37,6 +44,8 @@ export function DashboardShell({
 }) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const visibleModules = getVisibleModules(adminUser.role)
+  const navLinks = NAV_LINKS.filter((link) => visibleModules.includes(link.module))
 
   return (
     <div className="flex h-screen overflow-hidden bg-ocean-50/30">
@@ -78,7 +87,7 @@ export function DashboardShell({
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {NAV_LINKS.map((link) => {
+          {navLinks.map((link) => {
             const isActive =
               link.href === '/dashboard'
                 ? pathname === '/dashboard'
@@ -171,6 +180,7 @@ function NavIcon({ name, active }: { name: string; active: boolean }) {
     case 'home':     return <HomeIcon     className={cls} />
     case 'bed':      return <BedIcon      className={cls} />
     case 'calendar': return <CalendarIcon className={cls} />
+    case 'reception': return <BellDeskIcon className={cls} />
     case 'users':    return <UsersIcon    className={cls} />
     case 'grid':     return <GridIcon     className={cls} />
     case 'coin':     return <CoinIcon     className={cls} />
@@ -216,6 +226,15 @@ function CalendarIcon({ className }: { className?: string }) {
       <line x1={16} y1={2} x2={16} y2={6} />
       <line x1={8} y1={2} x2={8} y2={6} />
       <line x1={3} y1={10} x2={21} y2={10} />
+    </svg>
+  )
+}
+
+function BellDeskIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
   )
 }

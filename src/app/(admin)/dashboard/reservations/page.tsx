@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireModule } from '@/lib/auth'
 import { ReservationsFilters } from './_components/ReservationsFilters'
 import { ReservationStatusBadge, PaymentStatusBadge } from './_components/badges'
 
@@ -80,6 +81,8 @@ type SP = Promise<{
 }>
 
 export default async function ReservationsPage({ searchParams }: { searchParams: SP }) {
+  await requireModule('reservations')
+
   const sp = await searchParams
   const q              = (sp.q ?? '').trim().toLowerCase()
   const statusFilter   = sp.status ?? ''

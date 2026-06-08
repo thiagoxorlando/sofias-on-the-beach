@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireModule } from '@/lib/auth'
 import { getRoomCalendarData } from '@/lib/roomCalendar'
 import { RoomSelector, type RoomOption } from './_components/RoomSelector'
 import { RoomCalendarPanel } from './_components/RoomCalendarPanel'
@@ -37,6 +38,8 @@ function one<T>(rel: T | T[] | null): T | null {
 type SP = Promise<{ room_id?: string | string[]; month?: string | string[] }>
 
 export default async function AvailabilityPage({ searchParams }: { searchParams: SP }) {
+  await requireModule('availability')
+
   const sp = await searchParams
   const db = createAdminClient()
 

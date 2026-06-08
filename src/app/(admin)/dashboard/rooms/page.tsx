@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireModule } from '@/lib/auth'
 import { RoomsManager } from './_components/RoomsManager'
 import type { CategoryRow, RoomRow, ImageRow } from './_components/types'
 import type { Metadata } from 'next'
@@ -6,6 +7,8 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: "Quartos — Sofia's Admin" }
 
 export default async function RoomsPage() {
+  await requireModule('rooms')
+
   const db = createAdminClient()
 
   const [{ data: categoriesData }, { data: roomsData }, { data: imagesData }] = await Promise.all([

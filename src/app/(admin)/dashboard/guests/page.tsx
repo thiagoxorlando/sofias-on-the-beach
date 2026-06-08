@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireModule } from '@/lib/auth'
 import { GuestsSearch } from './_components/GuestsSearch'
 
 export const metadata: Metadata = { title: "Hóspedes — Painel Sofia's" }
@@ -91,6 +92,8 @@ function summarize(reservations: ReservationJoin[] | null): {
 type SP = Promise<{ q?: string; page?: string }>
 
 export default async function GuestsPage({ searchParams }: { searchParams: SP }) {
+  await requireModule('guests')
+
   const sp = await searchParams
   const q = (sp.q ?? '').trim().toLowerCase()
   const page = Math.max(1, parseInt(sp.page ?? '1', 10) || 1)

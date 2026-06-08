@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireModule } from '@/lib/auth'
 import { SettingsForm, type SiteSettingsFormValues } from './_components/SettingsForm'
 
 export const metadata: Metadata = { title: "Configurações — Painel Sofia's" }
@@ -11,6 +12,8 @@ function asString(value: unknown): string {
 }
 
 export default async function SettingsPage() {
+  await requireModule('settings')
+
   const db = createAdminClient()
   const { data } = await db.from('settings').select('key, value')
   const byKey = new Map((data ?? []).map((row) => [row.key, row.value]))

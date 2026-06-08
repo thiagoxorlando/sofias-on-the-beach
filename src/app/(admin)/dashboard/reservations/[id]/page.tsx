@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireModule } from '@/lib/auth'
 import { ReservationStatusBadge, PaymentStatusBadge, PAYMENT_LABELS } from '../_components/badges'
 import { ReservationActions } from './_components/ReservationActions'
 import { ManualPaymentTrigger } from './_components/ManualPaymentTrigger'
@@ -62,6 +63,8 @@ function one<T>(rel: T | T[] | null): T | null {
 }
 
 export default async function ReservationDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireModule('reservations')
+
   const { id } = await params
   const db = createAdminClient()
 

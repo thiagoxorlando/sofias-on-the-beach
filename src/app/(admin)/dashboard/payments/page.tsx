@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireModule } from '@/lib/auth'
 import { PaymentsFilters } from './_components/PaymentsFilters'
 import { PaymentRowActions } from './_components/PaymentRowActions'
 import { ReceiptLink } from './_components/ReceiptLink'
@@ -130,6 +131,8 @@ type SP = Promise<{
 }>
 
 export default async function PaymentsPage({ searchParams }: { searchParams: SP }) {
+  await requireModule('payments')
+
   const sp = await searchParams
   const q             = (sp.q ?? '').trim().toLowerCase()
   const statusFilter  = sp.status ?? ''
