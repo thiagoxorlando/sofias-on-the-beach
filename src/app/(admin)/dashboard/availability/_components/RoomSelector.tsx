@@ -3,8 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 
 const SELECT =
-  'border border-ocean-200 rounded-xl px-4 py-3 text-[14px] font-semibold text-ocean-900 bg-white w-full sm:w-auto sm:min-w-[260px] ' +
-  'focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent'
+  'border border-admin-border rounded-xl px-4 py-3 text-[14px] font-semibold text-slate-800 bg-white w-full sm:w-auto sm:min-w-[260px] ' +
+  'focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/30 focus:border-admin-sidebar-act/40'
 
 export type RoomOption = {
   id: string
@@ -31,8 +31,8 @@ export function RoomSelector({ rooms, selectedRoomId }: { rooms: RoomOption[]; s
   }
 
   return (
-    <div className="bg-white rounded-[18px] border border-ocean-100 p-5 md:p-7">
-      <p className="text-[10px] font-bold text-ocean-500 uppercase tracking-[0.14em] mb-2.5">
+    <div className="bg-white rounded-2xl border border-admin-border shadow-sm p-5 md:p-7">
+      <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.14em] mb-2.5">
         Quarto selecionado
       </p>
 
@@ -66,12 +66,12 @@ function InfoPill({ label, value, accent }: { label: string; value: string; acce
     <span
       className={
         accent
-          ? 'inline-flex items-center gap-1.5 rounded-full bg-navy/5 border border-navy/15 px-3.5 py-2 text-[12.5px]'
-          : 'inline-flex items-center gap-1.5 rounded-full bg-ocean-50 border border-ocean-100 px-3.5 py-2 text-[12.5px]'
+          ? 'inline-flex items-center gap-1.5 rounded-full bg-admin-sidebar/5 border border-admin-sidebar/15 px-3.5 py-2 text-[12.5px]'
+          : 'inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-admin-border px-3.5 py-2 text-[12.5px]'
       }
     >
-      <span className="text-ocean-400">{label}:</span>
-      <span className={accent ? 'font-bold text-navy' : 'font-bold text-ocean-800'}>{value}</span>
+      <span className="text-slate-400">{label}:</span>
+      <span className={accent ? 'font-bold text-admin-sidebar' : 'font-bold text-slate-700'}>{value}</span>
     </span>
   )
 }

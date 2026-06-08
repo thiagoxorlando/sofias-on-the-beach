@@ -19,17 +19,17 @@ export type SelectionRange = {
   nights: number
 }
 
-const CARD = 'bg-white rounded-[18px] border border-ocean-100 overflow-hidden'
+const CARD = 'bg-white rounded-2xl border border-admin-border shadow-sm overflow-hidden'
 
 const INPUT =
-  'w-full border border-ocean-200 rounded-xl px-3.5 py-2.5 text-[13px] text-ocean-900 placeholder:text-ocean-400 bg-white ' +
-  'focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent'
+  'w-full border border-admin-border rounded-xl px-3.5 py-2.5 text-[13px] text-slate-800 placeholder:text-slate-400 bg-white ' +
+  'focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/30 focus:border-admin-sidebar-act/40'
 
 const SELECT = INPUT
 
 const BTN_PRIMARY =
-  'inline-flex items-center justify-center rounded-xl bg-navy text-white px-5 py-2.5 ' +
-  'text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-navy-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  'inline-flex items-center justify-center rounded-xl bg-admin-sidebar text-white px-5 py-2.5 ' +
+  'text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-admin-sidebar-act transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 
 const REASON_PRESETS = [
   { value: 'Manutenção',                    label: 'Manutenção' },
@@ -63,15 +63,15 @@ export function SelectionActionPanel({
 
   return (
     <div className={CARD}>
-      <div className="px-5 md:px-7 py-5 border-b border-ocean-100 flex items-start justify-between flex-wrap gap-3">
+      <div className="px-5 md:px-7 py-5 border-b border-admin-border flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h2 className="font-serif text-[18px] font-bold text-navy">O que deseja fazer com este período?</h2>
-          <p className="text-[13px] text-ocean-600 mt-1">
+          <h2 className="text-[18px] font-bold text-admin-sidebar">O que deseja fazer com este período?</h2>
+          <p className="text-[13px] text-slate-600 mt-1">
             {formatDateFull(range.startDate)} até {formatDateFull(range.lastNight)}
             {' · '}{range.nights} noite{range.nights !== 1 ? 's' : ''}
           </p>
         </div>
-        <button type="button" onClick={onCancel} className="text-[12px] font-semibold text-ocean-500 hover:text-ocean-800 transition-colors shrink-0">
+        <button type="button" onClick={onCancel} className="text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors shrink-0">
           Limpar seleção
         </button>
       </div>
@@ -111,7 +111,7 @@ function AvailableAction({ range }: { range: SelectionRange }) {
       <input type="hidden" name="start_date" value={range.startDate} />
       <input type="hidden" name="end_date" value={range.endDate} />
 
-      <p className="text-[13px] text-ocean-600 leading-relaxed">
+      <p className="text-[13px] text-slate-600 leading-relaxed">
         Remove bloqueios manuais deste período. Reservas não serão alteradas.
       </p>
 
@@ -186,7 +186,7 @@ function RateAction({ range }: { range: SelectionRange }) {
         <input type="text" name="name" placeholder="Ex.: Alta temporada, Réveillon, Fim de semana…" className={INPUT} />
       </Field>
 
-      <p className="text-[11px] text-ocean-400 leading-relaxed">
+      <p className="text-[11px] text-slate-400 leading-relaxed">
         Substitui qualquer tarifa personalizada já existente que se sobreponha a este período.
       </p>
 
@@ -209,7 +209,7 @@ function ResetRateAction({ range }: { range: SelectionRange }) {
       <input type="hidden" name="start_date" value={range.startDate} />
       <input type="hidden" name="end_date" value={range.endDate} />
 
-      <p className="text-[13px] text-ocean-600 leading-relaxed">
+      <p className="text-[13px] text-slate-600 leading-relaxed">
         Remove tarifas personalizadas deste período e volta para a tarifa base do quarto.
       </p>
 
@@ -222,10 +222,6 @@ function ResetRateAction({ range }: { range: SelectionRange }) {
 }
 
 // ── Manual block briefing ─────────────────────────────────────────────────────
-// Surfaces *why* each manually-blocked date in the selection is blocked, so
-// staff can decide whether it's safe to clear before acting — reservation
-// blocks are intentionally excluded since those already link to their own
-// detail page from the calendar cell.
 
 function ManualBlocksBriefing({ blocks }: { blocks: ManualBlockBrief[] }) {
   return (
@@ -254,8 +250,8 @@ function ActionTab({ active, onClick, children }: { active: boolean; onClick: ()
       onClick={onClick}
       className={
         active
-          ? 'rounded-xl px-4 py-2.5 text-[12.5px] font-bold bg-navy text-white transition-colors'
-          : 'rounded-xl px-4 py-2.5 text-[12.5px] font-semibold bg-ocean-50 text-ocean-600 hover:bg-ocean-100 transition-colors'
+          ? 'rounded-xl px-4 py-2.5 text-[12.5px] font-bold bg-admin-sidebar text-white transition-colors'
+          : 'rounded-xl px-4 py-2.5 text-[12.5px] font-semibold bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors'
       }
     >
       {children}
@@ -266,7 +262,7 @@ function ActionTab({ active, onClick, children }: { active: boolean; onClick: ()
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-[10px] font-bold text-ocean-500 uppercase tracking-[0.10em] mb-1.5">
+      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.10em] mb-1.5">
         {label}
       </label>
       {children}

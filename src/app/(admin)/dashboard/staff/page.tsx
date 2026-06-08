@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireModule } from '@/lib/auth'
+import { AdminPageHeader } from '@/components/admin/AdminUI'
 import { StaffManager } from './_components/StaffManager'
 import type { StaffRow } from './_components/types'
 
@@ -21,14 +22,11 @@ export default async function StaffPage() {
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl space-y-8">
 
-      {/* Header */}
-      <div>
-        <p className="text-[11px] font-bold text-ocean-600 uppercase tracking-[0.28em] mb-1.5">Administração</p>
-        <h1 className="font-serif text-[26px] md:text-[30px] font-bold text-ocean-900">Equipe</h1>
-        <p className="text-[13px] text-ocean-500 mt-1.5">
-          Gerencie as contas de acesso da equipe e os cargos de cada pessoa.
-        </p>
-      </div>
+      <AdminPageHeader
+        eyebrow="Administração"
+        title="Equipe"
+        subtitle="Gerencie as contas de acesso da equipe e os cargos de cada pessoa."
+      />
 
       <StaffManager
         staff={data ?? []}

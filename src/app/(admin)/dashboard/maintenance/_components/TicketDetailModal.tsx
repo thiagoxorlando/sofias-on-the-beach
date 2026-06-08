@@ -11,8 +11,8 @@ import { PhotoLink } from './PhotoLink'
 import type { StaffOption, TicketRow } from './types'
 
 const TEXTAREA =
-  'w-full border border-ocean-200 rounded-xl px-3.5 py-2.5 text-[13px] text-foreground placeholder:text-foreground/35 ' +
-  'focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent bg-white resize-none'
+  'w-full border border-admin-border rounded-xl px-3.5 py-2.5 text-[13px] text-foreground placeholder:text-foreground/35 ' +
+  'focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/30 focus:border-admin-sidebar-act/40 bg-white resize-none'
 
 const PRIORITY_OPTIONS = [
   { value: 'low',    label: 'Baixa' },
@@ -66,14 +66,14 @@ export function TicketDetailModal({ ticket, staff, onClose }: {
 
   return (
     <ModalOverlay onClose={onClose}>
-      <h2 className="font-serif text-[20px] font-bold text-ocean-900 mb-1">{ticket.title}</h2>
-      <p className="text-[12px] text-ocean-500 mb-5">
+      <h2 className="text-[20px] font-bold text-slate-800 mb-1">{ticket.title}</h2>
+      <p className="text-[12px] text-slate-500 mb-5">
         {ticket.roomName ?? 'Sem quarto específico'} · Aberto por {ticket.reportedByName ?? 'Equipe'} em {formatDate(ticket.created_at)}
       </p>
 
       {/* Status actions */}
-      <div className="mb-5 pb-5 border-b border-ocean-100 space-y-2.5">
-        <p className="text-[11px] font-semibold text-ocean-900 uppercase tracking-[0.10em]">Status</p>
+      <div className="mb-5 pb-5 border-b border-slate-100 space-y-2.5">
+        <p className="text-[11px] font-semibold text-slate-700 uppercase tracking-[0.10em]">Status</p>
         <div className="flex flex-wrap gap-2">
           {STATUS_BUTTONS.map((btn) => {
             const isCurrent = btn.status === status
@@ -85,8 +85,8 @@ export function TicketDetailModal({ ticket, staff, onClose }: {
                 onClick={() => changeStatus(btn.status, btn.label)}
                 className={
                   isCurrent
-                    ? 'inline-flex items-center justify-center rounded-xl bg-ocean-900 text-white px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.06em] cursor-default'
-                    : 'inline-flex items-center justify-center rounded-xl border border-ocean-200 text-ocean-700 px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.06em] hover:bg-ocean-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                    ? 'inline-flex items-center justify-center rounded-xl bg-admin-sidebar text-white px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.06em] cursor-default'
+                    : 'inline-flex items-center justify-center rounded-xl border border-admin-border text-slate-600 px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.06em] hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
                 }
               >
                 {btn.label}
@@ -95,7 +95,7 @@ export function TicketDetailModal({ ticket, staff, onClose }: {
           })}
         </div>
         {ticket.blocks_room && status === 'fixed' && (
-          <p className="text-[11px] text-ocean-400">
+          <p className="text-[11px] text-slate-400">
             Ao marcar como resolvido, o bloqueio do calendário criado por este chamado é removido automaticamente.
           </p>
         )}
@@ -105,15 +105,15 @@ export function TicketDetailModal({ ticket, staff, onClose }: {
           </p>
         )}
         {ticket.resolved_at && (
-          <p className="text-[11px] text-ocean-400">Resolvido em {formatDateTime(ticket.resolved_at)}</p>
+          <p className="text-[11px] text-slate-400">Resolvido em {formatDateTime(ticket.resolved_at)}</p>
         )}
       </div>
 
       {/* Block info */}
       {ticket.blocks_room && (
-        <div className="mb-5 pb-5 border-b border-ocean-100">
-          <p className="text-[11px] font-semibold text-ocean-900 uppercase tracking-[0.10em] mb-1.5">Bloqueio do quarto</p>
-          <p className="text-[12px] text-ocean-600">
+        <div className="mb-5 pb-5 border-b border-slate-100">
+          <p className="text-[11px] font-semibold text-slate-700 uppercase tracking-[0.10em] mb-1.5">Bloqueio do quarto</p>
+          <p className="text-[12px] text-slate-600">
             {ticket.blocked_start_date && ticket.blocked_end_date
               ? `${formatDate(ticket.blocked_start_date)} até ${formatDate(ticket.blocked_end_date)} (saída)`
               : '—'}
@@ -123,8 +123,8 @@ export function TicketDetailModal({ ticket, staff, onClose }: {
 
       {/* Photos */}
       {ticket.photo_paths.length > 0 && (
-        <div className="mb-5 pb-5 border-b border-ocean-100">
-          <p className="text-[11px] font-semibold text-ocean-900 uppercase tracking-[0.10em] mb-2">Fotos</p>
+        <div className="mb-5 pb-5 border-b border-slate-100">
+          <p className="text-[11px] font-semibold text-slate-700 uppercase tracking-[0.10em] mb-2">Fotos</p>
           <div className="flex flex-wrap gap-3">
             {ticket.photo_paths.map((path, i) => (
               <PhotoLink key={path} ticketId={ticket.id} photoPath={path} index={i} canDelete />
@@ -165,7 +165,7 @@ export function TicketDetailModal({ ticket, staff, onClose }: {
             name="photos"
             accept="image/jpeg,image/jpg,image/png,image/webp"
             multiple
-            className="block w-full text-[12px] text-ocean-600 file:mr-3 file:rounded-lg file:border-0 file:bg-ocean-100 file:px-3.5 file:py-2 file:text-[11px] file:font-bold file:uppercase file:tracking-[0.06em] file:text-ocean-700 hover:file:bg-ocean-200"
+            className="block w-full text-[12px] text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3.5 file:py-2 file:text-[11px] file:font-bold file:uppercase file:tracking-[0.06em] file:text-slate-700 hover:file:bg-slate-200"
           />
         </FormField>
 

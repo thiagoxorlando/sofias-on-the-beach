@@ -29,7 +29,7 @@ function formatDate(dateStr: string): string {
 }
 
 type GuestJoin = { full_name: string; email: string; phone: string | null }
-type RoomJoin = { name: string; housekeeping_status: string }
+type RoomJoin = { id: string; name: string; housekeeping_status: string }
 type PaymentJoin = { status: string; created_at: string }
 
 type ReservationRow = {
@@ -60,6 +60,7 @@ type Row = {
   guestName: string
   guestEmail: string
   guestPhone: string | null
+  roomId: string | null
   roomName: string
   roomHousekeepingStatus: string | null
   paymentStatus: string | null
@@ -84,7 +85,7 @@ function formatBRL(value: number): string {
 const SELECT = `
   id, token, status, check_in, check_out, adults, children, total_brl, special_requests,
   guests ( full_name, email, phone ),
-  rooms ( name, housekeeping_status ),
+  rooms ( id, name, housekeeping_status ),
   payments ( status, created_at )
 `
 
@@ -104,6 +105,7 @@ function toRow(r: ReservationRow, latestNote: string | null): Row {
     guestName: guest?.full_name ?? '—',
     guestEmail: guest?.email ?? '—',
     guestPhone: guest?.phone ?? null,
+    roomId: room?.id ?? null,
     roomName: room?.name ?? '—',
     roomHousekeepingStatus: room?.housekeeping_status ?? null,
     paymentStatus: latestPaymentStatus(r.payments),
@@ -141,13 +143,24 @@ function attentionFor(checkIns: Row[], staying: Row[]): AttentionRow[] {
   return out
 }
 
-function checkInWarningsFor(row: Row): string[] {
+function checkInWarningsFor(row: Row, pendingCharges: number): string[] {
   const warnings: string[] = []
   if (row.paymentStatus !== 'paid') warnings.push('Pagamento ainda não confirmado.')
   if (row.roomHousekeepingStatus && row.roomHousekeepingStatus !== 'ready') {
     warnings.push(`Quarto ainda não está pronto (${HOUSEKEEPING_READY_LABEL[row.roomHousekeepingStatus] ?? row.roomHousekeepingStatus}).`)
   }
   if (row.specialRequests) warnings.push('Hóspede tem pedidos especiais — confira antes de liberar o check-in.')
+  warnings.push('Imprima e assine a ficha do hóspede antes de liberar o check-in.')
+  if (pendingCharges > 0) warnings.push(`${pendingCharges} cobrança${pendingCharges > 1 ? 's' : ''} extra pendente${pendingCharges > 1 ? 's' : ''} — resolva antes do check-in.`)
+  return warnings
+}
+
+function checkOutWarningsFor(row: Row, pendingCharges: number): string[] {
+  const warnings: string[] = []
+  if (pendingCharges > 0) warnings.push(`${pendingCharges} cobrança${pendingCharges > 1 ? 's' : ''} extra pendente${pendingCharges > 1 ? 's' : ''} — confirme o pagamento antes de liberar.`)
+  if (row.paymentStatus !== 'paid') warnings.push('Pagamento da reserva ainda não confirmado.')
+  warnings.push('Recolha as chaves e toalhas de praia do hóspede.')
+  warnings.push('O quarto será enviado para Governança (sujo) após o check-out.')
   return warnings
 }
 
@@ -189,19 +202,33 @@ export default async function ReceptionPage() {
   ]
   const reservationIds = [...new Set(allReservations.map((r) => r.id))]
 
-  const { data: notesData } = reservationIds.length > 0
-    ? await db
-        .from('reservation_notes')
-        .select('reservation_id, note, created_at')
-        .in('reservation_id', reservationIds)
-        .order('created_at', { ascending: false })
-    : { data: [] as { reservation_id: string; note: string; created_at: string }[] }
+  const [{ data: notesData }, { data: pendingChargesData }] = await Promise.all([
+    reservationIds.length > 0
+      ? db
+          .from('reservation_notes')
+          .select('reservation_id, note, created_at')
+          .in('reservation_id', reservationIds)
+          .order('created_at', { ascending: false })
+      : Promise.resolve({ data: [] as { reservation_id: string; note: string; created_at: string }[], error: null }),
+    reservationIds.length > 0
+      ? db
+          .from('reservation_charges')
+          .select('reservation_id')
+          .in('reservation_id', reservationIds)
+          .eq('status', 'pending')
+      : Promise.resolve({ data: [] as { reservation_id: string }[], error: null }),
+  ])
 
   const latestNoteByReservation = new Map<string, string>()
   for (const n of notesData ?? []) {
     if (!latestNoteByReservation.has(n.reservation_id)) latestNoteByReservation.set(n.reservation_id, n.note)
   }
   const noteFor = (id: string) => latestNoteByReservation.get(id) ?? null
+
+  const pendingCountBy = new Map<string, number>()
+  for (const c of pendingChargesData ?? []) {
+    pendingCountBy.set(c.reservation_id, (pendingCountBy.get(c.reservation_id) ?? 0) + 1)
+  }
 
   const checkIns = (checkInsData ?? []).map((r) => toRow(r, noteFor(r.id)))
   const checkOuts = (checkOutsData ?? []).map((r) => toRow(r, noteFor(r.id)))
@@ -252,10 +279,12 @@ export default async function ReceptionPage() {
                 actions={
                   <ReceptionActionBar
                     reservationId={row.id}
+                    roomId={row.roomId}
+                    roomName={row.roomName}
                     action={row.status === 'confirmed' && row.checkIn === today ? 'check_in' : null}
                     waHref={waHrefFor(row)}
                     note={null}
-                    checkInWarnings={checkInWarningsFor(row)}
+                    checkInWarnings={checkInWarningsFor(row, pendingCountBy.get(row.id) ?? 0)}
                   />
                 }
               />
@@ -271,10 +300,12 @@ export default async function ReceptionPage() {
         renderAction={(row) => (
           <ReceptionActionBar
             reservationId={row.id}
+            roomId={row.roomId}
+            roomName={row.roomName}
             action={row.status === 'confirmed' ? 'check_in' : null}
             waHref={waHrefFor(row)}
             note={row.status !== 'confirmed' ? 'Aguardando confirmação de pagamento para liberar o check-in.' : null}
-            checkInWarnings={checkInWarningsFor(row)}
+            checkInWarnings={checkInWarningsFor(row, pendingCountBy.get(row.id) ?? 0)}
           />
         )}
       />
@@ -286,9 +317,12 @@ export default async function ReceptionPage() {
         renderAction={(row) => (
           <ReceptionActionBar
             reservationId={row.id}
+            roomId={row.roomId}
+            roomName={row.roomName}
             action={row.status === 'checked_in' ? 'check_out' : null}
             waHref={waHrefFor(row)}
             note={row.status !== 'checked_in' ? 'Check-in ainda não foi registrado para esta reserva.' : null}
+            checkOutWarnings={row.status === 'checked_in' ? checkOutWarningsFor(row, pendingCountBy.get(row.id) ?? 0) : undefined}
           />
         )}
       />
@@ -298,7 +332,7 @@ export default async function ReceptionPage() {
         emptyText="Nenhum hóspede com check-in ativo no momento."
         rows={staying}
         renderAction={(row) => (
-          <ReceptionActionBar reservationId={row.id} action={null} waHref={waHrefFor(row)} note={null} />
+          <ReceptionActionBar reservationId={row.id} roomId={row.roomId} roomName={row.roomName} action={null} waHref={waHrefFor(row)} note={null} />
         )}
       />
 
@@ -307,7 +341,7 @@ export default async function ReceptionPage() {
         emptyText="Nenhuma chegada prevista para os próximos 7 dias."
         rows={upcoming}
         renderAction={(row) => (
-          <ReceptionActionBar reservationId={row.id} action={null} waHref={waHrefFor(row)} note={null} />
+          <ReceptionActionBar reservationId={row.id} roomId={row.roomId} roomName={row.roomName} action={null} waHref={waHrefFor(row)} note={null} />
         )}
       />
 

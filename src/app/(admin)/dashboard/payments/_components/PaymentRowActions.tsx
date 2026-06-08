@@ -9,12 +9,12 @@ import {
 import { ManualPaymentModal } from './ManualPaymentModal'
 
 const BTN_PRIMARY =
-  'inline-flex items-center justify-center rounded-xl bg-ocean-900 text-white px-3.5 py-2 ' +
-  'text-[11px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  'inline-flex items-center justify-center rounded-xl bg-admin-sidebar text-white px-3.5 py-2 ' +
+  'text-[11px] font-bold uppercase tracking-[0.08em] hover:bg-admin-sidebar-act transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 
 const BTN_SECONDARY =
-  'inline-flex items-center justify-center rounded-xl border border-ocean-200 text-ocean-700 px-3.5 py-2 ' +
-  'text-[11px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  'inline-flex items-center justify-center rounded-xl border border-admin-border text-slate-600 px-3.5 py-2 ' +
+  'text-[11px] font-bold uppercase tracking-[0.08em] hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 
 const BTN_DANGER =
   'inline-flex items-center justify-center rounded-xl border border-red-200 text-red-600 px-3.5 py-2 ' +

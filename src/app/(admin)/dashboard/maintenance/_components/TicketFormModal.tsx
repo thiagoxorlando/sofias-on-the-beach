@@ -6,8 +6,8 @@ import { ModalOverlay, FormField, INPUT, BTN_PRIMARY, BTN_SECONDARY, ErrorMessag
 import type { RoomOption, StaffOption } from './types'
 
 const TEXTAREA =
-  'w-full border border-ocean-200 rounded-xl px-3.5 py-2.5 text-[13px] text-foreground placeholder:text-foreground/35 ' +
-  'focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent bg-white resize-none'
+  'w-full border border-admin-border rounded-xl px-3.5 py-2.5 text-[13px] text-foreground placeholder:text-foreground/35 ' +
+  'focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/30 focus:border-admin-sidebar-act/40 bg-white resize-none'
 
 const PRIORITY_OPTIONS = [
   { value: 'low',    label: 'Baixa' },
@@ -33,7 +33,7 @@ export function TicketFormModal({ rooms, staff, onClose }: Props) {
 
   return (
     <ModalOverlay onClose={onClose}>
-      <h2 className="font-serif text-[20px] font-bold text-ocean-900 mb-6">Novo chamado de manutenção</h2>
+      <h2 className="text-[20px] font-bold text-slate-800 mb-6">Novo chamado de manutenção</h2>
 
       <form action={formAction} className="space-y-4">
         <FormField label="Título *">
@@ -71,11 +71,11 @@ export function TicketFormModal({ rooms, staff, onClose }: Props) {
             name="photos"
             accept="image/jpeg,image/jpg,image/png,image/webp"
             multiple
-            className="block w-full text-[12px] text-ocean-600 file:mr-3 file:rounded-lg file:border-0 file:bg-ocean-100 file:px-3.5 file:py-2 file:text-[11px] file:font-bold file:uppercase file:tracking-[0.06em] file:text-ocean-700 hover:file:bg-ocean-200"
+            className="block w-full text-[12px] text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3.5 file:py-2 file:text-[11px] file:font-bold file:uppercase file:tracking-[0.06em] file:text-slate-700 hover:file:bg-slate-200"
           />
         </FormField>
 
-        <div className="border-t border-ocean-100 pt-4">
+        <div className="border-t border-slate-100 pt-4">
           <label className="flex items-center gap-2.5 cursor-pointer">
             <input
               type="checkbox"
@@ -85,10 +85,10 @@ export function TicketFormModal({ rooms, staff, onClose }: Props) {
               disabled={!roomId}
               className="w-4 h-4 rounded"
             />
-            <span className="text-[13px] font-semibold text-ocean-900">Bloquear quarto durante o reparo</span>
+            <span className="text-[13px] font-semibold text-slate-800">Bloquear quarto durante o reparo</span>
           </label>
           {!roomId && (
-            <p className="text-[11px] text-ocean-400 mt-1.5 ml-6">Selecione um quarto acima para poder bloqueá-lo.</p>
+            <p className="text-[11px] text-slate-400 mt-1.5 ml-6">Selecione um quarto acima para poder bloqueá-lo.</p>
           )}
 
           {blocksRoom && roomId && (

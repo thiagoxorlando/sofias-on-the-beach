@@ -6,7 +6,7 @@ import { TicketDetailModal } from './TicketDetailModal'
 import { BTN_PRIMARY } from '@/app/(admin)/dashboard/rooms/_components/form-helpers'
 import type { RoomOption, StaffOption, TicketRow } from './types'
 
-const CARD = 'bg-white rounded-[18px] border border-ocean-100 p-5'
+const CARD = 'bg-white rounded-2xl border border-admin-border shadow-sm p-5'
 
 const STATUS_ORDER = ['open', 'in_progress', 'fixed'] as const
 
@@ -31,7 +31,7 @@ const STATUS_BADGE_LABELS: Record<string, string> = {
 const PRIORITY_TONES: Record<string, string> = {
   urgent: 'bg-red-100 text-red-700',
   high:   'bg-amber-100 text-amber-700',
-  medium: 'bg-ocean-100 text-ocean-700',
+  medium: 'bg-slate-100 text-slate-600',
   low:    'bg-slate-100 text-slate-500',
 }
 
@@ -106,10 +106,10 @@ function TicketColumn({ status, title, tickets, onSelect }: {
         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${STATUS_TONES[status] ?? 'bg-slate-100 text-slate-500'}`}>
           {title}
         </span>
-        <span className="text-[12px] font-semibold text-ocean-400">{tickets.length}</span>
+        <span className="text-[12px] font-semibold text-slate-400">{tickets.length}</span>
       </div>
       {tickets.length === 0 ? (
-        <div className={`${CARD} text-center text-[13px] text-ocean-400 py-6`}>
+        <div className={`${CARD} text-center text-[13px] text-slate-400 py-6`}>
           Nenhum chamado neste status no momento.
         </div>
       ) : (
@@ -130,8 +130,8 @@ function TicketCard({ ticket, onSelect }: { ticket: TicketRow; onSelect: () => v
       {/* Title + badges */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-semibold text-ocean-900 text-[14px] truncate">{ticket.title}</p>
-          <p className="text-[12px] text-ocean-400 truncate">{ticket.roomName ?? 'Sem quarto específico'}</p>
+          <p className="font-semibold text-slate-800 text-[14px] truncate">{ticket.title}</p>
+          <p className="text-[12px] text-slate-400 truncate">{ticket.roomName ?? 'Sem quarto específico'}</p>
         </div>
         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap ${PRIORITY_TONES[ticket.priority] ?? 'bg-slate-100 text-slate-500'}`}>
           {PRIORITY_LABELS[ticket.priority] ?? ticket.priority}
@@ -139,7 +139,7 @@ function TicketCard({ ticket, onSelect }: { ticket: TicketRow; onSelect: () => v
       </div>
 
       {/* Details */}
-      <div className="mt-3.5 pt-3.5 border-t border-ocean-50 space-y-1.5">
+      <div className="mt-3.5 pt-3.5 border-t border-slate-100 space-y-1.5">
         <InfoLine label="Status" value={STATUS_BADGE_LABELS[ticket.status] ?? ticket.status} />
         <InfoLine label="Aberto em" value={formatDate(ticket.created_at)} />
         {ticket.assignedToName && <InfoLine label="Responsável" value={ticket.assignedToName} />}
@@ -157,11 +157,11 @@ function TicketCard({ ticket, onSelect }: { ticket: TicketRow; onSelect: () => v
       </div>
 
       {/* CTA */}
-      <div className="mt-3.5 pt-3.5 border-t border-ocean-50">
+      <div className="mt-3.5 pt-3.5 border-t border-slate-100">
         <button
           type="button"
           onClick={onSelect}
-          className="text-[12px] font-bold uppercase tracking-[0.06em] text-ocean-700 hover:text-ocean-900 transition-colors"
+          className="text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors"
         >
           Ver / Editar →
         </button>
@@ -172,8 +172,8 @@ function TicketCard({ ticket, onSelect }: { ticket: TicketRow; onSelect: () => v
 
 function InfoLine({ label, value }: { label: string; value: string }) {
   return (
-    <p className="text-[12px] text-ocean-600 leading-relaxed">
-      <span className="font-semibold text-ocean-900">{label}:</span> {value}
+    <p className="text-[12px] text-slate-600 leading-relaxed">
+      <span className="font-semibold text-slate-700">{label}:</span> {value}
     </p>
   )
 }

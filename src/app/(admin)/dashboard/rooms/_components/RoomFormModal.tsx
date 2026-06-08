@@ -103,7 +103,7 @@ export function RoomFormModal({ mode, initial, images, categories, onClose }: Pr
 
   return (
     <ModalOverlay onClose={onClose}>
-      <h2 className="font-serif text-[20px] font-bold text-ocean-900 mb-6">
+      <h2 className="text-[20px] font-bold text-slate-800 mb-6">
         {mode === 'edit' ? 'Editar quarto' : 'Novo quarto'}
       </h2>
 
@@ -114,7 +114,7 @@ export function RoomFormModal({ mode, initial, images, categories, onClose }: Pr
       )}
 
       {/* ── Section 1: Room data ───────────────────────────────────────────── */}
-      <p className="text-[10px] font-bold text-ocean-500 uppercase tracking-[0.15em] mb-4">
+      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] mb-4">
         Dados do quarto
       </p>
 
@@ -229,7 +229,7 @@ export function RoomFormModal({ mode, initial, images, categories, onClose }: Pr
             <option value="4">5º destaque na landing page</option>
             <option value="5">6º destaque na landing page</option>
           </select>
-          <p className="text-[11px] text-ocean-400 mt-1.5">
+          <p className="text-[11px] text-slate-400 mt-1.5">
             Quartos destacados aparecem na página inicial. Máximo 6.
           </p>
         </FormField>
@@ -266,8 +266,8 @@ export function RoomFormModal({ mode, initial, images, categories, onClose }: Pr
 
         {/* ── Section 2: Photos (create mode inline) ───────────────────────── */}
         {mode === 'create' && (
-          <div className="pt-5 border-t border-ocean-100 space-y-3">
-            <p className="text-[10px] font-bold text-ocean-500 uppercase tracking-[0.15em]">
+          <div className="pt-5 border-t border-slate-100 space-y-3">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">
               Fotos do quarto
             </p>
 
@@ -276,15 +276,15 @@ export function RoomFormModal({ mode, initial, images, categories, onClose }: Pr
                 {pendingFiles.map((item) => (
                   <div
                     key={item.localId}
-                    className="flex items-center gap-3 p-2.5 border border-ocean-200 rounded-xl"
+                    className="flex items-center gap-3 p-2.5 border border-admin-border rounded-xl"
                   >
-                    <div className="w-14 h-10 rounded-lg overflow-hidden bg-ocean-50 border border-ocean-100 shrink-0">
+                    <div className="w-14 h-10 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={item.previewUrl} alt="" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] text-ocean-800 font-medium truncate">{item.file.name}</p>
-                      <p className="text-[10px] text-ocean-400">{formatFileSize(item.file.size)}</p>
+                      <p className="text-[12px] text-slate-800 font-medium truncate">{item.file.name}</p>
+                      <p className="text-[10px] text-slate-400">{formatFileSize(item.file.size)}</p>
                     </div>
                     <input
                       value={item.altText}
@@ -297,14 +297,14 @@ export function RoomFormModal({ mode, initial, images, categories, onClose }: Pr
                       type="button"
                       onClick={() => removePendingFile(item.localId)}
                       disabled={isPending}
-                      className="text-ocean-300 hover:text-red-500 transition-colors disabled:opacity-40 shrink-0 text-[13px] font-bold px-1"
+                      className="text-slate-300 hover:text-red-500 transition-colors disabled:opacity-40 shrink-0 text-[13px] font-bold px-1"
                       aria-label="Remover"
                     >
                       ✕
                     </button>
                   </div>
                 ))}
-                <p className="text-[11px] text-ocean-500 bg-ocean-50 rounded-lg px-3 py-2">
+                <p className="text-[11px] text-slate-500 bg-slate-50 rounded-lg px-3 py-2">
                   {pendingFiles.length} foto{pendingFiles.length > 1 ? 's' : ''} selecionada{pendingFiles.length > 1 ? 's' : ''}. Serão enviadas ao criar o quarto.
                 </p>
               </div>
@@ -325,11 +325,11 @@ export function RoomFormModal({ mode, initial, images, categories, onClose }: Pr
                 className="sr-only"
                 disabled={isPending}
               />
-              <span className="flex-1 text-center text-[13px] font-semibold py-2.5 px-4 rounded-xl border-2 border-dashed border-ocean-200 text-ocean-500 transition-colors group-hover:border-ocean-400 group-hover:text-ocean-700">
+              <span className="flex-1 text-center text-[13px] font-semibold py-2.5 px-4 rounded-xl border-2 border-dashed border-admin-border text-slate-500 transition-colors group-hover:border-admin-sidebar/30 group-hover:text-slate-700">
                 {pendingFiles.length > 0 ? '+ Adicionar mais fotos' : 'Selecionar fotos'}
               </span>
             </label>
-            <p className="text-[11px] text-ocean-400 text-center">
+            <p className="text-[11px] text-slate-400 text-center">
               Opcional. JPG, PNG ou WebP, máx. 5 MB por foto. A primeira foto será definida como capa.
             </p>
           </div>
@@ -359,8 +359,8 @@ export function RoomFormModal({ mode, initial, images, categories, onClose }: Pr
 
       {/* ── Section 2: Photos (edit mode — separate component) ────────────── */}
       {mode === 'edit' && (
-        <div className="mt-6 pt-6 border-t border-ocean-100">
-          <p className="text-[10px] font-bold text-ocean-500 uppercase tracking-[0.15em] mb-4">
+        <div className="mt-6 pt-6 border-t border-slate-100">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] mb-4">
             Fotos do quarto
           </p>
           <RoomPhotosSection

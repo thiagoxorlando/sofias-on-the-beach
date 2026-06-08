@@ -32,10 +32,10 @@ export function FormField({
 }) {
   return (
     <div>
-      <label className="block text-[11px] font-semibold text-ocean-900 uppercase tracking-[0.10em] mb-1.5">
+      <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-[0.10em] mb-1.5">
         {label}
         {hint && (
-          <span className="ml-1.5 text-ocean-400 font-normal normal-case tracking-normal">
+          <span className="ml-1.5 text-slate-400 font-normal normal-case tracking-normal">
             {hint}
           </span>
         )}
@@ -46,13 +46,13 @@ export function FormField({
 }
 
 export const INPUT =
-  'w-full border border-ocean-200 rounded-xl px-3.5 py-2.5 text-[13px] text-foreground placeholder:text-foreground/35 focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent bg-white'
+  'w-full border border-admin-border rounded-xl px-3.5 py-2.5 text-[13px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/30 focus:border-admin-sidebar-act/40 bg-white'
 
 export const BTN_PRIMARY =
-  'bg-ocean-900 text-white px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed'
+  'bg-admin-sidebar text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold hover:bg-admin-sidebar-act transition-colors disabled:opacity-60 disabled:cursor-not-allowed'
 
 export const BTN_SECONDARY =
-  'border border-ocean-200 text-ocean-700 px-5 py-2.5 rounded-xl text-[12px] font-semibold hover:bg-ocean-50 transition-colors'
+  'border border-admin-border text-slate-600 px-5 py-2.5 rounded-xl text-[13px] font-semibold hover:bg-slate-50 transition-colors'
 
 export function ErrorMessage({ message }: { message: string }) {
   return (

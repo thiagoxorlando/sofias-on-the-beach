@@ -146,7 +146,7 @@ export function RoomPhotosSection({ roomId, initialImages }: Props) {
     <div className="space-y-4">
       {/* Existing uploaded photos */}
       {sorted.length === 0 && pending.length === 0 ? (
-        <p className="text-[13px] text-ocean-400 text-center py-4 bg-ocean-50/50 rounded-xl">
+        <p className="text-[13px] text-slate-400 text-center py-4 bg-slate-50 rounded-xl">
           Nenhuma foto ainda.
         </p>
       ) : sorted.length > 0 ? (
@@ -154,17 +154,17 @@ export function RoomPhotosSection({ roomId, initialImages }: Props) {
           {sorted.map((img) => (
             <div
               key={img.id}
-              className="flex items-center gap-3 p-2.5 border border-ocean-100 rounded-xl"
+              className="flex items-center gap-3 p-2.5 border border-admin-border rounded-xl"
             >
               <Thumbnail url={img.url} alt={img.alt_text} />
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] text-ocean-800 font-medium truncate">
-                  {img.alt_text || <span className="italic text-ocean-300">sem texto alt</span>}
+                <p className="text-[12px] text-slate-800 font-medium truncate">
+                  {img.alt_text || <span className="italic text-slate-300">sem texto alt</span>}
                 </p>
-                <p className="text-[10px] text-ocean-300 truncate">{img.url}</p>
+                <p className="text-[10px] text-slate-300 truncate">{img.url}</p>
               </div>
               {img.is_cover && (
-                <span className="text-[9px] font-bold text-white bg-ocean-600 px-2 py-0.5 rounded-full uppercase tracking-wide shrink-0">
+                <span className="text-[9px] font-bold text-white bg-admin-sidebar px-2 py-0.5 rounded-full uppercase tracking-wide shrink-0">
                   Capa
                 </span>
               )}
@@ -174,7 +174,7 @@ export function RoomPhotosSection({ roomId, initialImages }: Props) {
                     type="button"
                     onClick={() => handleSetCover(img)}
                     disabled={isCovering}
-                    className="text-[11px] text-ocean-400 hover:text-ocean-700 font-medium transition-colors disabled:opacity-50"
+                    className="text-[11px] text-slate-400 hover:text-slate-700 font-medium transition-colors disabled:opacity-50"
                   >
                     Definir capa
                   </button>
@@ -196,19 +196,19 @@ export function RoomPhotosSection({ roomId, initialImages }: Props) {
       {/* Pending files preview + upload */}
       {pending.length > 0 && (
         <div className="space-y-2">
-          <p className="text-[11px] font-semibold text-ocean-600 uppercase tracking-[0.08em]">
+          <p className="text-[11px] font-semibold text-admin-sidebar-act uppercase tracking-[0.08em]">
             {pending.length} foto{pending.length > 1 ? 's' : ''} para enviar
           </p>
           {pending.map((item) => (
-            <div key={item.localId} className="border border-ocean-200 rounded-xl overflow-hidden">
+            <div key={item.localId} className="border border-admin-border rounded-xl overflow-hidden">
               <div className="flex items-center gap-3 p-2.5">
-                <div className="w-14 h-10 rounded-lg overflow-hidden bg-ocean-50 border border-ocean-100 shrink-0">
+                <div className="w-14 h-10 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 shrink-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={item.previewUrl} alt="" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[12px] text-ocean-800 font-medium truncate">{item.file.name}</p>
-                  <p className="text-[10px] text-ocean-400">{formatSize(item.file.size)}</p>
+                  <p className="text-[12px] text-slate-800 font-medium truncate">{item.file.name}</p>
+                  <p className="text-[10px] text-slate-400">{formatSize(item.file.size)}</p>
                 </div>
                 <input
                   value={item.altText}
@@ -229,7 +229,7 @@ export function RoomPhotosSection({ roomId, initialImages }: Props) {
                   type="button"
                   onClick={() => handleRemovePending(item.localId)}
                   disabled={isUploading}
-                  className="text-ocean-300 hover:text-red-500 transition-colors disabled:opacity-40 shrink-0 text-[13px] font-bold px-1"
+                  className="text-slate-300 hover:text-red-500 transition-colors disabled:opacity-40 shrink-0 text-[13px] font-bold px-1"
                   aria-label="Remover da lista"
                 >
                   ✕
@@ -259,8 +259,8 @@ export function RoomPhotosSection({ roomId, initialImages }: Props) {
       )}
 
       {/* File picker */}
-      <div className="pt-2 border-t border-ocean-100 space-y-2">
-        <p className="text-[11px] font-bold text-ocean-800 uppercase tracking-[0.08em]">
+      <div className="pt-2 border-t border-slate-100 space-y-2">
+        <p className="text-[11px] font-bold text-slate-700 uppercase tracking-[0.08em]">
           Adicionar fotos
         </p>
         <label
@@ -278,11 +278,11 @@ export function RoomPhotosSection({ roomId, initialImages }: Props) {
             className="sr-only"
             disabled={isUploading}
           />
-          <span className="flex-1 text-center text-[13px] font-semibold py-2.5 px-4 rounded-xl border-2 border-dashed border-ocean-200 text-ocean-500 transition-colors group-hover:border-ocean-400 group-hover:text-ocean-700">
+          <span className="flex-1 text-center text-[13px] font-semibold py-2.5 px-4 rounded-xl border-2 border-dashed border-admin-border text-slate-500 transition-colors group-hover:border-admin-sidebar/30 group-hover:text-slate-700">
             Selecionar fotos
           </span>
         </label>
-        <p className="text-[11px] text-ocean-400 text-center">
+        <p className="text-[11px] text-slate-400 text-center">
           Você pode selecionar várias fotos de uma vez. JPG, PNG ou WebP, máx. 5 MB por foto.
         </p>
       </div>
@@ -292,7 +292,7 @@ export function RoomPhotosSection({ roomId, initialImages }: Props) {
 
 function Thumbnail({ url, alt }: { url: string; alt: string | null }) {
   return (
-    <div className="w-14 h-10 rounded-lg overflow-hidden bg-ocean-50 border border-ocean-100 shrink-0 flex items-center justify-center">
+    <div className="w-14 h-10 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 shrink-0 flex items-center justify-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={url}

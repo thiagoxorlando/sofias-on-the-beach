@@ -35,7 +35,7 @@ export function StaffFormModal({ mode, initial, isSuperAdmin, onClose }: Props) 
 
   return (
     <ModalOverlay onClose={onClose}>
-      <h2 className="font-serif text-[20px] font-bold text-ocean-900 mb-6">
+      <h2 className="text-[20px] font-bold text-slate-800 mb-6">
         {mode === 'edit' ? 'Editar usuário da equipe' : 'Novo usuário da equipe'}
       </h2>
 

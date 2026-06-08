@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireModule } from '@/lib/auth'
+import { AdminPageHeader } from '@/components/admin/AdminUI'
 import { RoomsManager } from './_components/RoomsManager'
 import type { CategoryRow, RoomRow, ImageRow } from './_components/types'
 import type { Metadata } from 'next'
@@ -41,10 +42,11 @@ export default async function RoomsPage() {
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
       <div className="mb-8">
-        <h1 className="font-serif text-[28px] font-bold text-ocean-900">Quartos</h1>
-        <p className="text-[14px] text-ocean-500 mt-1">
-          Gerencie as categorias e quartos da pousada.
-        </p>
+        <AdminPageHeader
+          eyebrow="Gestão"
+          title="Quartos"
+          subtitle="Gerencie as categorias e quartos da pousada."
+        />
       </div>
       <RoomsManager categories={categories} rooms={rooms} imagesByRoomId={imagesByRoomId} />
     </div>

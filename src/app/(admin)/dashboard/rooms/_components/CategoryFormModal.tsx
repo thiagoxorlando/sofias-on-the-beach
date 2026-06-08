@@ -40,7 +40,7 @@ export function CategoryFormModal({ mode, initial, onClose }: Props) {
 
   return (
     <ModalOverlay onClose={onClose}>
-      <h2 className="font-serif text-[20px] font-bold text-ocean-900 mb-6">
+      <h2 className="text-[20px] font-bold text-slate-800 mb-6">
         {mode === 'edit' ? 'Editar categoria' : 'Nova categoria'}
       </h2>
 
@@ -96,7 +96,7 @@ export function CategoryFormModal({ mode, initial, onClose }: Props) {
               <option value={8}>9º — Mostrar nono</option>
               <option value={9}>10º — Mostrar décimo</option>
             </select>
-            <p className="text-[11px] text-ocean-400 mt-1.5">
+            <p className="text-[11px] text-slate-400 mt-1.5">
               Define a ordem das categorias no painel e no site.
             </p>
           </FormField>

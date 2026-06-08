@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { ManualPaymentModal } from '../../../payments/_components/ManualPaymentModal'
 
 const BTN_PRIMARY =
-  'inline-flex items-center justify-center rounded-xl bg-ocean-900 text-white px-4 py-2.5 ' +
-  'text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  'inline-flex items-center justify-center rounded-xl bg-admin-sidebar text-white px-4 py-2.5 ' +
+  'text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-admin-sidebar-act transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 
 type Props =
   | { paymentId: string; reservationId?: never; amount: number }

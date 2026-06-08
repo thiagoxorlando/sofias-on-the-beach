@@ -14,7 +14,7 @@ export function LoginForm() {
       <div className="space-y-1.5">
         <label
           htmlFor="email"
-          className="block text-[12px] font-semibold text-ocean-900 uppercase tracking-[0.10em]"
+          className="block text-[12px] font-semibold text-slate-800 uppercase tracking-[0.10em]"
         >
           E-mail
         </label>
@@ -25,14 +25,14 @@ export function LoginForm() {
           required
           autoComplete="email"
           placeholder="seu@email.com"
-          className="w-full border border-ocean-200 rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-foreground/35 focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent bg-white transition-shadow"
+          className="w-full border border-admin-border rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-foreground/35 focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/30 focus:border-admin-sidebar-act/40 bg-white transition-shadow"
         />
       </div>
 
       <div className="space-y-1.5">
         <label
           htmlFor="password"
-          className="block text-[12px] font-semibold text-ocean-900 uppercase tracking-[0.10em]"
+          className="block text-[12px] font-semibold text-slate-800 uppercase tracking-[0.10em]"
         >
           Senha
         </label>
@@ -43,7 +43,7 @@ export function LoginForm() {
           required
           autoComplete="current-password"
           placeholder="••••••••"
-          className="w-full border border-ocean-200 rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-foreground/35 focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent bg-white transition-shadow"
+          className="w-full border border-admin-border rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-foreground/35 focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/30 focus:border-admin-sidebar-act/40 bg-white transition-shadow"
         />
       </div>
 
@@ -56,7 +56,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full bg-ocean-900 text-white py-3.5 rounded-xl text-[13px] font-bold uppercase tracking-[0.10em] hover:bg-ocean-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+        className="w-full bg-admin-sidebar text-white py-3.5 rounded-xl text-[13px] font-bold uppercase tracking-[0.10em] hover:bg-admin-sidebar-act transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
       >
         {isPending ? 'Entrando…' : 'Entrar no painel'}
       </button>

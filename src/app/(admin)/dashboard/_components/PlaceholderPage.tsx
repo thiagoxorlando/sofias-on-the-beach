@@ -10,10 +10,10 @@ export function PlaceholderPage({
   return (
     <div className="p-6 md:p-10">
       <div className="max-w-2xl">
-        <p className="text-[11px] font-bold text-ocean-600 uppercase tracking-[0.28em] mb-1.5">
+        <p className="text-[11px] font-bold text-admin-sidebar-act uppercase tracking-[0.28em] mb-1.5">
           {eyebrow}
         </p>
-        <h1 className="font-serif text-[26px] md:text-[32px] font-bold text-ocean-900 leading-tight mb-3">
+        <h1 className="text-[26px] md:text-[32px] font-bold text-slate-800 leading-tight mb-3">
           {title}
         </h1>
         <p className="text-[14px] text-foreground/55 leading-relaxed mb-8">

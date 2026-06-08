@@ -4,21 +4,21 @@ import { useActionState, useEffect, useRef, useState } from 'react'
 import { confirmManualPaymentAction, type ActionState } from '../actions'
 
 const INPUT =
-  'w-full border border-ocean-200 rounded-xl px-3.5 py-2.5 text-[13px] text-ocean-900 placeholder:text-ocean-400 bg-white ' +
-  'focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent'
+  'w-full border border-admin-border rounded-xl px-3.5 py-2.5 text-[13px] text-slate-800 placeholder:text-slate-400 bg-white ' +
+  'focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/30 focus:border-admin-sidebar-act/40'
 
 const TEXTAREA = `${INPUT} resize-none`
 
-const LABEL = 'block text-[11px] font-semibold text-ocean-900 uppercase tracking-[0.10em] mb-1.5'
-const HINT  = 'text-ocean-400 font-normal normal-case tracking-normal'
+const LABEL = 'block text-[11px] font-semibold text-slate-700 uppercase tracking-[0.10em] mb-1.5'
+const HINT  = 'text-slate-400 font-normal normal-case tracking-normal'
 
 const BTN_PRIMARY =
-  'inline-flex items-center justify-center rounded-xl bg-ocean-900 text-white px-5 py-2.5 ' +
-  'text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  'inline-flex items-center justify-center rounded-xl bg-admin-sidebar text-white px-5 py-2.5 ' +
+  'text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-admin-sidebar-act transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 
 const BTN_SECONDARY =
-  'inline-flex items-center justify-center rounded-xl border border-ocean-200 text-ocean-700 px-5 py-2.5 ' +
-  'text-[12px] font-semibold hover:bg-ocean-50 transition-colors'
+  'inline-flex items-center justify-center rounded-xl border border-admin-border text-slate-600 px-5 py-2.5 ' +
+  'text-[12px] font-semibold hover:bg-slate-50 transition-colors'
 
 export const MANUAL_METHOD_OPTIONS: { value: string; label: string }[] = [
   { value: 'pix_manual',    label: 'PIX manual' },
@@ -36,9 +36,6 @@ function todayISO(): string {
 }
 
 type Props = {
-  // Pass exactly one: `paymentId` to confirm an existing charge, or
-  // `reservationId` to create a brand-new manual payment for a reservation
-  // that currently has none (e.g. walk-ins, staff-arranged stays).
   paymentId?: string | null
   reservationId?: string | null
   amount: number
@@ -81,8 +78,8 @@ export function ManualPaymentModal({ paymentId, reservationId, amount, onClose, 
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="bg-white rounded-[22px] shadow-[0_24px_64px_rgba(0,18,50,0.20)] w-full max-w-[480px] max-h-[90vh] overflow-y-auto p-7">
-        <h2 className="font-serif text-[20px] font-bold text-ocean-900 mb-1.5">Confirmar pagamento manual</h2>
-        <p className="text-[13px] text-ocean-500 mb-5 leading-relaxed">
+        <h2 className="text-[20px] font-bold text-slate-800 mb-1.5">Confirmar pagamento manual</h2>
+        <p className="text-[13px] text-slate-500 mb-5 leading-relaxed">
           Use isto quando o pagamento foi recebido fora do Asaas (PIX direto, dinheiro, transferência, máquina de cartão).
           Os detalhes ficam registrados na reserva e no financeiro.
         </p>
@@ -143,7 +140,7 @@ export function ManualPaymentModal({ paymentId, reservationId, amount, onClose, 
               name="receipt"
               accept="image/jpeg,image/png,image/webp,application/pdf"
               onChange={handleFileChange}
-              className="block w-full text-[13px] text-ocean-700 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:uppercase file:tracking-[0.08em] file:bg-ocean-50 file:text-ocean-700 hover:file:bg-ocean-100 file:cursor-pointer cursor-pointer"
+              className="block w-full text-[13px] text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:uppercase file:tracking-[0.08em] file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer cursor-pointer"
             />
             {fileName && !fileError && <p className="text-[12px] text-emerald-600 mt-1.5">Selecionado: {fileName}</p>}
             {fileError && <p className="text-[12px] text-red-600 mt-1.5">{fileError}</p>}

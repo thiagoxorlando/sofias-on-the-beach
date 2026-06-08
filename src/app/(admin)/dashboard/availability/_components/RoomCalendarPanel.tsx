@@ -8,7 +8,7 @@ import { nextDay } from '@/lib/pricing'
 import type { CalendarDay, CalendarDayStatus, RoomCalendarMonth } from '@/lib/roomCalendar'
 import { SelectionActionPanel, type SelectionRange } from './SelectionActionPanel'
 
-const CARD = 'bg-white rounded-[18px] border border-ocean-100 overflow-hidden'
+const CARD = 'bg-white rounded-2xl border border-admin-border shadow-sm overflow-hidden'
 
 const WEEKDAYS_PT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
 
@@ -22,7 +22,7 @@ const MONTHS_PT = [
 // without reading any text.
 const STATUS_STYLES: Record<CalendarDayStatus, string> = {
   available:    'bg-emerald-50/70 border border-emerald-100 hover:bg-emerald-100/60',
-  reservation:  'bg-ocean-50 border border-ocean-200 hover:bg-ocean-100/70',
+  reservation:  'bg-sky-50 border border-sky-200 hover:bg-sky-100/70',
   manual_block: 'bg-rose-50 border border-rose-200 hover:bg-rose-100/70',
 }
 
@@ -130,18 +130,18 @@ export function RoomCalendarPanel({
   return (
     <div className="space-y-5">
       <div className={CARD}>
-        <div className="flex items-center justify-between gap-4 px-5 md:px-7 py-5 border-b border-ocean-100 flex-wrap">
+        <div className="flex items-center justify-between gap-4 px-5 md:px-7 py-5 border-b border-admin-border flex-wrap">
           <div className="min-w-0">
-            <h2 className="font-serif text-[22px] sm:text-[27px] font-bold text-ocean-900">
+            <h2 className="text-[20px] sm:text-[24px] font-bold text-slate-800">
               {MONTHS_PT[month.month - 1]} de {month.year}
             </h2>
             {selectionRange ? (
-              <p className="text-[13px] font-semibold text-navy mt-1.5">
+              <p className="text-[13px] font-semibold text-admin-sidebar mt-1.5">
                 Período selecionado: {formatDateFull(selectionRange.startDate)} até {formatDateFull(selectionRange.lastNight)}
                 {' · '}{selectionRange.nights} noite{selectionRange.nights !== 1 ? 's' : ''}
               </p>
             ) : (
-              <p className="text-[12.5px] text-ocean-500 mt-1.5">
+              <p className="text-[12.5px] text-slate-500 mt-1.5">
                 Clique na primeira data e depois na última para selecionar um período.
               </p>
             )}
@@ -151,16 +151,16 @@ export function RoomCalendarPanel({
               <button
                 type="button"
                 onClick={clearSelection}
-                className="text-[12px] font-bold text-navy hover:text-navy-deep px-3.5 py-2 rounded-xl hover:bg-navy/5 transition-colors"
+                className="text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar px-3.5 py-2 rounded-xl hover:bg-slate-50 transition-colors"
               >
                 Limpar seleção
               </button>
             )}
-            <div className="flex items-center gap-2 pl-1.5 ml-1 border-l border-ocean-100">
+            <div className="flex items-center gap-2 pl-1.5 ml-1 border-l border-admin-border">
               <button
                 type="button"
                 onClick={() => navigate(shiftMonth(monthParam, -1))}
-                className="w-9 h-9 inline-flex items-center justify-center rounded-xl border border-ocean-200 text-ocean-600 hover:bg-ocean-50 transition-colors"
+                className="w-9 h-9 inline-flex items-center justify-center rounded-xl border border-admin-border text-slate-600 hover:bg-slate-50 transition-colors"
                 aria-label="Mês anterior"
               >
                 <ChevronLeftIcon />
@@ -168,7 +168,7 @@ export function RoomCalendarPanel({
               <button
                 type="button"
                 onClick={() => navigate(shiftMonth(monthParam, 1))}
-                className="w-9 h-9 inline-flex items-center justify-center rounded-xl border border-ocean-200 text-ocean-600 hover:bg-ocean-50 transition-colors"
+                className="w-9 h-9 inline-flex items-center justify-center rounded-xl border border-admin-border text-slate-600 hover:bg-slate-50 transition-colors"
                 aria-label="Próximo mês"
               >
                 <ChevronRightIcon />
@@ -180,7 +180,7 @@ export function RoomCalendarPanel({
         <div className="px-4 sm:px-6 md:px-7 py-5">
           <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mb-2.5">
             {WEEKDAYS_PT.map((wd) => (
-              <div key={wd} className="text-center text-[10px] sm:text-[11px] font-bold text-ocean-400 uppercase tracking-wide py-1">
+              <div key={wd} className="text-center text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wide py-1">
                 {wd}
               </div>
             ))}
@@ -241,21 +241,21 @@ function DayCell({
     'relative isolate overflow-hidden rounded-xl border flex flex-col justify-between gap-1 ' +
     'p-2 sm:p-2.5 min-h-[76px] sm:min-h-[92px] lg:min-h-[100px] text-left transition-colors w-full',
     STATUS_STYLES[day.status],
-    selected && 'ring-2 ring-navy ring-inset',
+    selected && 'ring-2 ring-admin-sidebar ring-inset',
   )
 
   // Positioned with z-0 / z-10 (an explicit stacking order) rather than relying
   // on DOM order, so the tint never paints over the day's content.
   const selectionOverlay = selected && (
-    <span className="absolute inset-0 z-0 bg-navy/[0.10] pointer-events-none" aria-hidden="true" />
+    <span className="absolute inset-0 z-0 bg-admin-sidebar/[0.08] pointer-events-none" aria-hidden="true" />
   )
 
   const dateBadge = (
     <span
       className={cn(
         'inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 shrink-0 rounded-full ' +
-        'text-[11px] sm:text-[12.5px] font-bold text-ocean-900 leading-none',
-        isToday && 'ring-2 ring-navy-deep ring-inset text-navy-deep',
+        'text-[11px] sm:text-[12.5px] font-bold text-slate-800 leading-none',
+        isToday && 'ring-2 ring-admin-sidebar ring-inset text-admin-sidebar',
       )}
     >
       {dayNum}
@@ -277,7 +277,7 @@ function DayCell({
     <span
       className={cn(
         'relative z-10 block text-[10.5px] sm:text-[12.5px] font-bold leading-none whitespace-nowrap',
-        day.isCustomPrice ? 'text-sand-700' : 'text-ocean-900',
+        day.isCustomPrice ? 'text-sand-700' : 'text-slate-800',
       )}
     >
       {formatBRLShort(day.price)}
@@ -332,7 +332,7 @@ function dayAccent(day: CalendarDay): {
   labelShort: string
 } {
   if (day.status === 'reservation') {
-    return { dot: 'bg-ocean-500',    labelColor: 'text-ocean-700',   labelFull: 'Reserva',         labelShort: 'Reserva' }
+    return { dot: 'bg-sky-500',    labelColor: 'text-sky-700',   labelFull: 'Reserva',         labelShort: 'Reserva' }
   }
   if (day.status === 'manual_block') {
     return { dot: 'bg-rose-500',     labelColor: 'text-rose-700',    labelFull: 'Bloqueado',       labelShort: 'Bloq.' }
@@ -345,16 +345,16 @@ function dayAccent(day: CalendarDay): {
 
 function Legend() {
   return (
-    <div className="bg-white rounded-[18px] border border-ocean-100 px-5 md:px-7 py-4 flex flex-wrap items-center gap-x-6 gap-y-3">
-      <span className="text-[10px] font-bold text-ocean-500 uppercase tracking-[0.10em]">Legenda</span>
+    <div className="bg-white rounded-2xl border border-admin-border shadow-sm px-5 md:px-7 py-4 flex flex-wrap items-center gap-x-6 gap-y-3">
+      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.10em]">Legenda</span>
 
       <LegendItem label="Disponível">
         <span className="w-4 h-4 rounded-md bg-emerald-50 border border-emerald-200" />
       </LegendItem>
 
       <LegendItem label="Reserva">
-        <span className="relative w-4 h-4 rounded-md bg-ocean-50 border border-ocean-200">
-          <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-ocean-500" />
+        <span className="relative w-4 h-4 rounded-md bg-sky-50 border border-sky-200">
+          <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-sky-500" />
         </span>
       </LegendItem>
 
@@ -369,11 +369,11 @@ function Legend() {
       </LegendItem>
 
       <LegendItem label="Selecionado">
-        <span className="w-4 h-4 rounded-md bg-white ring-2 ring-navy ring-inset border border-ocean-100" />
+        <span className="w-4 h-4 rounded-md bg-white ring-2 ring-admin-sidebar ring-inset border border-admin-border" />
       </LegendItem>
 
       <LegendItem label="Hoje">
-        <span className="w-4 h-4 rounded-full bg-white ring-2 ring-navy-deep ring-inset border border-ocean-100" />
+        <span className="w-4 h-4 rounded-full bg-white ring-2 ring-admin-sidebar ring-inset border border-admin-border" />
       </LegendItem>
     </div>
   )
@@ -381,7 +381,7 @@ function Legend() {
 
 function LegendItem({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 text-[12.5px] text-ocean-700 font-medium">
+    <span className="inline-flex items-center gap-2 text-[12.5px] text-slate-600 font-medium">
       {children}
       {label}
     </span>

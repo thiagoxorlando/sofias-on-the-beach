@@ -8,7 +8,7 @@ import { GuestNotesPanel } from './_components/GuestNotesPanel'
 
 export const metadata: Metadata = { title: "Hóspede — Painel Sofia's" }
 
-const CARD = 'bg-white rounded-[18px] border border-ocean-100 p-5 md:p-6'
+const CARD = 'bg-white rounded-2xl border border-admin-border shadow-sm p-5 md:p-6'
 
 const METHOD_LABELS: Record<string, string> = {
   pix:          'PIX',
@@ -116,15 +116,15 @@ export default async function GuestDetailPage({ params }: { params: Promise<{ id
 
       {/* Header */}
       <div className="mb-6">
-        <Link href="/dashboard/guests" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-ocean-500 hover:text-ocean-800 transition-colors mb-3">
+        <Link href="/dashboard/guests" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors mb-3">
           ← Todos os hóspedes
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="font-serif text-[26px] md:text-[30px] font-bold text-ocean-900">
+            <h1 className="text-[26px] md:text-[30px] font-bold text-slate-800">
               {guest.full_name}
             </h1>
-            <p className="text-[13px] text-ocean-500 mt-1.5">
+            <p className="text-[13px] text-slate-500 mt-1.5">
               Cadastrado em {formatDateTime(guest.created_at)} · {guest.total_stays} estadia{guest.total_stays !== 1 ? 's' : ''} concluída{guest.total_stays !== 1 ? 's' : ''}
             </p>
           </div>
@@ -148,31 +148,31 @@ export default async function GuestDetailPage({ params }: { params: Promise<{ id
 
           {/* Reservation history */}
           <section className={CARD}>
-            <h2 className="font-serif text-[17px] font-bold text-ocean-900 mb-4">Histórico de reservas</h2>
+            <h2 className="text-[17px] font-semibold text-slate-800 mb-4">Histórico de reservas</h2>
             {reservations.length > 0 ? (
-              <ul className="divide-y divide-ocean-50 -mx-1">
+              <ul className="divide-y divide-slate-100 -mx-1">
                 {reservations.map((r) => (
                   <li key={r.id} className="px-1 py-4 first:pt-0 last:pb-0">
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                       <div className="min-w-0">
-                        <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-0.5">Quarto</p>
-                        <p className="text-[13px] font-medium text-ocean-900 truncate">{r.roomName}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.10em] mb-0.5">Quarto</p>
+                        <p className="text-[13px] font-medium text-slate-800 truncate">{r.roomName}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-0.5">Check-in / Check-out</p>
-                        <p className="text-[13px] font-medium text-ocean-700 whitespace-nowrap">
-                          {formatDate(r.checkIn)} <span className="text-ocean-300">→</span> {formatDate(r.checkOut)}
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.10em] mb-0.5">Check-in / Check-out</p>
+                        <p className="text-[13px] font-medium text-slate-600 whitespace-nowrap">
+                          {formatDate(r.checkIn)} <span className="text-slate-300">→</span> {formatDate(r.checkOut)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-0.5">Hóspedes</p>
-                        <p className="text-[13px] font-medium text-ocean-700">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.10em] mb-0.5">Hóspedes</p>
+                        <p className="text-[13px] font-medium text-slate-600">
                           {r.adults}{r.children > 0 ? ` + ${r.children}` : ''}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-0.5">Total</p>
-                        <p className="text-[13px] font-bold text-ocean-900 whitespace-nowrap">{formatBRL(r.total)}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.10em] mb-0.5">Total</p>
+                        <p className="text-[13px] font-bold text-slate-800 whitespace-nowrap">{formatBRL(r.total)}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <ReservationStatusBadge status={r.status} />
@@ -180,7 +180,7 @@ export default async function GuestDetailPage({ params }: { params: Promise<{ id
                       </div>
                       <Link
                         href={`/dashboard/reservations/${r.id}`}
-                        className="sm:ml-auto text-ocean-600 hover:text-ocean-900 text-[12px] font-semibold transition-colors whitespace-nowrap"
+                        className="sm:ml-auto text-admin-sidebar-act hover:text-admin-sidebar text-[12px] font-semibold transition-colors whitespace-nowrap"
                       >
                         Ver reserva →
                       </Link>
@@ -189,26 +189,26 @@ export default async function GuestDetailPage({ params }: { params: Promise<{ id
                 ))}
               </ul>
             ) : (
-              <p className="text-[13px] text-ocean-400">Nenhuma reserva registrada para este hóspede.</p>
+              <p className="text-[13px] text-slate-400">Nenhuma reserva registrada para este hóspede.</p>
             )}
           </section>
 
           {/* Payment history */}
           <section className={CARD}>
-            <h2 className="font-serif text-[17px] font-bold text-ocean-900 mb-4">Histórico de pagamentos</h2>
+            <h2 className="text-[17px] font-semibold text-slate-800 mb-4">Histórico de pagamentos</h2>
             {payments.length > 0 ? (
-              <ul className="divide-y divide-ocean-50">
+              <ul className="divide-y divide-slate-100">
                 {payments.map((p) => (
                   <li key={p.id} className="py-3 first:pt-0 last:pb-0 flex flex-wrap items-center gap-x-4 gap-y-1.5">
                     <PaymentStatusBadge status={p.status} />
-                    <span className="text-[13px] text-ocean-700">{METHOD_LABELS[p.method] ?? p.method}</span>
-                    <span className="text-[13px] font-bold text-ocean-900">{formatBRL(p.amount_brl)}</span>
-                    <span className="text-[12px] text-ocean-400">
+                    <span className="text-[13px] text-slate-600">{METHOD_LABELS[p.method] ?? p.method}</span>
+                    <span className="text-[13px] font-bold text-slate-800">{formatBRL(p.amount_brl)}</span>
+                    <span className="text-[12px] text-slate-400">
                       {p.paid_at ? `pago em ${formatDateTime(p.paid_at)}` : `criado em ${formatDateTime(p.created_at)}`}
                     </span>
                     <Link
                       href={`/dashboard/reservations/${p.reservationId}`}
-                      className="sm:ml-auto text-[12px] font-semibold text-ocean-600 hover:text-ocean-900 transition-colors whitespace-nowrap"
+                      className="sm:ml-auto text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors whitespace-nowrap"
                     >
                       Reserva {p.reservationToken} →
                     </Link>
@@ -216,7 +216,7 @@ export default async function GuestDetailPage({ params }: { params: Promise<{ id
                 ))}
               </ul>
             ) : (
-              <p className="text-[13px] text-ocean-400">Nenhum pagamento registrado para este hóspede.</p>
+              <p className="text-[13px] text-slate-400">Nenhum pagamento registrado para este hóspede.</p>
             )}
           </section>
 
@@ -227,7 +227,7 @@ export default async function GuestDetailPage({ params }: { params: Promise<{ id
 
           {/* Profile */}
           <section className={CARD}>
-            <h2 className="font-serif text-[15px] font-bold text-ocean-900 mb-4">Perfil do hóspede</h2>
+            <h2 className="text-[15px] font-semibold text-slate-800 mb-4">Perfil do hóspede</h2>
             <div className="space-y-3.5">
               <Field label="Nome completo" value={guest.full_name} />
               <Field label="E-mail" value={guest.email} />
@@ -240,7 +240,7 @@ export default async function GuestDetailPage({ params }: { params: Promise<{ id
 
           {/* Internal notes */}
           <section className={CARD}>
-            <h2 className="font-serif text-[15px] font-bold text-ocean-900 mb-4">Notas internas</h2>
+            <h2 className="text-[15px] font-semibold text-slate-800 mb-4">Notas internas</h2>
             <GuestNotesPanel guestId={guest.id} notes={guest.notes} />
           </section>
 
@@ -253,8 +253,8 @@ export default async function GuestDetailPage({ params }: { params: Promise<{ id
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-1">{label}</p>
-      <p className="text-[13px] font-medium text-ocean-900">{value}</p>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.10em] mb-1">{label}</p>
+      <p className="text-[13px] font-medium text-slate-800">{value}</p>
     </div>
   )
 }

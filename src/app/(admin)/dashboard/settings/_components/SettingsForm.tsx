@@ -3,20 +3,20 @@
 import { useActionState } from 'react'
 import { updateSiteSettingsAction, type ActionState } from '../actions'
 
-const CARD = 'bg-white rounded-[18px] border border-ocean-100 p-5 md:p-6'
+const CARD = 'bg-white rounded-2xl border border-admin-border shadow-sm p-5 md:p-6'
 
 const INPUT =
-  'w-full border border-ocean-200 rounded-xl px-3.5 py-2.5 text-[13px] text-ocean-900 placeholder:text-ocean-400 bg-white ' +
-  'focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent'
+  'w-full border border-admin-border rounded-xl px-3.5 py-2.5 text-[13px] text-slate-800 placeholder:text-slate-400 bg-white ' +
+  'focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/30 focus:border-admin-sidebar-act/40'
 
 const TEXTAREA = `${INPUT} resize-none`
 
-const LABEL = 'block text-[11px] font-semibold text-ocean-900 uppercase tracking-[0.10em] mb-1.5'
-const HINT  = 'text-ocean-400 font-normal normal-case tracking-normal'
+const LABEL = 'block text-[11px] font-semibold text-slate-700 uppercase tracking-[0.10em] mb-1.5'
+const HINT  = 'text-slate-400 font-normal normal-case tracking-normal'
 
 const BTN_PRIMARY =
-  'inline-flex items-center justify-center rounded-xl bg-ocean-900 text-white px-5 py-2.5 ' +
-  'text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  'inline-flex items-center justify-center rounded-xl bg-admin-sidebar text-white px-5 py-2.5 ' +
+  'text-[13px] font-semibold hover:bg-admin-sidebar-act transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 
 export type SiteSettingsFormValues = {
   businessName: string
@@ -61,7 +61,7 @@ export function SettingsForm({ initial }: { initial: SiteSettingsFormValues }) {
 
       {/* 1. Dados da pousada */}
       <section className={CARD}>
-        <h2 className="font-serif text-[17px] font-bold text-ocean-900 mb-4">Dados da pousada</h2>
+        <h2 className="text-[15px] font-semibold text-slate-800 mb-4">Dados da pousada</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Nome da pousada" name="business_name" defaultValue={initial.businessName} />
           <Field label="E-mail público" name="public_email" type="email" defaultValue={initial.publicEmail} placeholder="contato@suapousada.com.br" />
@@ -76,7 +76,7 @@ export function SettingsForm({ initial }: { initial: SiteSettingsFormValues }) {
 
       {/* 2. Redes sociais */}
       <section className={CARD}>
-        <h2 className="font-serif text-[17px] font-bold text-ocean-900 mb-4">Redes sociais</h2>
+        <h2 className="text-[15px] font-semibold text-slate-800 mb-4">Redes sociais</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Instagram" name="instagram_url" type="url" defaultValue={initial.instagramUrl} placeholder="https://instagram.com/suapousada" />
           <Field label="Facebook" name="facebook_url" type="url" defaultValue={initial.facebookUrl} placeholder="https://facebook.com/suapousada" />
@@ -85,7 +85,7 @@ export function SettingsForm({ initial }: { initial: SiteSettingsFormValues }) {
 
       {/* 3. Reservas */}
       <section className={CARD}>
-        <h2 className="font-serif text-[17px] font-bold text-ocean-900 mb-4">Reservas</h2>
+        <h2 className="text-[15px] font-semibold text-slate-800 mb-4">Reservas</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Horário padrão de check-in" name="check_in_time" defaultValue={initial.checkInTime} placeholder="14:00" hint="(HH:MM)" />
           <Field label="Horário padrão de check-out" name="check_out_time" defaultValue={initial.checkOutTime} placeholder="12:00" hint="(HH:MM)" />

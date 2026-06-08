@@ -8,6 +8,7 @@ import {
   addReservationNoteAction,
   type ActionState,
 } from '../../reservations/actions'
+import { HandoffRequestModal } from '@/components/admin/HandoffRequestModal'
 
 const BTN_PRIMARY =
   'inline-flex items-center justify-center rounded-xl bg-admin-sidebar text-white px-4 py-2.5 ' +
@@ -28,20 +29,27 @@ type ActionKind = 'check_in' | 'check_out' | null
 
 export function ReceptionActionBar({
   reservationId,
+  roomId,
+  roomName,
   action,
   waHref,
   note,
   checkInWarnings,
+  checkOutWarnings,
 }: {
   reservationId: string
+  roomId?: string | null
+  roomName?: string | null
   action: ActionKind
   waHref: string | null
   note: string | null
   checkInWarnings?: string[]
+  checkOutWarnings?: string[]
 }) {
   const [isPending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ kind: 'error' | 'success'; text: string } | null>(null)
   const [showNote, setShowNote] = useState(false)
+  const [showHandoff, setShowHandoff] = useState(false)
 
   function run(fn: (id: string) => Promise<ActionState>, successText: string) {
     setFeedback(null)
@@ -57,6 +65,16 @@ export function ReceptionActionBar({
       {action === 'check_in' && checkInWarnings && checkInWarnings.length > 0 && (
         <ul className="space-y-1 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5">
           {checkInWarnings.map((w) => (
+            <li key={w} className="text-[12px] text-amber-700 flex items-start gap-1.5">
+              <span className="mt-0.5">⚠</span>
+              <span>{w}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {action === 'check_out' && checkOutWarnings && checkOutWarnings.length > 0 && (
+        <ul className="space-y-1 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5">
+          {checkOutWarnings.map((w) => (
             <li key={w} className="text-[12px] text-amber-700 flex items-start gap-1.5">
               <span className="mt-0.5">⚠</span>
               <span>{w}</span>
@@ -83,6 +101,9 @@ export function ReceptionActionBar({
         <button type="button" onClick={() => setShowNote((v) => !v)} className={BTN_SECONDARY}>
           {showNote ? 'Fechar nota' : 'Adicionar nota'}
         </button>
+        <button type="button" onClick={() => setShowHandoff(true)} className={BTN_SECONDARY}>
+          Enviar solicitação
+        </button>
         <Link href={`/dashboard/reservations/${reservationId}/print`} className={LINK}>
           Imprimir ficha
         </Link>
@@ -91,7 +112,7 @@ export function ReceptionActionBar({
         </Link>
       </div>
 
-      {note && <p className="text-[12px] text-ocean-400">{note}</p>}
+      {note && <p className="text-[12px] text-slate-400">{note}</p>}
 
       {feedback && (
         <p className={`text-[12px] font-medium ${feedback.kind === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>
@@ -100,6 +121,15 @@ export function ReceptionActionBar({
       )}
 
       {showNote && <QuickNoteForm reservationId={reservationId} onDone={() => setShowNote(false)} />}
+
+      {showHandoff && (
+        <HandoffRequestModal
+          reservationId={reservationId}
+          roomId={roomId}
+          roomName={roomName}
+          onClose={() => setShowHandoff(false)}
+        />
+      )}
     </div>
   )
 }

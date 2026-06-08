@@ -22,7 +22,7 @@ export function ReceiptLink({ receiptPath, label = 'Ver comprovante →' }: { re
         type="button"
         onClick={open}
         disabled={isPending}
-        className="text-[12px] font-semibold text-ocean-600 hover:text-ocean-900 transition-colors disabled:opacity-50 whitespace-nowrap"
+        className="text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors disabled:opacity-50 whitespace-nowrap"
       >
         {isPending ? 'Abrindo…' : label}
       </button>

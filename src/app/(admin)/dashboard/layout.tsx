@@ -72,22 +72,22 @@ function AccessDenied({
   detail: string
 }) {
   return (
-    <div className="min-h-screen bg-ocean-50/30 flex items-center justify-center px-6">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-6">
       <div className="text-center max-w-sm">
-        <div className="w-14 h-14 rounded-2xl bg-ocean-100 flex items-center justify-center mx-auto mb-5">
+        <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-5">
           {icon === 'lock' ? (
-            <LockIcon className="w-6 h-6 text-ocean-600" />
+            <LockIcon className="w-6 h-6 text-slate-500" />
           ) : (
-            <BanIcon className="w-6 h-6 text-ocean-600" />
+            <BanIcon className="w-6 h-6 text-slate-500" />
           )}
         </div>
-        <h1 className="font-serif text-[22px] font-bold text-ocean-900 mb-2">{title}</h1>
+        <h1 className="text-[22px] font-bold text-slate-800 mb-2">{title}</h1>
         <p className="text-[14px] text-foreground/60 leading-relaxed">{message}</p>
-        <p className="text-[12px] text-ocean-500 mt-3">{detail}</p>
+        <p className="text-[12px] text-slate-500 mt-3">{detail}</p>
         <form action={signOutAction} className="mt-6">
           <button
             type="submit"
-            className="text-[12px] font-semibold text-ocean-700 border border-ocean-200 hover:border-ocean-400 px-5 py-2.5 rounded-xl transition-colors"
+            className="text-[12px] font-semibold text-admin-sidebar border border-admin-border hover:border-admin-sidebar/40 px-5 py-2.5 rounded-xl transition-colors"
           >
             Sair
           </button>

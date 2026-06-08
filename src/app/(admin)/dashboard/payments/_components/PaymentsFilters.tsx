@@ -5,12 +5,12 @@ import { useState } from 'react'
 import { PAYMENT_LABELS } from '../../reservations/_components/badges'
 
 const SELECT =
-  'border border-ocean-200 rounded-xl px-3 py-2.5 text-[13px] text-ocean-900 bg-white ' +
-  'focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent'
+  'border border-admin-border rounded-xl px-3 py-2.5 text-[13px] text-slate-800 bg-white ' +
+  'focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/30 focus:border-admin-sidebar-act/40'
 
 const INPUT =
-  'border border-ocean-200 rounded-xl px-3 py-2.5 text-[13px] text-ocean-900 placeholder:text-ocean-400 bg-white ' +
-  'focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent'
+  'border border-admin-border rounded-xl px-3 py-2.5 text-[13px] text-slate-800 placeholder:text-slate-400 bg-white ' +
+  'focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/30 focus:border-admin-sidebar-act/40'
 
 const METHOD_LABELS: Record<string, string> = {
   pix:         'PIX',
@@ -51,7 +51,7 @@ export function PaymentsFilters() {
   return (
     <form
       onSubmit={(e) => { e.preventDefault(); apply() }}
-      className="bg-white rounded-[18px] border border-ocean-100 p-4 md:p-5 mb-6 space-y-3.5"
+      className="bg-white rounded-2xl border border-admin-border shadow-sm p-4 md:p-5 space-y-3.5"
     >
       <div className="flex flex-col md:flex-row gap-3">
         <input
@@ -63,7 +63,7 @@ export function PaymentsFilters() {
         />
         <button
           type="submit"
-          className="bg-ocean-900 text-white px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-800 transition-colors shrink-0"
+          className="bg-admin-sidebar text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold hover:bg-admin-sidebar-act transition-colors shrink-0"
         >
           Buscar
         </button>
@@ -118,7 +118,7 @@ export function PaymentsFilters() {
           <button
             type="button"
             onClick={clearAll}
-            className="text-[12px] font-semibold text-ocean-500 hover:text-ocean-800 transition-colors px-1 py-2.5"
+            className="text-[12px] font-semibold text-slate-500 hover:text-slate-800 transition-colors px-1 py-2.5"
           >
             Limpar filtros
           </button>
@@ -131,7 +131,7 @@ export function PaymentsFilters() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-[10px] font-bold text-ocean-500 uppercase tracking-[0.10em] mb-1.5">
+      <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-[0.10em] mb-1.5">
         {label}
       </label>
       {children}

@@ -18,11 +18,11 @@ export function ResetPasswordModal({ row, onClose }: { row: StaffRow; onClose: (
 
   return (
     <ModalOverlay onClose={onClose}>
-      <h2 className="font-serif text-[20px] font-bold text-ocean-900 mb-1.5">
+      <h2 className="text-[20px] font-bold text-slate-800 mb-1.5">
         Redefinir senha
       </h2>
-      <p className="text-[12px] text-ocean-500 mb-6">
-        Defina uma nova senha temporária para <span className="font-semibold text-ocean-700">{row.full_name}</span> ({row.email}).
+      <p className="text-[12px] text-slate-500 mb-6">
+        Defina uma nova senha temporária para <span className="font-semibold text-slate-700">{row.full_name}</span> ({row.email}).
         Avise a pessoa para trocá-la no próximo acesso.
       </p>
 

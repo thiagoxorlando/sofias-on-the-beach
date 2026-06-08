@@ -11,10 +11,11 @@ import { NotesPanel } from './_components/NotesPanel'
 import { ChargesPanel, type ChargeRow } from './_components/ChargesPanel'
 import { ReceiptLink } from '../../payments/_components/ReceiptLink'
 import { DeleteReservationDanger } from './_components/DeleteReservationDanger'
+import { HandoffRequestsPanel, type HandoffRequestItem } from './_components/HandoffRequestsPanel'
 
 export const metadata: Metadata = { title: "Detalhe da reserva — Painel Sofia's" }
 
-const CARD = 'bg-white rounded-[18px] border border-ocean-100 p-5 md:p-6'
+const CARD = 'bg-white rounded-2xl border border-admin-border shadow-sm p-5 md:p-6'
 
 function formatDate(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number)
@@ -99,7 +100,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
   const room  = one(reservation.rooms as RoomJoin | RoomJoin[] | null)
   const category = room ? one(room.room_categories) : null
 
-  const [{ data: payments }, { data: events }, { data: notesData }, { data: blockedDates }, { data: chargesData }] = await Promise.all([
+  const [{ data: payments }, { data: events }, { data: notesData }, { data: blockedDates }, { data: chargesData }, { data: handoffData }] = await Promise.all([
     db
       .from('payments')
       .select('id, method, status, amount_brl, paid_at, asaas_invoice_url, refund_reason, refunded_at, created_at, manual_payment_method, manual_payment_note, manual_receipt_path')
@@ -125,7 +126,25 @@ export default async function ReservationDetailPage({ params }: { params: Promis
       .select('id, category, description, quantity, unit_amount_brl, total_amount_brl, status, created_at')
       .eq('reservation_id', id)
       .order('created_at', { ascending: false }),
+    db
+      .from('handoff_requests')
+      .select('id, title, description, priority, status, target_department, created_at, completed_at, requested_by:admin_users!handoff_requests_requested_by_fkey ( full_name )')
+      .eq('reservation_id', id)
+      .order('created_at', { ascending: false }),
   ])
+
+  type HandoffRaw = { id: string; title: string; description: string | null; priority: string; status: string; target_department: string; created_at: string; completed_at: string | null; requested_by: { full_name: string } | { full_name: string }[] | null }
+  const handoffRequests: HandoffRequestItem[] = (handoffData as HandoffRaw[] ?? []).map((h) => ({
+    id: h.id,
+    title: h.title,
+    description: h.description,
+    priority: h.priority,
+    status: h.status,
+    targetDepartment: h.target_department,
+    requestedByName: one(h.requested_by as { full_name: string } | { full_name: string }[] | null)?.full_name ?? null,
+    createdAt: h.created_at,
+    completedAt: h.completed_at,
+  }))
 
   const charges: ChargeRow[] = (chargesData ?? []).map((c) => ({
     id: c.id,
@@ -144,6 +163,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
   const canAddCharges = canAccessModule(admin.role, 'reception')
   const canMarkChargesPaid = canAccessModule(admin.role, 'reception') || canAccessModule(admin.role, 'payments')
   const canWaiveCharges = canAccessModule(admin.role, 'reception')
+  const canCreateHandoff = canAccessModule(admin.role, 'reception')
 
   const notes = (notesData ?? []).map((n) => ({
     id: n.id,
@@ -155,6 +175,8 @@ export default async function ReservationDetailPage({ params }: { params: Promis
   const relevantPayment = (payments ?? []).find((p) => p.status !== 'failed') ?? payments?.[0] ?? null
   const nights = nightsBetween(reservation.check_in, reservation.check_out)
 
+  const pendingCharges = charges.filter((c) => c.status === 'pending')
+
   // Same checklist shown on the reception dashboard before check-in.
   const checkInWarnings: string[] = []
   if (reservation.status === 'confirmed') {
@@ -163,6 +185,16 @@ export default async function ReservationDetailPage({ params }: { params: Promis
       checkInWarnings.push(`Quarto ainda não está pronto (status: ${room.housekeeping_status}).`)
     }
     if (reservation.special_requests) checkInWarnings.push('Hóspede tem pedidos especiais — confira antes de liberar o check-in.')
+    checkInWarnings.push('Imprima e assine a ficha do hóspede antes de liberar o check-in.')
+    if (pendingCharges.length > 0) checkInWarnings.push(`${pendingCharges.length} cobrança${pendingCharges.length > 1 ? 's' : ''} extra pendente${pendingCharges.length > 1 ? 's' : ''} — resolva antes do check-in.`)
+  }
+
+  const checkOutWarnings: string[] = []
+  if (reservation.status === 'checked_in') {
+    if (pendingCharges.length > 0) checkOutWarnings.push(`${pendingCharges.length} cobrança${pendingCharges.length > 1 ? 's' : ''} extra pendente${pendingCharges.length > 1 ? 's' : ''} — confirme o pagamento antes de liberar.`)
+    if (relevantPayment?.status !== 'paid') checkOutWarnings.push('Pagamento da reserva ainda não confirmado.')
+    checkOutWarnings.push('Recolha as chaves e toalhas de praia do hóspede.')
+    checkOutWarnings.push('O quarto será enviado para Governança (sujo) após o check-out.')
   }
 
   const waMsg = encodeURIComponent(`Olá ${guest?.full_name ?? ''}! Aqui é da Sofia's on the Beach, sobre a sua reserva ${reservation.token}.`)
@@ -173,30 +205,30 @@ export default async function ReservationDetailPage({ params }: { params: Promis
 
       {/* Header */}
       <div className="mb-6">
-        <Link href="/dashboard/reservations" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-ocean-500 hover:text-ocean-800 transition-colors mb-3">
+        <Link href="/dashboard/reservations" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors mb-3">
           ← Todas as reservas
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="font-serif text-[26px] md:text-[30px] font-bold text-ocean-900">
+              <h1 className="text-[26px] md:text-[30px] font-bold text-slate-800">
                 Reserva {reservation.token}
               </h1>
               <ReservationStatusBadge status={reservation.status} />
             </div>
-            <p className="text-[13px] text-ocean-500 mt-1.5">
+            <p className="text-[13px] text-slate-500 mt-1.5">
               Criada em {formatDateTime(reservation.created_at)}
             </p>
           </div>
           <div className="flex flex-col items-end gap-2.5">
             <Link
               href={`/dashboard/reservations/${reservation.id}/print`}
-              className="inline-flex items-center justify-center rounded-xl border border-ocean-200 text-ocean-700 px-4 py-2.5 text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-50 transition-colors"
+              className="inline-flex items-center justify-center rounded-xl border border-admin-border text-slate-600 px-4 py-2.5 text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-slate-50 transition-colors"
             >
               Imprimir ficha
             </Link>
             {canManageReservation && (
-              <ReservationActions reservationId={reservation.id} status={reservation.status} checkInWarnings={checkInWarnings} />
+              <ReservationActions reservationId={reservation.id} status={reservation.status} checkInWarnings={checkInWarnings} checkOutWarnings={checkOutWarnings} />
             )}
           </div>
         </div>
@@ -209,27 +241,27 @@ export default async function ReservationDetailPage({ params }: { params: Promis
 
           {/* Summary */}
           <section className={CARD}>
-            <h2 className="font-serif text-[17px] font-bold text-ocean-900 mb-4">Resumo da reserva</h2>
+            <h2 className="text-[17px] font-semibold text-slate-800 mb-4">Resumo da reserva</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
               <Field label="Check-in"  value={formatDate(reservation.check_in)} />
               <Field label="Check-out" value={formatDate(reservation.check_out)} />
               <Field label="Noites"    value={`${nights} noite${nights !== 1 ? 's' : ''}`} />
               <Field label="Hóspedes"  value={`${reservation.adults}${reservation.children > 0 ? ` + ${reservation.children}` : ''}`} />
             </div>
-            <div className="rounded-2xl bg-ocean-50/60 px-5 py-4 space-y-1.5">
+            <div className="rounded-2xl bg-slate-50 px-5 py-4 space-y-1.5">
               <Row label="Diária base" value={formatBRL(reservation.base_amount_brl)} />
               {reservation.discount_brl > 0 && (
                 <Row label="Desconto" value={`− ${formatBRL(reservation.discount_brl)}`} />
               )}
-              <div className="flex justify-between items-center pt-2 mt-1 border-t border-ocean-100">
-                <span className="text-[13px] font-bold text-ocean-900">Total</span>
-                <span className="font-serif text-[19px] font-bold text-ocean-900">{formatBRL(reservation.total_brl)}</span>
+              <div className="flex justify-between items-center pt-2 mt-1 border-t border-slate-100">
+                <span className="text-[13px] font-bold text-slate-800">Total</span>
+                <span className="text-[19px] font-bold text-slate-800">{formatBRL(reservation.total_brl)}</span>
               </div>
             </div>
             {reservation.special_requests && (
               <div className="mt-4">
-                <p className="text-[11px] font-bold text-ocean-500 uppercase tracking-[0.10em] mb-1.5">Pedidos especiais</p>
-                <p className="text-[13px] text-ocean-700 leading-relaxed bg-ocean-50/40 rounded-xl px-4 py-3">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.10em] mb-1.5">Pedidos especiais</p>
+                <p className="text-[13px] text-slate-700 leading-relaxed bg-slate-50 rounded-xl px-4 py-3">
                   {reservation.special_requests}
                 </p>
               </div>
@@ -247,7 +279,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
 
           {/* Guest */}
           <section className={CARD}>
-            <h2 className="font-serif text-[17px] font-bold text-ocean-900 mb-4">Hóspede</h2>
+            <h2 className="text-[17px] font-semibold text-slate-800 mb-4">Hóspede</h2>
             {guest ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <Field label="Nome"          value={guest.full_name} />
@@ -258,7 +290,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                 <Field label="Estadias"      value={`${guest.total_stays}`} />
               </div>
             ) : (
-              <p className="text-[13px] text-ocean-400">Hóspede não encontrado.</p>
+              <p className="text-[13px] text-slate-400">Hóspede não encontrado.</p>
             )}
             {waHref && (
               <a
@@ -274,7 +306,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
 
           {/* Room */}
           <section className={CARD}>
-            <h2 className="font-serif text-[17px] font-bold text-ocean-900 mb-4">Acomodação</h2>
+            <h2 className="text-[17px] font-semibold text-slate-800 mb-4">Acomodação</h2>
             {room ? (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <Field label="Quarto"       value={room.name} />
@@ -283,14 +315,14 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                 <Field label="Diária base"  value={formatBRL(room.base_price_brl)} />
               </div>
             ) : (
-              <p className="text-[13px] text-ocean-400">Quarto não encontrado.</p>
+              <p className="text-[13px] text-slate-400">Quarto não encontrado.</p>
             )}
           </section>
 
           {/* Payment */}
           <section className={CARD}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-serif text-[17px] font-bold text-ocean-900">Pagamento</h2>
+              <h2 className="text-[17px] font-semibold text-slate-800">Pagamento</h2>
               <PaymentStatusBadge status={relevantPayment?.status ?? null} />
             </div>
             {relevantPayment ? (
@@ -302,15 +334,15 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                   <Field label="Status"  value={PAYMENT_LABELS[relevantPayment.status] ?? relevantPayment.status} />
                 </div>
                 {relevantPayment.manual_payment_method && (
-                  <div className="bg-ocean-50/60 border border-ocean-100 rounded-xl px-4 py-3 space-y-1.5">
+                  <div className="bg-slate-50 border border-admin-border rounded-xl px-4 py-3 space-y-1.5">
                     <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.10em]">Pago manualmente</p>
-                    <p className="text-[13px] font-medium text-ocean-900">
+                    <p className="text-[13px] font-medium text-slate-800">
                       {MANUAL_METHOD_LABELS[relevantPayment.manual_payment_method] ?? relevantPayment.manual_payment_method}
-                      <span className="text-ocean-500"> · {formatBRL(relevantPayment.amount_brl)}</span>
-                      {relevantPayment.paid_at && <span className="text-ocean-500"> · {formatDateTime(relevantPayment.paid_at)}</span>}
+                      <span className="text-slate-500"> · {formatBRL(relevantPayment.amount_brl)}</span>
+                      {relevantPayment.paid_at && <span className="text-slate-500"> · {formatDateTime(relevantPayment.paid_at)}</span>}
                     </p>
                     {relevantPayment.manual_payment_note && (
-                      <p className="text-[12px] text-ocean-600 leading-relaxed">{relevantPayment.manual_payment_note}</p>
+                      <p className="text-[12px] text-slate-600 leading-relaxed">{relevantPayment.manual_payment_note}</p>
                     )}
                     {relevantPayment.manual_receipt_path && (
                       <ReceiptLink receiptPath={relevantPayment.manual_receipt_path} />
@@ -318,7 +350,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                   </div>
                 )}
                 {relevantPayment.refund_reason && (
-                  <p className="text-[12px] text-ocean-500">
+                  <p className="text-[12px] text-slate-500">
                     Estorno: {relevantPayment.refund_reason} ({formatDateTime(relevantPayment.refunded_at)})
                   </p>
                 )}
@@ -329,7 +361,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                         href={relevantPayment.asaas_invoice_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-ocean-600 hover:text-ocean-900 transition-colors"
+                        className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors"
                       >
                         Ver cobrança no Asaas →
                       </a>
@@ -340,8 +372,8 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                   </div>
                 )}
                 {(payments?.length ?? 0) > 1 && (
-                  <details className="text-[12px] text-ocean-500">
-                    <summary className="cursor-pointer font-semibold text-ocean-600 hover:text-ocean-900">
+                  <details className="text-[12px] text-slate-500">
+                    <summary className="cursor-pointer font-semibold text-admin-sidebar-act hover:text-admin-sidebar">
                       Ver todas as tentativas de pagamento ({payments!.length})
                     </summary>
                     <ul className="mt-2 space-y-1.5">
@@ -349,7 +381,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                         <li key={p.id} className="flex items-center gap-2 flex-wrap">
                           <PaymentStatusBadge status={p.status} />
                           <span>{p.method === 'pix' ? 'PIX' : p.method === 'card' ? 'Cartão' : p.method}</span>
-                          <span className="text-ocean-400">· {formatDateTime(p.created_at)}</span>
+                          <span className="text-slate-400">· {formatDateTime(p.created_at)}</span>
                         </li>
                       ))}
                     </ul>
@@ -358,7 +390,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
               </div>
             ) : (
               <div className="space-y-3">
-                <p className="text-[13px] text-ocean-400">Sem pagamento registrado para esta reserva.</p>
+                <p className="text-[13px] text-slate-400">Sem pagamento registrado para esta reserva.</p>
                 {(reservation.status === 'pending_payment' || reservation.status === 'confirmed') && (
                   <ManualPaymentTrigger reservationId={reservation.id} amount={reservation.total_brl} />
                 )}
@@ -368,21 +400,21 @@ export default async function ReservationDetailPage({ params }: { params: Promis
 
           {/* Timeline */}
           <section className={CARD}>
-            <h2 className="font-serif text-[17px] font-bold text-ocean-900 mb-4">Histórico da reserva</h2>
+            <h2 className="text-[17px] font-semibold text-slate-800 mb-4">Histórico da reserva</h2>
             {events && events.length > 0 ? (
               <ol className="space-y-4">
                 {events.map((ev, i) => (
                   <li key={ev.id} className="flex gap-3">
                     <div className="flex flex-col items-center">
-                      <span className="w-2 h-2 rounded-full bg-ocean-500 mt-1.5 shrink-0" />
-                      {i < events.length - 1 && <span className="w-px flex-1 bg-ocean-100 mt-1" />}
+                      <span className="w-2 h-2 rounded-full bg-admin-sidebar mt-1.5 shrink-0" />
+                      {i < events.length - 1 && <span className="w-px flex-1 bg-slate-100 mt-1" />}
                     </div>
                     <div className="pb-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-ocean-900">
+                      <p className="text-[13px] font-semibold text-slate-800">
                         {EVENT_LABELS[ev.event_type] ?? ev.event_type}
                       </p>
-                      <p className="text-[12px] text-ocean-500 mt-0.5 leading-relaxed">{ev.description}</p>
-                      <p className="text-[11px] text-ocean-400 mt-1">
+                      <p className="text-[12px] text-slate-500 mt-0.5 leading-relaxed">{ev.description}</p>
+                      <p className="text-[11px] text-slate-400 mt-1">
                         {formatDateTime(ev.created_at)} · {ev.created_by}
                       </p>
                     </div>
@@ -390,7 +422,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                 ))}
               </ol>
             ) : (
-              <p className="text-[13px] text-ocean-400">Nenhum evento registrado.</p>
+              <p className="text-[13px] text-slate-400">Nenhum evento registrado.</p>
             )}
           </section>
 
@@ -401,24 +433,24 @@ export default async function ReservationDetailPage({ params }: { params: Promis
 
           {/* Blocked dates */}
           <section className={CARD}>
-            <h2 className="font-serif text-[15px] font-bold text-ocean-900 mb-4">Datas bloqueadas</h2>
+            <h2 className="text-[15px] font-semibold text-slate-800 mb-4">Datas bloqueadas</h2>
             {blockedDates && blockedDates.length > 0 ? (
               <ul className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                 {blockedDates.map((b) => (
                   <li key={b.date} className="flex items-center justify-between text-[12px]">
-                    <span className="text-ocean-700 font-medium">{formatDate(b.date)}</span>
-                    <span className="text-ocean-400">{b.blocked_reason}</span>
+                    <span className="text-slate-700 font-medium">{formatDate(b.date)}</span>
+                    <span className="text-slate-400">{b.blocked_reason}</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-[13px] text-ocean-400">Nenhuma data bloqueada para esta reserva.</p>
+              <p className="text-[13px] text-slate-400">Nenhuma data bloqueada para esta reserva.</p>
             )}
           </section>
 
           {/* Extra charges ledger */}
           <section className={CARD}>
-            <h2 className="font-serif text-[15px] font-bold text-ocean-900 mb-4">Cobranças extras</h2>
+            <h2 className="text-[15px] font-semibold text-slate-800 mb-4">Cobranças extras</h2>
             <ChargesPanel
               reservationId={reservation.id}
               originalTotal={reservation.total_brl}
@@ -429,9 +461,21 @@ export default async function ReservationDetailPage({ params }: { params: Promis
             />
           </section>
 
+          {/* Handoff requests */}
+          <section className={CARD}>
+            <h2 className="text-[15px] font-semibold text-slate-800 mb-4">Solicitações internas</h2>
+            <HandoffRequestsPanel
+              reservationId={reservation.id}
+              roomId={room?.id ?? null}
+              roomName={room?.name ?? null}
+              requests={handoffRequests}
+              canCreate={canCreateHandoff}
+            />
+          </section>
+
           {/* Internal notes */}
           <section className={CARD}>
-            <h2 className="font-serif text-[15px] font-bold text-ocean-900 mb-4">Notas internas</h2>
+            <h2 className="text-[15px] font-semibold text-slate-800 mb-4">Notas internas</h2>
             <NotesPanel reservationId={reservation.id} notes={notes} />
           </section>
 
@@ -451,8 +495,8 @@ export default async function ReservationDetailPage({ params }: { params: Promis
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.10em] mb-1">{label}</p>
-      <p className="text-[13px] font-medium text-ocean-900">{value}</p>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.10em] mb-1">{label}</p>
+      <p className="text-[13px] font-medium text-slate-800">{value}</p>
     </div>
   )
 }
@@ -460,8 +504,8 @@ function Field({ label, value }: { label: string; value: string }) {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-center text-[13px]">
-      <span className="text-ocean-500">{label}</span>
-      <span className="text-ocean-700 font-medium">{value}</span>
+      <span className="text-slate-500">{label}</span>
+      <span className="text-slate-700 font-medium">{value}</span>
     </div>
   )
 }

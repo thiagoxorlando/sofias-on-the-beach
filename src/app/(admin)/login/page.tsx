@@ -27,20 +27,20 @@ export default async function LoginPage() {
 
           {/* Brand */}
           <div className="flex items-center justify-center gap-3 mb-8">
-            <SofiasMark className="w-10 h-10 text-ocean-600 shrink-0" />
+            <SofiasMark className="w-10 h-10 text-admin-sidebar shrink-0" />
             <div>
-              <p className="font-serif text-[26px] font-bold text-ocean-900 leading-none tracking-tight">
+              <p className="text-[26px] font-bold text-slate-800 leading-none tracking-tight">
                 SOFIA&apos;S
               </p>
-              <p className="text-[9px] font-semibold text-ocean-500 uppercase tracking-[0.20em] mt-1">
+              <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-[0.20em] mt-1">
                 on the beach
               </p>
             </div>
           </div>
 
-          <div className="w-8 h-[2px] rounded-full bg-ocean-200 mx-auto mb-6" />
+          <div className="w-8 h-[2px] rounded-full bg-slate-200 mx-auto mb-6" />
 
-          <p className="text-center text-[12px] font-semibold text-ocean-700 uppercase tracking-[0.18em] mb-8">
+          <p className="text-center text-[12px] font-semibold text-slate-700 uppercase tracking-[0.18em] mb-8">
             Painel administrativo
           </p>
 

@@ -4,23 +4,23 @@ import { useState, useTransition } from 'react'
 import { updateHousekeepingStatusAction } from '../actions'
 
 const BTN_SECONDARY =
-  'inline-flex items-center justify-center rounded-xl border border-ocean-200 text-ocean-700 px-3.5 py-2 ' +
-  'text-[11px] font-bold uppercase tracking-[0.06em] hover:bg-ocean-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  'inline-flex items-center justify-center rounded-xl border border-admin-border text-slate-600 px-3 py-2 ' +
+  'text-[11px] font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 
 const BTN_ACTIVE =
-  'inline-flex items-center justify-center rounded-xl bg-ocean-900 text-white px-3.5 py-2 ' +
-  'text-[11px] font-bold uppercase tracking-[0.06em] cursor-default'
+  'inline-flex items-center justify-center rounded-xl bg-admin-sidebar text-white px-3 py-2 ' +
+  'text-[11px] font-semibold cursor-default'
 
 const TEXTAREA =
-  'w-full border border-ocean-200 rounded-xl px-3.5 py-2.5 text-[12px] text-ocean-900 placeholder:text-ocean-400 bg-white ' +
-  'focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent resize-none'
+  'w-full border border-admin-border rounded-xl px-3.5 py-2.5 text-[12px] text-slate-800 placeholder:text-slate-400 bg-white ' +
+  'focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/30 focus:border-admin-sidebar-act/40 resize-none'
 
 const STATUS_BUTTONS: { status: string; label: string }[] = [
-  { status: 'dirty',     label: 'Marcar sujo' },
-  { status: 'cleaning',  label: 'Iniciar limpeza' },
-  { status: 'clean',     label: 'Marcar limpo' },
-  { status: 'inspected', label: 'Marcar inspecionado' },
-  { status: 'ready',     label: 'Marcar pronto' },
+  { status: 'dirty',     label: 'Sujo' },
+  { status: 'cleaning',  label: 'Em limpeza' },
+  { status: 'clean',     label: 'Limpo' },
+  { status: 'inspected', label: 'Inspecionado' },
+  { status: 'ready',     label: 'Pronto' },
 ]
 
 export function RoomActionBar({ roomId, currentStatus }: { roomId: string; currentStatus: string }) {
@@ -43,7 +43,7 @@ export function RoomActionBar({ roomId, currentStatus }: { roomId: string; curre
 
   return (
     <div className="space-y-2.5">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {STATUS_BUTTONS.map((btn) => {
           const isCurrent = btn.status === currentStatus
           return (

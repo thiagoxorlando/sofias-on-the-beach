@@ -1,13 +1,14 @@
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireModule } from '@/lib/auth'
+import { AdminPageHeader } from '@/components/admin/AdminUI'
 import { getRoomCalendarData } from '@/lib/roomCalendar'
 import { RoomSelector, type RoomOption } from './_components/RoomSelector'
 import { RoomCalendarPanel } from './_components/RoomCalendarPanel'
 
 export const metadata: Metadata = { title: "Disponibilidade e tarifas — Painel Sofia's" }
 
-const CARD = 'bg-white rounded-[18px] border border-ocean-100 overflow-hidden'
+const CARD = 'bg-white rounded-2xl border border-admin-border shadow-sm overflow-hidden'
 
 const MONTH_RE = /^\d{4}-\d{2}$/
 
@@ -60,9 +61,13 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
 
   if (rooms.length === 0) {
     return (
-      <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl">
-        <Header />
-        <div className={`${CARD} py-14 text-center text-[13px] text-ocean-400`}>
+      <div className="px-4 sm:px-6 lg:px-8 py-7 max-w-6xl space-y-6">
+        <AdminPageHeader
+          eyebrow="Gestão"
+          title="Disponibilidade e tarifas"
+          subtitle="Selecione um quarto, marque datas no calendário e ajuste disponibilidade ou valores."
+        />
+        <div className={`${CARD} py-14 text-center text-[13px] text-slate-400`}>
           Nenhum quarto ativo encontrado. Cadastre um quarto para gerenciar disponibilidade e tarifas.
         </div>
       </div>
@@ -78,13 +83,17 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
   const month = await getRoomCalendarData(selectedRoomId, ...parseMonth(monthParam))
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-7xl space-y-5">
-      <Header />
+    <div className="px-4 sm:px-6 lg:px-8 py-7 max-w-7xl space-y-5">
+      <AdminPageHeader
+        eyebrow="Gestão"
+        title="Disponibilidade e tarifas"
+        subtitle="Selecione um quarto, marque datas no calendário e ajuste disponibilidade ou valores."
+      />
 
       <RoomSelector rooms={rooms} selectedRoomId={selectedRoomId} />
 
       {month === null ? (
-        <div className={`${CARD} py-14 text-center text-[13px] text-ocean-400`}>
+        <div className={`${CARD} py-14 text-center text-[13px] text-slate-400`}>
           Não foi possível carregar o calendário deste quarto.
         </div>
       ) : (
@@ -102,15 +111,4 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
 function parseMonth(monthStr: string): [number, number] {
   const [y, m] = monthStr.split('-').map(Number)
   return [y, m]
-}
-
-function Header() {
-  return (
-    <div>
-      <h1 className="font-serif text-[28px] font-bold text-ocean-900">Disponibilidade e tarifas</h1>
-      <p className="text-[14px] text-ocean-500 mt-1">
-        Selecione um quarto, marque datas no calendário e ajuste disponibilidade ou valores.
-      </p>
-    </div>
-  )
 }

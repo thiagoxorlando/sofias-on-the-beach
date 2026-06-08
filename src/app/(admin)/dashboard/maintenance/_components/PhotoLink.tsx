@@ -36,7 +36,7 @@ export function PhotoLink({ ticketId, photoPath, index, canDelete }: {
         type="button"
         onClick={open}
         disabled={isOpening || isDeleting}
-        className="text-[12px] font-semibold text-ocean-600 hover:text-ocean-900 transition-colors disabled:opacity-50"
+        className="text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors disabled:opacity-50"
       >
         {isOpening ? 'Abrindo…' : `Foto ${index + 1} →`}
       </button>

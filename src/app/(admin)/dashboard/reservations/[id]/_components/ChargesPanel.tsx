@@ -9,20 +9,20 @@ import {
 } from '../charges-actions'
 
 const BTN_PRIMARY =
-  'inline-flex items-center justify-center rounded-xl bg-ocean-900 text-white px-4 py-2.5 ' +
-  'text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  'inline-flex items-center justify-center rounded-xl bg-admin-sidebar text-white px-4 py-2.5 ' +
+  'text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-admin-sidebar-act transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 
 const BTN_SECONDARY =
-  'inline-flex items-center justify-center rounded-xl border border-ocean-200 text-ocean-700 px-4 py-2.5 ' +
-  'text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  'inline-flex items-center justify-center rounded-xl border border-admin-border text-slate-600 px-4 py-2.5 ' +
+  'text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 
 const BTN_TINY =
-  'inline-flex items-center justify-center rounded-lg border border-ocean-200 text-ocean-700 px-2.5 py-1.5 ' +
-  'text-[11px] font-bold uppercase tracking-[0.06em] hover:bg-ocean-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  'inline-flex items-center justify-center rounded-lg border border-admin-border text-slate-600 px-2.5 py-1.5 ' +
+  'text-[11px] font-bold uppercase tracking-[0.06em] hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 
 const INPUT =
-  'w-full border border-ocean-200 rounded-xl px-3.5 py-2.5 text-[13px] text-ocean-900 placeholder:text-ocean-400 bg-white ' +
-  'focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-transparent'
+  'w-full border border-admin-border rounded-xl px-3.5 py-2.5 text-[13px] text-slate-800 placeholder:text-slate-400 bg-white ' +
+  'focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/30 focus:border-admin-sidebar-act/40'
 
 const CATEGORY_LABELS: Record<string, string> = {
   beach_towel:    'Toalha de praia',
@@ -89,40 +89,38 @@ export function ChargesPanel({
   return (
     <div className="space-y-4">
 
-      {/* Totals — extras are a separate ledger from the original booking total,
-          shown side by side so reception sees the full balance at a glance. */}
-      <div className="rounded-xl bg-ocean-50/60 px-4 py-3 flex items-center justify-between">
-        <span className="text-[12px] font-semibold text-ocean-700">Reserva original</span>
-        <span className="font-serif text-[15px] font-bold text-ocean-900">{formatBRL(originalTotal)}</span>
+      <div className="rounded-xl bg-slate-50 px-4 py-3 flex items-center justify-between">
+        <span className="text-[12px] font-semibold text-slate-600">Reserva original</span>
+        <span className="text-[15px] font-bold text-slate-800">{formatBRL(originalTotal)}</span>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <TotalCard label="Extras pendentes" value={formatBRL(pendingTotal)} tone="amber" />
         <TotalCard label="Extras pagos" value={formatBRL(paidTotal)} tone="emerald" />
       </div>
-      <div className="rounded-xl bg-ocean-900 px-4 py-3 flex items-center justify-between">
+      <div className="rounded-xl bg-admin-sidebar px-4 py-3 flex items-center justify-between">
         <span className="text-[12px] font-semibold text-white/80">Total a cobrar (reserva + extras pendentes)</span>
-        <span className="font-serif text-[16px] font-bold text-white">{formatBRL(totalToCharge)}</span>
+        <span className="text-[16px] font-bold text-white">{formatBRL(totalToCharge)}</span>
       </div>
 
       {/* List */}
       {charges.length === 0 ? (
-        <p className="text-[13px] text-ocean-400">Nenhuma cobrança extra registrada.</p>
+        <p className="text-[13px] text-slate-400">Nenhuma cobrança extra registrada.</p>
       ) : (
         <ul className="space-y-2.5">
           {charges.map((charge) => (
-            <li key={charge.id} className="rounded-xl border border-ocean-100 px-4 py-3">
+            <li key={charge.id} className="rounded-xl border border-admin-border px-4 py-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-ocean-900">
+                  <p className="text-[13px] font-semibold text-slate-800">
                     {CATEGORY_LABELS[charge.category] ?? charge.category}
                   </p>
-                  <p className="text-[12px] text-ocean-500 mt-0.5 leading-relaxed">{charge.description}</p>
-                  <p className="text-[11px] text-ocean-400 mt-1">
+                  <p className="text-[12px] text-slate-500 mt-0.5 leading-relaxed">{charge.description}</p>
+                  <p className="text-[11px] text-slate-400 mt-1">
                     {charge.quantity}× {formatBRL(charge.unitAmount)} · {charge.createdAtLabel}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="font-serif text-[15px] font-bold text-ocean-900">{formatBRL(charge.totalAmount)}</p>
+                  <p className="text-[15px] font-bold text-slate-800">{formatBRL(charge.totalAmount)}</p>
                   <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold mt-1 ${STATUS_TONES[charge.status] ?? 'bg-slate-100 text-slate-500'}`}>
                     {STATUS_LABELS[charge.status] ?? charge.status}
                   </span>
@@ -157,7 +155,7 @@ function TotalCard({ label, value, tone }: { label: string; value: string; tone:
   return (
     <div className={`rounded-xl px-4 py-3 ${toneCls}`}>
       <p className="text-[10px] font-bold uppercase tracking-[0.10em] opacity-80">{label}</p>
-      <p className="font-serif text-[17px] font-bold mt-0.5">{value}</p>
+      <p className="text-[17px] font-bold mt-0.5">{value}</p>
     </div>
   )
 }
@@ -176,7 +174,7 @@ function ChargeActions({ chargeId, canMarkPaid, canWaive }: { chargeId: string; 
   }
 
   return (
-    <div className="mt-3 pt-3 border-t border-ocean-50 flex flex-wrap items-center gap-2">
+    <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
       {canMarkPaid && (
         <button type="button" disabled={isPending} onClick={() => run(markChargePaidAction, 'Cobrança marcada como paga.')} className={BTN_TINY}>
           Marcar como paga
@@ -204,7 +202,7 @@ function AddChargeForm({ reservationId, onDone, onCancel }: { reservationId: str
   }, [state, onDone])
 
   return (
-    <form action={formAction} className="space-y-2.5 bg-ocean-50/40 border border-ocean-100 rounded-2xl p-4">
+    <form action={formAction} className="space-y-2.5 bg-slate-50/60 border border-admin-border rounded-2xl p-4">
       <input type="hidden" name="reservation_id" value={reservationId} />
       <div className="grid grid-cols-2 gap-2.5">
         <select name="category" required defaultValue="" className={INPUT}>

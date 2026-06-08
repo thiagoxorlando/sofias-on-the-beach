@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireModule } from '@/lib/auth'
+import { AdminPageHeader, AdminStatCard } from '@/components/admin/AdminUI'
 import { RoomActionBar } from './_components/RoomActionBar'
+import { HandoffRequestCard, type HandoffRow } from '@/components/admin/HandoffRequestCard'
 
 export const metadata: Metadata = { title: "Governança — Painel Sofia's" }
 
-const CARD = 'bg-white rounded-[18px] border border-ocean-100 p-5'
+const CARD = 'bg-white rounded-2xl border border-admin-border shadow-sm p-5'
 
 const STATUS_ORDER = ['dirty', 'cleaning', 'clean', 'inspected', 'ready'] as const
 
@@ -29,7 +31,7 @@ const STATUS_TONES: Record<string, string> = {
   dirty:     'bg-red-50 text-red-600',
   cleaning:  'bg-amber-50 text-amber-700',
   clean:     'bg-emerald-50 text-emerald-700',
-  inspected: 'bg-ocean-100 text-ocean-700',
+  inspected: 'bg-sky-50 text-sky-700',
   ready:     'bg-sky-50 text-sky-700',
 }
 
@@ -103,7 +105,15 @@ export default async function HousekeepingPage() {
   const db = createAdminClient()
   const today = todayISO()
 
-  const [{ data: roomsData }, { data: checkoutsData }, { data: arrivalsData }, { data: logsData }] = await Promise.all([
+  type HandoffRecord = {
+    id: string; title: string; description: string | null; priority: string; status: string
+    target_department: string; created_at: string; completed_at: string | null
+    rooms: { name: string } | { name: string }[] | null
+    reservations: { token: string; guests: { full_name: string } | { full_name: string }[] | null } | null
+    requested_by_admin: { full_name: string } | { full_name: string }[] | null
+  }
+
+  const [{ data: roomsData }, { data: checkoutsData }, { data: arrivalsData }, { data: logsData }, { data: handoffData }] = await Promise.all([
     db.from('rooms').select(ROOM_SELECT)
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
@@ -120,6 +130,12 @@ export default async function HousekeepingPage() {
     db.from('housekeeping_logs').select(LOG_SELECT)
       .order('created_at', { ascending: false })
       .returns<LogRecord[]>(),
+    db.from('handoff_requests')
+      .select('id, title, description, priority, status, target_department, created_at, completed_at, rooms ( name ), reservations ( token, guests ( full_name ) ), requested_by_admin:admin_users!handoff_requests_requested_by_fkey ( full_name )')
+      .eq('target_department', 'housekeeping')
+      .in('status', ['open', 'in_progress'])
+      .order('created_at', { ascending: false })
+      .returns<HandoffRecord[]>(),
   ])
 
   const lastCheckoutByRoom = new Map<string, MovementInfo>()
@@ -166,17 +182,70 @@ export default async function HousekeepingPage() {
     else byStatus.set(room.status, [room])
   }
 
-  return (
-    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl space-y-8">
+  const handoffRequests: HandoffRow[] = (handoffData ?? []).map((h) => ({
+    id: h.id,
+    title: h.title,
+    description: h.description,
+    priority: h.priority,
+    status: h.status,
+    targetDepartment: h.target_department,
+    roomName: one(h.rooms)?.name ?? null,
+    guestName: h.reservations ? one(h.reservations.guests)?.full_name ?? null : null,
+    token: h.reservations?.token ?? null,
+    requestedByName: one(h.requested_by_admin)?.full_name ?? null,
+    createdAt: h.created_at,
+    completedAt: h.completed_at,
+  }))
 
-      {/* Header */}
-      <div>
-        <p className="text-[11px] font-bold text-ocean-600 uppercase tracking-[0.28em] mb-1.5">Operação diária</p>
-        <h1 className="font-serif text-[26px] md:text-[30px] font-bold text-ocean-900">Governança</h1>
-        <p className="text-[13px] text-ocean-500 mt-1.5">
-          Status de limpeza dos quartos — hoje, {formatDate(today)}.
-        </p>
+  const dirty     = byStatus.get('dirty')?.length     ?? 0
+  const cleaning  = byStatus.get('cleaning')?.length  ?? 0
+  const clean     = byStatus.get('clean')?.length     ?? 0
+  const inspected = byStatus.get('inspected')?.length ?? 0
+  const ready     = byStatus.get('ready')?.length     ?? 0
+
+  return (
+    <div className="px-4 sm:px-6 lg:px-8 py-7 max-w-6xl space-y-6">
+
+      <AdminPageHeader
+        eyebrow="Operação diária"
+        title="Governança"
+        subtitle={`Status de limpeza dos quartos — hoje, ${formatDate(today)}.`}
+      />
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <AdminStatCard label="Sujos" value={dirty} tone={dirty > 0 ? 'danger' : 'neutral'}
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke={dirty > 0 ? '#DC2626' : '#94A3B8'} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><circle cx={12} cy={12} r={9} /><line x1={12} y1={8} x2={12} y2={12} /><line x1={12} y1={16} x2={12.01} y2={16} /></svg>}
+        />
+        <AdminStatCard label="Em limpeza" value={cleaning} tone={cleaning > 0 ? 'warning' : 'neutral'}
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke={cleaning > 0 ? '#D97706' : '#94A3B8'} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" /></svg>}
+        />
+        <AdminStatCard label="Limpos" value={clean} tone={clean > 0 ? 'success' : 'neutral'}
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke={clean > 0 ? '#059669' : '#94A3B8'} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>}
+        />
+        <AdminStatCard label="Inspecionados" value={inspected} tone={inspected > 0 ? 'info' : 'neutral'}
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke={inspected > 0 ? '#0284C7' : '#94A3B8'} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx={12} cy={12} r={3} /></svg>}
+        />
+        <AdminStatCard label="Prontos" value={ready} tone={ready > 0 ? 'success' : 'neutral'}
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke={ready > 0 ? '#059669' : '#94A3B8'} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8" /><path d="M2 15h20" /></svg>}
+        />
       </div>
+
+      {handoffRequests.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2.5 mb-3">
+            <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold bg-amber-50 text-amber-700">
+              Solicitações da recepção
+            </span>
+            <span className="text-[12px] font-semibold text-slate-400">{handoffRequests.length}</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {handoffRequests.map((req) => (
+              <HandoffRequestCard key={req.id} request={req} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {STATUS_ORDER.map((status) => (
         <HousekeepingColumn
@@ -200,10 +269,10 @@ function HousekeepingColumn({ status, title, rooms }: { status: string; title: s
         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${STATUS_TONES[status] ?? 'bg-slate-100 text-slate-500'}`}>
           {title}
         </span>
-        <span className="text-[12px] font-semibold text-ocean-400">{rooms.length}</span>
+        <span className="text-[12px] font-semibold text-slate-400">{rooms.length}</span>
       </div>
       {rooms.length === 0 ? (
-        <div className={`${CARD} text-center text-[13px] text-ocean-400 py-6`}>
+        <div className={`${CARD} text-center text-[13px] text-slate-400 py-6`}>
           Nenhum quarto neste status no momento.
         </div>
       ) : (
@@ -222,8 +291,8 @@ function RoomCard({ room }: { room: RoomBoardItem }) {
       {/* Room + status */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-semibold text-ocean-900 text-[14px] truncate">{room.name}</p>
-          <p className="text-[12px] text-ocean-400 truncate">{room.categoryName}</p>
+          <p className="font-semibold text-slate-800 text-[14px] truncate">{room.name}</p>
+          <p className="text-[12px] text-slate-400 truncate">{room.categoryName}</p>
         </div>
         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap ${STATUS_TONES[room.status] ?? 'bg-slate-100 text-slate-500'}`}>
           {STATUS_BADGE_LABELS[room.status] ?? room.status}
@@ -231,7 +300,7 @@ function RoomCard({ room }: { room: RoomBoardItem }) {
       </div>
 
       {/* Movements + latest log */}
-      <div className="mt-3.5 pt-3.5 border-t border-ocean-50 space-y-1.5">
+      <div className="mt-3.5 pt-3.5 border-t border-slate-100 space-y-1.5">
         {room.lastCheckout && (
           <InfoLine label="Última saída" value={`${room.lastCheckout.guestName} · ${formatDate(room.lastCheckout.date)} · ${room.lastCheckout.token}`} />
         )}
@@ -245,12 +314,12 @@ function RoomCard({ room }: { room: RoomBoardItem }) {
           />
         )}
         {!room.lastCheckout && !room.nextArrival && !room.latestLog && (
-          <p className="text-[12px] text-ocean-400">Sem movimentações recentes.</p>
+          <p className="text-[12px] text-slate-400">Sem movimentações recentes.</p>
         )}
       </div>
 
       {/* Actions */}
-      <div className="mt-3.5 pt-3.5 border-t border-ocean-50">
+      <div className="mt-3.5 pt-3.5 border-t border-slate-100">
         <RoomActionBar roomId={room.id} currentStatus={room.status} />
       </div>
     </div>
@@ -259,8 +328,8 @@ function RoomCard({ room }: { room: RoomBoardItem }) {
 
 function InfoLine({ label, value }: { label: string; value: string }) {
   return (
-    <p className="text-[12px] text-ocean-600 leading-relaxed">
-      <span className="font-semibold text-ocean-900">{label}:</span> {value}
+    <p className="text-[12px] text-slate-600 leading-relaxed">
+      <span className="font-semibold text-slate-700">{label}:</span> {value}
     </p>
   )
 }

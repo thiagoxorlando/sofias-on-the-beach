@@ -71,31 +71,31 @@ export default async function ReservationPrintPage({ params }: { params: Promise
     <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-3xl print:max-w-none print:px-0 print:py-0">
 
       <div className="mb-6 flex items-center justify-between print:hidden">
-        <p className="text-[13px] text-ocean-500">
+        <p className="text-[13px] text-slate-500">
           Ficha de registro do hóspede — pronta para impressão (A4).
         </p>
         <PrintButton />
       </div>
 
       {/* ── Printable sheet ──────────────────────────────────────────── */}
-      <div className="bg-white rounded-[18px] border border-ocean-100 p-8 print:rounded-none print:border-0 print:p-0 print:text-black">
+      <div className="bg-white rounded-2xl border border-admin-border shadow-sm p-8 print:rounded-none print:border-0 print:p-0 print:text-black">
 
         {/* Brand header */}
-        <div className="flex items-center justify-between gap-4 pb-5 border-b-2 border-ocean-900 print:border-black">
+        <div className="flex items-center justify-between gap-4 pb-5 border-b-2 border-admin-sidebar print:border-black">
           <div className="flex items-center gap-3">
-            <SofiasMark className="w-10 h-10 text-ocean-600 print:text-black shrink-0" />
+            <SofiasMark className="w-10 h-10 text-admin-sidebar print:text-black shrink-0" />
             <div className="leading-none">
-              <p className="font-serif text-[22px] font-bold text-ocean-900 print:text-black leading-none">
+              <p className="text-[22px] font-bold text-slate-800 print:text-black leading-none">
                 {settings.businessName}
               </p>
-              <p className="text-[10px] font-semibold text-ocean-500 print:text-neutral-600 uppercase tracking-[0.18em] mt-1">
+              <p className="text-[10px] font-semibold text-slate-500 print:text-neutral-600 uppercase tracking-[0.18em] mt-1">
                 Ficha de registro do hóspede
               </p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-[10px] font-bold text-ocean-400 print:text-neutral-500 uppercase tracking-[0.12em]">Reserva</p>
-            <p className="font-mono text-[16px] font-bold text-ocean-900 print:text-black">{reservation.token}</p>
+            <p className="text-[10px] font-bold text-slate-400 print:text-neutral-500 uppercase tracking-[0.12em]">Reserva</p>
+            <p className="font-mono text-[16px] font-bold text-slate-800 print:text-black">{reservation.token}</p>
           </div>
         </div>
 
@@ -132,14 +132,14 @@ export default async function ReservationPrintPage({ params }: { params: Promise
         {/* Special requests */}
         {reservation.special_requests && (
           <Section title="Pedidos especiais">
-            <p className="text-[13px] text-ocean-700 print:text-black leading-relaxed">{reservation.special_requests}</p>
+            <p className="text-[13px] text-slate-700 print:text-black leading-relaxed">{reservation.special_requests}</p>
           </Section>
         )}
 
         {/* House rules / cancellation policy */}
         {(settings.cancellationPolicy || settings.checkInTime || settings.checkOutTime) && (
           <Section title="Política da casa">
-            <div className="text-[12px] text-ocean-600 print:text-neutral-700 leading-relaxed space-y-1.5">
+            <div className="text-[12px] text-slate-600 print:text-neutral-700 leading-relaxed space-y-1.5">
               <p>Check-in a partir das {settings.checkInTime} · Check-out até às {settings.checkOutTime}</p>
               {settings.cancellationPolicy && <p>{settings.cancellationPolicy}</p>}
             </div>
@@ -149,25 +149,25 @@ export default async function ReservationPrintPage({ params }: { params: Promise
         {/* Reception notes (handwritten) */}
         <Section title="Notas da recepção">
           <div className="space-y-3 pt-1">
-            <div className="border-b border-ocean-200 print:border-neutral-400 h-7" />
-            <div className="border-b border-ocean-200 print:border-neutral-400 h-7" />
-            <div className="border-b border-ocean-200 print:border-neutral-400 h-7" />
+            <div className="border-b border-slate-200 print:border-neutral-400 h-7" />
+            <div className="border-b border-slate-200 print:border-neutral-400 h-7" />
+            <div className="border-b border-slate-200 print:border-neutral-400 h-7" />
           </div>
         </Section>
 
         {/* Signature */}
         <div className="grid grid-cols-2 gap-10 mt-10 pt-6">
           <div>
-            <div className="border-b border-ocean-400 print:border-black h-12" />
-            <p className="text-[11px] text-ocean-500 print:text-neutral-600 mt-1.5">Assinatura do hóspede</p>
+            <div className="border-b border-slate-300 print:border-black h-12" />
+            <p className="text-[11px] text-slate-500 print:text-neutral-600 mt-1.5">Assinatura do hóspede</p>
           </div>
           <div>
-            <div className="border-b border-ocean-400 print:border-black h-12" />
-            <p className="text-[11px] text-ocean-500 print:text-neutral-600 mt-1.5">Data</p>
+            <div className="border-b border-slate-300 print:border-black h-12" />
+            <p className="text-[11px] text-slate-500 print:text-neutral-600 mt-1.5">Data</p>
           </div>
         </div>
 
-        <p className="text-[10px] text-ocean-400 print:text-neutral-500 text-center mt-10 pt-4 border-t border-ocean-100 print:border-neutral-300">
+        <p className="text-[10px] text-slate-400 print:text-neutral-500 text-center mt-10 pt-4 border-t border-slate-100 print:border-neutral-300">
           {settings.businessName} · Ficha gerada em {formatDate(new Date().toISOString().slice(0, 10))} · Reserva {reservation.token}
         </p>
       </div>
@@ -180,7 +180,7 @@ export default async function ReservationPrintPage({ params }: { params: Promise
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-6 print:mt-5 print:break-inside-avoid">
-      <h2 className="text-[11px] font-bold text-ocean-500 print:text-neutral-600 uppercase tracking-[0.14em] mb-3 pb-1.5 border-b border-ocean-100 print:border-neutral-300">
+      <h2 className="text-[11px] font-bold text-slate-500 print:text-neutral-600 uppercase tracking-[0.14em] mb-3 pb-1.5 border-b border-slate-100 print:border-neutral-300">
         {title}
       </h2>
       {children}
@@ -195,8 +195,8 @@ function Grid({ children }: { children: React.ReactNode }) {
 function PField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[9px] font-bold text-ocean-400 print:text-neutral-500 uppercase tracking-[0.10em] mb-1">{label}</p>
-      <p className="text-[13px] font-medium text-ocean-900 print:text-black">{value}</p>
+      <p className="text-[9px] font-bold text-slate-400 print:text-neutral-500 uppercase tracking-[0.10em] mb-1">{label}</p>
+      <p className="text-[13px] font-medium text-slate-800 print:text-black">{value}</p>
     </div>
   )
 }
