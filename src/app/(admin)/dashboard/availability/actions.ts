@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdmin } from '@/lib/auth'
+import { requireModule } from '@/lib/auth'
 import { nextDay } from '@/lib/pricing'
 
 export type ActionState = { error: string } | { success: true } | undefined
@@ -67,7 +67,7 @@ export async function setManualBlockRangeAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const admin = await requireAdmin()
+  const admin = await requireModule('availability')
   const roomId = str(formData, 'room_id')
   const startDate = str(formData, 'start_date')
   const endDate = str(formData, 'end_date')
@@ -141,7 +141,7 @@ export async function clearManualBlockRangeAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const admin = await requireAdmin()
+  const admin = await requireModule('availability')
   const roomId = str(formData, 'room_id')
   const startDate = str(formData, 'start_date')
   const endDate = str(formData, 'end_date')
@@ -201,7 +201,7 @@ export async function setCustomRateRangeAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const admin = await requireAdmin()
+  const admin = await requireModule('availability')
   const roomId = str(formData, 'room_id')
   const startDate = str(formData, 'start_date')
   const endDate = str(formData, 'end_date')
@@ -275,7 +275,7 @@ export async function clearCustomRateRangeAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const admin = await requireAdmin()
+  const admin = await requireModule('availability')
   const roomId = str(formData, 'room_id')
   const startDate = str(formData, 'start_date')
   const endDate = str(formData, 'end_date')

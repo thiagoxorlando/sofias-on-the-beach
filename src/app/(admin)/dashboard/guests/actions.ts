@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdmin } from '@/lib/auth'
+import { requireModule } from '@/lib/auth'
 
 export type ActionState = { error: string } | { success: true } | undefined
 
@@ -19,7 +19,7 @@ export async function updateGuestNotesAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireAdmin()
+  await requireModule('guests')
   const guestId = str(formData, 'guest_id')
   const notes = str(formData, 'notes')
 

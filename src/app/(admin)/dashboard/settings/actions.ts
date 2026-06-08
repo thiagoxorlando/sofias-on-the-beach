@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdmin } from '@/lib/auth'
+import { requireModule } from '@/lib/auth'
 
 export type ActionState = { error: string } | { success: true } | undefined
 
@@ -49,7 +49,7 @@ const FIELD_KEYS = {
 } as const
 
 export async function updateSiteSettingsAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const admin = await requireAdmin()
+  const admin = await requireModule('settings')
 
   const fields: Record<string, string> = {}
   for (const formKey of Object.keys(FIELD_KEYS)) fields[formKey] = str(formData, formKey)

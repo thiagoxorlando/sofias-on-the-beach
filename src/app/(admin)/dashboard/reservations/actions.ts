@@ -1,8 +1,10 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdmin } from '@/lib/auth'
+import { requireAdmin, requireModule } from '@/lib/auth'
+import { canAccessModule } from '@/lib/permissions'
 
 export type ActionState = { error: string } | { success: true } | undefined
 
@@ -30,6 +32,20 @@ function revalidateReservation(id: string) {
   revalidatePath(`/dashboard/reservations/${id}`)
 }
 
+// Mirrors the dual-module check on the reservation detail page guard: finance
+// staff can reach that page (and its NotesPanel) for payment context without
+// holding the full 'reservations' module, so the note action must accept the
+// same two module sets — otherwise finance would see the form but get redirected
+// on submit. Reservation status changes (cancel/check-in/check-out) stay
+// strictly 'reservations'-gated below.
+async function requireReservationOrPaymentAccess() {
+  const admin = await requireAdmin()
+  if (!canAccessModule(admin.role, 'reservations') && !canAccessModule(admin.role, 'payments')) {
+    redirect('/dashboard')
+  }
+  return admin
+}
+
 // ── Cancel (with reason) ──────────────────────────────────────────────────────
 // Frees up the dates by removing the sparse room_availability blocks tied to
 // this reservation — per the "available = row absent" model used site-wide.
@@ -38,7 +54,7 @@ export async function cancelReservationAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const admin = await requireAdmin()
+  const admin = await requireModule('reservations')
   const reservationId = str(formData, 'reservation_id')
   const reason = str(formData, 'reason')
 
@@ -84,7 +100,7 @@ export async function cancelReservationAction(
 // ── Check-in ──────────────────────────────────────────────────────────────────
 
 export async function markCheckedInAction(reservationId: string): Promise<ActionState> {
-  const admin = await requireAdmin()
+  const admin = await requireModule('reservations')
   const db = createAdminClient()
 
   const { data: reservation } = await db
@@ -118,7 +134,7 @@ export async function markCheckedInAction(reservationId: string): Promise<Action
 // ── Check-out ─────────────────────────────────────────────────────────────────
 
 export async function markCheckedOutAction(reservationId: string): Promise<ActionState> {
-  const admin = await requireAdmin()
+  const admin = await requireModule('reservations')
   const db = createAdminClient()
 
   const { data: reservation } = await db
@@ -176,7 +192,7 @@ export async function addReservationNoteAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const admin = await requireAdmin()
+  const admin = await requireReservationOrPaymentAccess()
   const reservationId = str(formData, 'reservation_id')
   const note = str(formData, 'note')
 
