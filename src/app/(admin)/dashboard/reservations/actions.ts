@@ -123,7 +123,7 @@ export async function markCheckedOutAction(reservationId: string): Promise<Actio
 
   const { data: reservation } = await db
     .from('reservations')
-    .select('status')
+    .select('status, room_id')
     .eq('id', reservationId)
     .single()
 
@@ -144,6 +144,27 @@ export async function markCheckedOutAction(reservationId: string): Promise<Actio
     `Check-out registrado por ${admin.full_name}.`,
     admin.email,
   )
+
+  // Housekeeping: a room always needs cleaning once the guest leaves —
+  // flip it to "dirty" and record the transition, mirroring reservation_events.
+  const { data: room } = await db
+    .from('rooms')
+    .select('housekeeping_status')
+    .eq('id', reservation.room_id)
+    .single()
+
+  if (room) {
+    await db.from('rooms').update({ housekeeping_status: 'dirty' }).eq('id', reservation.room_id)
+    await db.from('housekeeping_logs').insert({
+      room_id:        reservation.room_id,
+      reservation_id: reservationId,
+      from_status:    room.housekeeping_status,
+      to_status:      'dirty',
+      note:           'Check-out realizado.',
+      admin_user_id:  admin.id,
+    })
+    revalidatePath('/dashboard/housekeeping')
+  }
 
   revalidateReservation(reservationId)
   return { success: true }

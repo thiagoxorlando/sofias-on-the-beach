@@ -169,6 +169,61 @@ export type Database = {
         }
         Relationships: []
       }
+      housekeeping_logs: {
+        Row: {
+          admin_user_id: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          note: string | null
+          reservation_id: string | null
+          room_id: string
+          to_status: string
+        }
+        Insert: {
+          admin_user_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          reservation_id?: string | null
+          room_id: string
+          to_status: string
+        }
+        Update: {
+          admin_user_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          reservation_id?: string | null
+          room_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "housekeeping_logs_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "housekeeping_logs_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "housekeeping_logs_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           admin_notes: string | null
@@ -851,6 +906,7 @@ export type Database = {
           description: string | null
           featured: boolean
           floor: number | null
+          housekeeping_status: string
           id: string
           is_active: boolean
           max_guests: number
@@ -872,6 +928,7 @@ export type Database = {
           description?: string | null
           featured?: boolean
           floor?: number | null
+          housekeeping_status?: string
           id?: string
           is_active?: boolean
           max_guests?: number
@@ -893,6 +950,7 @@ export type Database = {
           description?: string | null
           featured?: boolean
           floor?: number | null
+          housekeeping_status?: string
           id?: string
           is_active?: boolean
           max_guests?: number
