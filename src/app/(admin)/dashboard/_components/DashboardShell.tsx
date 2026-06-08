@@ -29,9 +29,11 @@ const NAV_LINKS: { href: string; label: string; icon: string; module: Module }[]
   { href: '/dashboard/rooms',         label: 'Quartos',         icon: 'bed',      module: 'rooms'        },
   { href: '/dashboard/reservations',  label: 'Reservas',        icon: 'calendar', module: 'reservations' },
   { href: '/dashboard/reception',     label: 'Recepção',        icon: 'reception', module: 'reception'   },
+  { href: '/dashboard/housekeeping',  label: 'Governança',      icon: 'housekeeping', module: 'housekeeping' },
   { href: '/dashboard/guests',        label: 'Hóspedes',        icon: 'users',    module: 'guests'       },
   { href: '/dashboard/availability',  label: 'Disponibilidade', icon: 'grid',     module: 'availability' },
   { href: '/dashboard/payments',      label: 'Financeiro',      icon: 'coin',     module: 'payments'     },
+  { href: '/dashboard/staff',         label: 'Equipe',          icon: 'staff',    module: 'staff'        },
   { href: '/dashboard/settings',      label: 'Configurações',   icon: 'settings', module: 'settings'     },
 ]
 
@@ -181,9 +183,11 @@ function NavIcon({ name, active }: { name: string; active: boolean }) {
     case 'bed':      return <BedIcon      className={cls} />
     case 'calendar': return <CalendarIcon className={cls} />
     case 'reception': return <BellDeskIcon className={cls} />
+    case 'housekeeping': return <SparkleIcon className={cls} />
     case 'users':    return <UsersIcon    className={cls} />
     case 'grid':     return <GridIcon     className={cls} />
     case 'coin':     return <CoinIcon     className={cls} />
+    case 'staff':    return <StaffIcon    className={cls} />
     case 'settings': return <SettingsIcon className={cls} />
     default:         return null
   }
@@ -239,6 +243,14 @@ function BellDeskIcon({ className }: { className?: string }) {
   )
 }
 
+function SparkleIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" />
+    </svg>
+  )
+}
+
 function UsersIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
@@ -267,6 +279,17 @@ function CoinIcon({ className }: { className?: string }) {
       <path d="M14.5 9a3 3 0 0 0-5 2.2c0 2.4 5 3.8 5 6a3 3 0 0 1-5 2.1" />
       <line x1={12} y1={6} x2={12} y2={8} />
       <line x1={12} y1={19} x2={12} y2={21} />
+    </svg>
+  )
+}
+
+function StaffIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <rect x={3} y={4} width={14} height={18} rx={2} />
+      <circle cx={10} cy={10} r={2.5} />
+      <path d="M6.5 17a3.5 3.5 0 0 1 7 0" />
+      <path d="M20 8v3M20 14v.01" />
     </svg>
   )
 }

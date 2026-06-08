@@ -15,6 +15,7 @@ export type Module =
   | 'availability'
   | 'settings'
   | 'payments'
+  | 'staff'
 
 export type Role =
   | 'super_admin'
@@ -28,7 +29,7 @@ export type Role =
 
 const ALL_MODULES: Module[] = [
   'overview', 'reception', 'housekeeping', 'maintenance', 'finance',
-  'reservations', 'rooms', 'guests', 'availability', 'settings', 'payments',
+  'reservations', 'rooms', 'guests', 'availability', 'settings', 'payments', 'staff',
 ]
 
 // '*' means unrestricted — used by super_admin/admin for full legacy-compatible access.

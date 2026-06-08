@@ -29,7 +29,48 @@ Two distinct account types share the same Supabase Auth project:
 | `getCurrentAdmin()` | `AdminSession \| null` | Admin record or null |
 | `getCurrentGuest()` | `GuestSession \| null` | Guest record or null (null if admin) |
 | `requireAdmin()` | `AdminSession` | Redirects to `/login` if not admin |
+| `requireModule(module)` | `AdminSession` | Like `requireAdmin()`, plus redirects to `/dashboard` if the role can't access that module (see below) |
 | `requireGuest(nextPath?)` | `GuestSession` | Redirects to `/entrar` if not valid guest |
+
+## Staff Roles & Module Permissions (`src/lib/permissions.ts`)
+
+The dashboard has grown from a single admin tool into a staff operations system.
+Every `admin_users` row has a `role`, and each role maps to the set of dashboard
+**modules** it may access. A module roughly corresponds to one sidebar section /
+route group (`reception`, `housekeeping`, `staff`, `payments`, etc.).
+
+| Role | Label (PT-BR) | Module access |
+|------|---------------|---------------|
+| `super_admin` | Super Admin | `*` — every module, including Equipe (`staff`) |
+| `admin` | Administrador | `*` — every module, including Equipe (`staff`) |
+| `manager` | Gerente | All operational modules (reception, housekeeping, maintenance, finance, reservations, rooms, guests, availability, settings, payments) — **not** `staff` |
+| `reception` | Recepção | `reception`, `reservations`, `guests` |
+| `housekeeping` | Governança | `housekeeping` |
+| `maintenance` | Manutenção | `maintenance` |
+| `finance` | Financeiro | `finance`, `payments` |
+| `staff` | Equipe (genérico) | `overview` only — legacy generic role |
+
+Two helpers enforce this:
+- `canAccessModule(role, module)` — used by `requireModule()` to guard pages, and
+- `getVisibleModules(role)` — used by `DashboardShell` to filter the sidebar links
+
+so a logged-in user only ever sees and reaches the sections their role covers.
+The `staff` **module** (Equipe / `/dashboard/staff`) is intentionally left out of
+every role's list except the `'*'` (super_admin/admin) sentinel — this is what
+keeps staff-account management restricted to super_admin/admin without a
+separate guard helper.
+
+## Route Separation
+
+| Area | Route prefix | Login | Table |
+|------|--------------|-------|-------|
+| Guest accounts & booking | `/entrar`, `/minha-conta`, `/reservar` | `/entrar` | `guests` |
+| Staff & admin dashboard | `/dashboard/*` | `/login` | `admin_users` |
+| Staff management (super_admin/admin only) | `/dashboard/staff` | `/login` | `admin_users` (+ `auth.users` via Admin API) |
+
+`/login` is exclusively for staff/admin accounts; `/entrar` is exclusively for
+guest accounts. Each flow blocks the other account type before creating a
+session (see "Login Flows" below).
 
 ## Route Protection
 
@@ -56,6 +97,43 @@ Handle **account type** checks:
 ### Admin Login (`/login`)
 - Separate page and action
 - No cross-contamination with guest flow
+
+## Staff Account Management (`/dashboard/staff`)
+
+Only `super_admin`/`admin` can reach this route (`requireModule('staff')` denies
+every other role — see "Staff Roles & Module Permissions"). It replaces the old
+fully-manual process described in `docs/admin-setup.md` for day-to-day staff
+account creation.
+
+**Creating a staff user** (`createStaffAction`):
+1. Validates full name, e-mail, temporary password (≥ 8 chars) and role
+2. Calls `createAdminClient().auth.admin.createUser()` — creates the
+   `auth.users` row with the temporary password and `email_confirm: true`
+   (no confirmation e-mail step needed; Resend isn't wired up yet — Phase 3)
+3. Inserts the matching `admin_users` row with the **same id**
+4. If the `admin_users` insert fails, the just-created auth user is deleted —
+   no orphaned logins without a role
+
+**Editing a staff user** (`updateStaffAction`): only `full_name`, `role` and
+`is_active` can change. Email and password are immutable here by design.
+
+**Role isolation rules** enforced server-side on both create and edit:
+- Only `super_admin` may assign, edit, or otherwise touch `super_admin` accounts
+  — `admin` cannot create or elevate anyone to `super_admin`, nor edit an
+  existing `super_admin`'s role/status
+- A user can never deactivate their own account (`id === admin.id && !is_active`
+  is rejected)
+- Deleting accounts is not supported — deactivate (`is_active = false`) instead;
+  a deactivated `admin_users` row fails the `is_active = true` check in
+  `getCurrentAdmin()` / `isAdminUser()`, so the person is immediately locked out
+  of `/dashboard` even with a valid Supabase session
+
+**Resetting a password** (`resetStaffPasswordAction`): sets a new temporary
+password directly via `auth.admin.updateUserById(id, { password })`. No email
+is sent (same Phase 3 dependency as account creation) — the admin communicates
+the new temporary password to the staff member directly (e.g. via WhatsApp) and
+asks them to change it after logging in. Only `super_admin` can reset another
+`super_admin`'s password.
 
 ## Booking Flow
 
