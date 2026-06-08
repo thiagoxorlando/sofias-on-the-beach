@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdmin } from '@/lib/auth'
+import { requireModule } from '@/lib/auth'
 
 export type ActionState = { error: string } | { success: true } | undefined
 
@@ -84,7 +84,7 @@ export async function confirmManualPaymentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const admin = await requireAdmin()
+  const admin = await requireModule('payments')
 
   const paymentId     = str(formData, 'payment_id') || null
   const reservationId = str(formData, 'reservation_id') || null
@@ -255,7 +255,7 @@ async function markPaymentAs(
   targetStatus: 'failed' | 'cancelled',
   label: string,
 ): Promise<ActionState> {
-  const admin = await requireAdmin()
+  const admin = await requireModule('payments')
   const db = createAdminClient()
 
   const { data: payment } = await db
@@ -301,7 +301,7 @@ export async function markPaymentCancelledAction(paymentId: string): Promise<Act
 // minted, short-lived signed URL (never cache one in the DB; it would expire).
 
 export async function getReceiptSignedUrlAction(receiptPath: string): Promise<{ url: string } | { error: string }> {
-  await requireAdmin()
+  await requireModule('payments')
   if (!receiptPath) return { error: 'Comprovante não encontrado.' }
 
   const db = createAdminClient()

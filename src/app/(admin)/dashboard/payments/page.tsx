@@ -118,6 +118,7 @@ function summarize(rows: Row[]) {
     pendingCount:   rows.filter((r) => r.status === 'pending' || r.status === 'overdue').length,
     paidCount:      paid.length,
     failedCount:    rows.filter((r) => r.status === 'failed' || r.status === 'cancelled' || r.status === 'refunded').length,
+    manualCount:    rows.filter((r) => r.method === 'manual').length,
   }
 }
 
@@ -186,6 +187,10 @@ export default async function PaymentsPage({ searchParams }: { searchParams: SP 
 
   const stats = summarize(all)
 
+  // Server-only env check, mirrors src/app/(admin)/dashboard/settings/page.tsx —
+  // never expose the key itself, only whether it's set.
+  const asaasConfigured = !!process.env.ASAAS_API_KEY?.trim()
+
   const filtered = all.filter((row) => {
     if (statusFilter && row.status !== statusFilter) return false
     if (methodFilter && row.method !== methodFilter) return false
@@ -226,14 +231,22 @@ export default async function PaymentsPage({ searchParams }: { searchParams: SP 
         </p>
       </div>
 
+      {!asaasConfigured && (
+        <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6 leading-relaxed">
+          Asaas não configurado — usando pagamentos manuais/WhatsApp. Confirme os recebimentos manualmente
+          abaixo conforme o pagamento chega (PIX direto, dinheiro, transferência, máquina de cartão).
+        </p>
+      )}
+
       {/* Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
         <StatCard label="Total recebido" value={formatBRL(stats.totalReceived)} tone="emerald" />
-        <StatCard label="Receita deste mês" value={formatBRL(stats.monthRevenue)} tone="ocean" />
-        <StatCard label="Receita hoje" value={formatBRL(stats.todayRevenue)} tone="ocean" />
-        <StatCard label="Pagamentos pendentes" value={String(stats.pendingCount)} tone="amber" />
+        <StatCard label="Recebido este mês" value={formatBRL(stats.monthRevenue)} tone="ocean" />
+        <StatCard label="Recebido hoje" value={formatBRL(stats.todayRevenue)} tone="ocean" />
+        <StatCard label="Pendente / vencido" value={String(stats.pendingCount)} tone="amber" />
         <StatCard label="Pagamentos pagos" value={String(stats.paidCount)} tone="emerald" />
         <StatCard label="Falhos / cancelados / estornados" value={String(stats.failedCount)} tone="slate" />
+        <StatCard label="Pagamentos manuais" value={String(stats.manualCount)} tone="ocean" />
       </div>
 
       <PaymentsFilters />

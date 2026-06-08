@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireModule } from '@/lib/auth'
+import { requireAdmin } from '@/lib/auth'
+import { canAccessModule } from '@/lib/permissions'
 import { ReservationStatusBadge, PaymentStatusBadge, PAYMENT_LABELS } from '../_components/badges'
 import { ReservationActions } from './_components/ReservationActions'
 import { ManualPaymentTrigger } from './_components/ManualPaymentTrigger'
@@ -63,7 +64,16 @@ function one<T>(rel: T | T[] | null): T | null {
 }
 
 export default async function ReservationDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireModule('reservations')
+  // Reservation detail is also where payment cards link to ("Ver reserva →"),
+  // so finance staff need to reach this page for payment context — without
+  // handing them the full 'reservations' module. Anyone who can manage
+  // reservations OR payments may view; `canManageReservation` below then
+  // decides which edit actions (check-in/out, cancellation) actually render.
+  const admin = await requireAdmin()
+  if (!canAccessModule(admin.role, 'reservations') && !canAccessModule(admin.role, 'payments')) {
+    redirect('/dashboard')
+  }
+  const canManageReservation = canAccessModule(admin.role, 'reservations')
 
   const { id } = await params
   const db = createAdminClient()
@@ -141,7 +151,9 @@ export default async function ReservationDetailPage({ params }: { params: Promis
               Criada em {formatDateTime(reservation.created_at)}
             </p>
           </div>
-          <ReservationActions reservationId={reservation.id} status={reservation.status} />
+          {canManageReservation && (
+            <ReservationActions reservationId={reservation.id} status={reservation.status} />
+          )}
         </div>
       </div>
 
