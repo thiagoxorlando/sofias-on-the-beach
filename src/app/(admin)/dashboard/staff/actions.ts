@@ -7,6 +7,11 @@ import type { Role } from '@/lib/permissions'
 
 export type ActionState = { error: string } | { success: true } | undefined
 
+export type DeleteStaffResult =
+  | { error: string }
+  | { archived: true }
+  | { deleted: true }
+
 const ASSIGNABLE_ROLES: Role[] = [
   'manager', 'reception', 'housekeeping', 'maintenance', 'finance', 'staff', 'admin', 'super_admin',
 ]
@@ -155,4 +160,94 @@ export async function resetStaffPasswordAction(
   if (error) return { error: 'Erro ao redefinir a senha. Tente novamente.' }
 
   return { success: true }
+}
+
+// ── Delete staff user ─────────────────────────────────────────────────────────
+// "Deactivate" (via updateStaffAction) stays the recommended path — this is the
+// dangerous, permanent alternative. Only super_admin may use it; self-delete and
+// non-super_admin deletion of super_admin accounts are blocked the same way
+// updateStaffAction blocks self-deactivation and cross-role super_admin edits.
+//
+// Hard delete is only safe when the account has NO linked history. FK reality
+// (checked against supabase/migrations — see 001_initial_schema.sql,
+// 005_add_manual_payment_confirmation.sql, 009_add_housekeeping.sql,
+// 010_add_maintenance.sql):
+//   - admin_users.id            → auth.users(id)        ON DELETE CASCADE
+//   - reservation_notes.admin_user_id  → admin_users(id) ON DELETE SET NULL
+//   - settings.updated_by              → admin_users(id) ON DELETE SET NULL
+//   - audit_logs.admin_user_id         → admin_users(id) ON DELETE SET NULL
+//   - housekeeping_logs.admin_user_id  → admin_users(id) ON DELETE SET NULL
+//   - maintenance_tickets.reported_by  → admin_users(id) ON DELETE SET NULL
+//   - maintenance_tickets.assigned_to  → admin_users(id) ON DELETE SET NULL
+//   - payments.manual_paid_by          → admin_users(id) — NO action clause,
+//     i.e. ON DELETE NO ACTION/RESTRICT. This is the one FK that would make a
+//     hard delete fail outright with a foreign-key violation.
+// Even where the FK would merely SET NULL, doing so would sever a real audit
+// trail (who confirmed a payment, who logged a cleaning, who reported a ticket).
+// So: ANY linked row in any of these tables → archive instead of deleting.
+// reservation_events.created_by is plain text ("admin:<email>", no FK), but the
+// spec calls it out as meaningful history too, so it's included in the check.
+async function hasLinkedHistory(db: ReturnType<typeof createAdminClient>, userId: string, email: string): Promise<boolean> {
+  const counts = await Promise.all([
+    db.from('payments').select('id', { count: 'exact', head: true }).eq('manual_paid_by', userId),
+    db.from('reservation_notes').select('id', { count: 'exact', head: true }).eq('admin_user_id', userId),
+    db.from('housekeeping_logs').select('id', { count: 'exact', head: true }).eq('admin_user_id', userId),
+    db.from('maintenance_tickets').select('id', { count: 'exact', head: true }).eq('reported_by', userId),
+    db.from('maintenance_tickets').select('id', { count: 'exact', head: true }).eq('assigned_to', userId),
+    db.from('audit_logs').select('id', { count: 'exact', head: true }).eq('admin_user_id', userId),
+    db.from('reservation_events').select('id', { count: 'exact', head: true }).eq('created_by', `admin:${email}`),
+  ])
+
+  return counts.some(({ count }) => (count ?? 0) > 0)
+}
+
+export async function deleteStaffAction(userId: string, confirmationEmail: string): Promise<DeleteStaffResult> {
+  const admin = await requireModule('staff')
+
+  if (!userId) return { error: 'Usuário inválido.' }
+  if (admin.role !== 'super_admin') {
+    return { error: 'Apenas um Super Admin pode excluir contas permanentemente.' }
+  }
+  if (userId === admin.id) {
+    return { error: 'Você não pode excluir a sua própria conta.' }
+  }
+
+  const db = createAdminClient()
+  const { data: target } = await db
+    .from('admin_users')
+    .select('id, email')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (!target) return { error: 'Usuário não encontrado.' }
+
+  if (confirmationEmail.trim().toLowerCase() !== target.email.toLowerCase()) {
+    return { error: 'O e-mail de confirmação não corresponde ao da conta.' }
+  }
+
+  if (await hasLinkedHistory(db, target.id, target.email)) {
+    const { error } = await db.from('admin_users').update({ is_active: false }).eq('id', target.id)
+    if (error) return { error: 'Erro ao arquivar o usuário. Tente novamente.' }
+
+    revalidatePath('/dashboard/staff')
+    return { archived: true }
+  }
+
+  // No linked history — hard delete is safe. Remove admin_users first (mirrors
+  // the rollback-on-failure ordering in createStaffAction): if this fails,
+  // nothing else has changed yet. Then remove the auth user explicitly so no
+  // orphaned login remains — admin_users.id → auth.users(id) ON DELETE CASCADE
+  // would also clean it up the other way around, but the spec's order (admin_users
+  // then auth user) keeps the role/permissions record gone first either way.
+  const { error: deleteError } = await db.from('admin_users').delete().eq('id', target.id)
+  if (deleteError) return { error: 'Erro ao excluir o usuário. Tente novamente.' }
+
+  const { error: authError } = await db.auth.admin.deleteUser(target.id)
+  if (authError) {
+    console.error('[staff] admin_users row removed but auth user deletion failed:', authError)
+    return { error: 'A conta foi removida do painel, mas houve um erro ao remover o acesso. Contate o suporte técnico.' }
+  }
+
+  revalidatePath('/dashboard/staff')
+  return { deleted: true }
 }

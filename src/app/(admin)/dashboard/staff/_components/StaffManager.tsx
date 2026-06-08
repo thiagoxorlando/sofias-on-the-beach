@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { StaffFormModal } from './StaffFormModal'
 import { ResetPasswordModal } from './ResetPasswordModal'
+import { DeleteStaffModal } from './DeleteStaffModal'
 import { BTN_PRIMARY } from '@/app/(admin)/dashboard/rooms/_components/form-helpers'
 import type { StaffRow } from './types'
 
@@ -32,6 +33,7 @@ type ActiveModal =
   | { type: 'create' }
   | { type: 'edit'; row: StaffRow }
   | { type: 'reset-password'; row: StaffRow }
+  | { type: 'delete'; row: StaffRow }
   | null
 
 export function StaffManager({ staff, currentAdminId, isSuperAdmin }: {
@@ -109,6 +111,17 @@ export function StaffManager({ staff, currentAdminId, isSuperAdmin }: {
                     >
                       Redefinir senha
                     </button>
+                    {isSuperAdmin && row.id !== currentAdminId && (
+                      <>
+                        <span className="mx-2 text-ocean-200">·</span>
+                        <button
+                          onClick={() => setModal({ type: 'delete', row })}
+                          className="text-[12px] font-semibold text-red-600 hover:text-red-700 transition-colors"
+                        >
+                          Excluir
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -125,6 +138,9 @@ export function StaffManager({ staff, currentAdminId, isSuperAdmin }: {
       )}
       {modal?.type === 'reset-password' && (
         <ResetPasswordModal row={modal.row} onClose={() => setModal(null)} />
+      )}
+      {modal?.type === 'delete' && (
+        <DeleteStaffModal row={modal.row} onClose={() => setModal(null)} />
       )}
 
       <p className="text-[11px] text-ocean-400 mt-3">
