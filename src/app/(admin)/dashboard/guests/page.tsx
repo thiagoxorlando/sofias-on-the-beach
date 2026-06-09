@@ -3,12 +3,11 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireModule } from '@/lib/auth'
 import { GuestsSearch } from './_components/GuestsSearch'
+import { GuestListManager } from './_components/GuestListManager'
 import {
   AdminPageHeader,
   AdminStatCard,
-  AdminListCard,
   AdminEmptyState,
-  AdminActionButton,
 } from '@/components/admin/AdminUI'
 
 export const metadata: Metadata = { title: "Hóspedes — Painel Sofia's" }
@@ -52,15 +51,6 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-function formatDate(dateStr: string): string {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`
-}
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
-
 function formatBRL(value: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value)
 }
@@ -99,7 +89,8 @@ function summarize(reservations: ReservationJoin[] | null): {
 type SP = Promise<{ q?: string; page?: string }>
 
 export default async function GuestsPage({ searchParams }: { searchParams: SP }) {
-  await requireModule('guests')
+  const admin = await requireModule('guests')
+  const isAdmin = admin.role === 'admin' || admin.role === 'super_admin'
 
   const sp = await searchParams
   const q = (sp.q ?? '').trim().toLowerCase()
@@ -186,35 +177,10 @@ export default async function GuestsPage({ searchParams }: { searchParams: SP })
         <AdminEmptyState>Nenhum hóspede encontrado com os filtros atuais.</AdminEmptyState>
       ) : (
         <>
-          <div className="space-y-3">
-            {pageRows.map((row) => (
-              <AdminListCard
-                key={row.id}
-                title={row.fullName}
-                titleMeta={`${row.email}${row.phone ? ` · ${row.phone}` : ''}${row.cpf ? ` · CPF ${row.cpf}` : ''} · cadastrado em ${formatDateTime(row.createdAt)}`}
-                fields={[
-                  { label: 'Reservas', value: String(row.reservationCount) },
-                  { label: 'Total gasto', value: formatBRL(row.totalSpent) },
-                  { label: 'Última estadia', value: row.lastStay ? formatDate(row.lastStay) : '—' },
-                  {
-                    label: 'Próxima estadia',
-                    value: (
-                      <span className={row.nextStay ? 'text-emerald-700' : 'text-slate-400'}>
-                        {row.nextStay ? formatDate(row.nextStay) : '—'}
-                      </span>
-                    ),
-                  },
-                ]}
-                actions={
-                  <div className="flex items-center justify-end">
-                    <AdminActionButton href={`/dashboard/guests/${row.id}`} variant="link">
-                      Ver detalhes →
-                    </AdminActionButton>
-                  </div>
-                }
-              />
-            ))}
-          </div>
+          <GuestListManager
+            rows={pageRows.map((r) => ({ ...r, totalSpent: formatBRL(r.totalSpent) }))}
+            isAdmin={isAdmin}
+          />
 
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3.5 rounded-[18px] border border-admin-border bg-white">

@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireModule } from '@/lib/auth'
 import { ReservationStatusBadge, PaymentStatusBadge } from '../../reservations/_components/badges'
 import { GuestNotesPanel } from './_components/GuestNotesPanel'
+import { DeleteGuestDanger } from './_components/DeleteGuestDanger'
 
 export const metadata: Metadata = { title: "Hóspede — Painel Sofia's" }
 
@@ -67,7 +68,8 @@ type ReservationJoin = {
 }
 
 export default async function GuestDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireModule('guests')
+  const admin = await requireModule('guests')
+  const isAdmin = admin.role === 'admin' || admin.role === 'super_admin'
 
   const { id } = await params
   const db = createAdminClient()
@@ -246,6 +248,17 @@ export default async function GuestDetailPage({ params }: { params: Promise<{ id
 
         </div>
       </div>
+
+      {isAdmin && (
+        <div className="mt-6 max-w-sm">
+          <DeleteGuestDanger
+            guestId={guest.id}
+            guestName={guest.full_name}
+            guestEmail={guest.email}
+            guestPhone={guest.phone}
+          />
+        </div>
+      )}
     </div>
   )
 }
