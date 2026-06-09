@@ -13,7 +13,7 @@ function heroExists(): boolean {
   return fs.existsSync(path.join(process.cwd(), 'public', HERO_IMG.replace(/^\//, '')))
 }
 
-export function HeroSection({ whatsapp }: { whatsapp: string }) {
+export function HeroSection({ whatsapp, onlineBookingEnabled }: { whatsapp: string; onlineBookingEnabled: boolean }) {
   const hasImage = heroExists()
   const waHref = `https://wa.me/${whatsapp}?text=${WA_MSG}`
 
@@ -85,27 +85,36 @@ export function HeroSection({ whatsapp }: { whatsapp: string }) {
             </p>
 
             <div className="flex flex-wrap gap-2.5">
+              {onlineBookingEnabled ? (
+                <Link
+                  href="/quartos"
+                  className="inline-flex items-center gap-2 bg-ocean-900 text-white px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-800 transition-colors shadow-sm"
+                >
+                  <CalendarIcon />
+                  Consultar disponibilidade
+                </Link>
+              ) : (
+                <a
+                  href={waHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-ocean-900 text-white px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-800 transition-colors shadow-sm"
+                >
+                  <WhatsAppIcon className="w-[14px] h-[14px] text-[#25D366] shrink-0" />
+                  Falar pelo WhatsApp
+                </a>
+              )}
               <Link
                 href="/quartos"
-                className="inline-flex items-center gap-2 bg-ocean-900 text-white px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-800 transition-colors shadow-sm"
-              >
-                <CalendarIcon />
-                Consultar disponibilidade
-              </Link>
-              <a
-                href={waHref}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 border border-ocean-200 text-ocean-700 bg-white/60 px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-50 transition-colors"
               >
-                <WhatsAppIcon className="w-[14px] h-[14px] text-[#25D366] shrink-0" />
-                Falar no WhatsApp
-              </a>
+                Ver suítes
+              </Link>
             </div>
           </div>
         </div>
 
-        {/* Z-20 — floating booking widget */}
+        {/* Z-20 — floating booking widget or coming-soon banner */}
         <div
           className="absolute z-[20]"
           style={{
@@ -115,7 +124,11 @@ export function HeroSection({ whatsapp }: { whatsapp: string }) {
             width: 'min(1120px, calc(100% - 80px))',
           }}
         >
-          <BookingWidget />
+          {onlineBookingEnabled ? (
+            <BookingWidget />
+          ) : (
+            <BookingComingSoon waHref={waHref} />
+          )}
         </div>
       </section>
 
@@ -148,8 +161,6 @@ export function HeroSection({ whatsapp }: { whatsapp: string }) {
           )}
         </div>
 
-        {/* Dark gradient overlay — full-height so the text block reads clearly
-            wherever it sits, strongest toward the bottom where the CTAs are */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -158,7 +169,6 @@ export function HeroSection({ whatsapp }: { whatsapp: string }) {
           }}
         />
 
-        {/* Content — raised off the bottom edge, clear of the floating WhatsApp button */}
         <div className="absolute inset-x-0 bottom-[calc(7rem+env(safe-area-inset-bottom))] px-6">
           <p className="text-[10px] font-bold text-white/65 uppercase tracking-[0.32em] mb-3">
             Beira-mar · Búzios · RJ
@@ -170,31 +180,73 @@ export function HeroSection({ whatsapp }: { whatsapp: string }) {
             Seu refúgio. Sua vista. Seu tempo.
           </p>
           <div className="flex flex-col gap-2.5">
+            {onlineBookingEnabled ? (
+              <Link
+                href="/quartos"
+                className="flex items-center justify-center gap-2.5 bg-white text-ocean-900 py-3 rounded-xl font-bold text-[13px] uppercase tracking-[0.08em] shadow-[0_8px_28px_rgba(0,0,0,0.20)]"
+              >
+                <CalendarIcon />
+                Consultar disponibilidade
+              </Link>
+            ) : (
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2.5 bg-white text-ocean-900 py-3 rounded-xl font-bold text-[13px] uppercase tracking-[0.08em] shadow-[0_8px_28px_rgba(0,0,0,0.20)]"
+              >
+                <WhatsAppIcon className="w-[15px] h-[15px] text-[#25D366] shrink-0" />
+                Falar pelo WhatsApp
+              </a>
+            )}
             <Link
               href="/quartos"
-              className="flex items-center justify-center gap-2.5 bg-white text-ocean-900 py-3 rounded-xl font-bold text-[13px] uppercase tracking-[0.08em] shadow-[0_8px_28px_rgba(0,0,0,0.20)]"
-            >
-              <CalendarIcon />
-              Consultar disponibilidade
-            </Link>
-            <a
-              href={waHref}
-              target="_blank"
-              rel="noopener noreferrer"
               className="flex items-center justify-center gap-2.5 border border-white/30 bg-white/10 backdrop-blur-sm text-white py-3 rounded-xl font-semibold text-[13px] uppercase tracking-[0.08em]"
             >
-              <WhatsAppIcon className="w-[15px] h-[15px] text-[#25D366] shrink-0" />
-              Falar no WhatsApp
-            </a>
+              Ver suítes
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Mobile booking widget */}
+      {/* Mobile booking widget or coming-soon banner */}
       <div className="md:hidden bg-white px-4 pt-4 pb-8 border-b border-ocean-100">
-        <BookingWidget />
+        {onlineBookingEnabled ? (
+          <BookingWidget />
+        ) : (
+          <BookingComingSoon waHref={waHref} mobile />
+        )}
       </div>
     </>
+  )
+}
+
+function BookingComingSoon({ waHref, mobile = false }: { waHref: string; mobile?: boolean }) {
+  return (
+    <div className={`bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,40,80,0.14)] border border-ocean-100 overflow-hidden ${mobile ? 'px-5 py-4' : 'px-6 py-5'}`}>
+      <div className="flex flex-col md:flex-row md:items-center gap-4">
+        <div className="flex-1 min-w-0">
+          <span className="inline-block text-[9px] font-bold text-ocean-600 bg-ocean-50 border border-ocean-100 rounded-full px-2.5 py-1 uppercase tracking-[0.20em] mb-2">
+            Site em modo apresentação
+          </span>
+          <p className="text-[14px] font-bold text-ocean-900 mb-0.5 leading-snug">
+            Reservas online em breve
+          </p>
+          <p className="text-[12px] text-foreground/55 leading-relaxed">
+            Estamos preparando a reserva direta pelo site. Por enquanto, consulte disponibilidade e valores pelo WhatsApp.
+          </p>
+        </div>
+        <a
+          href={waHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 inline-flex items-center justify-center gap-2 bg-ocean-900 text-white px-6 py-3 rounded-xl text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-ocean-800 transition-colors shadow-sm whitespace-nowrap"
+        >
+          <WhatsAppIcon className="w-[14px] h-[14px] text-[#25D366] shrink-0" />
+          Falar pelo WhatsApp
+        </a>
+      </div>
+    </div>
   )
 }
 

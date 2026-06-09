@@ -21,6 +21,7 @@ export type SiteSettings = {
   checkOutTime: string
   cancellationPolicy: string
   bookingConfirmationMessage: string
+  onlineBookingEnabled: boolean
 }
 
 const FALLBACK_SETTINGS: SiteSettings = {
@@ -39,9 +40,12 @@ const FALLBACK_SETTINGS: SiteSettings = {
   checkOutTime:               '12:00',
   cancellationPolicy:         '',
   bookingConfirmationMessage: '',
+  onlineBookingEnabled:       false,
 }
 
-const SETTING_KEY: Record<keyof SiteSettings, string> = {
+type StringSettingField = keyof Omit<SiteSettings, 'onlineBookingEnabled'>
+
+const SETTING_KEY: Record<StringSettingField, string> = {
   businessName:               'pousada_name',
   publicEmail:                'pousada_email',
   phone:                      'phone',
@@ -70,10 +74,13 @@ export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
   const raw = new Map(data.map((row) => [row.key, row.value]))
   const settings = { ...FALLBACK_SETTINGS }
 
-  for (const field of Object.keys(SETTING_KEY) as (keyof SiteSettings)[]) {
+  for (const field of Object.keys(SETTING_KEY) as StringSettingField[]) {
     const value = raw.get(SETTING_KEY[field])
     if (typeof value === 'string' && value.trim() !== '') settings[field] = value
   }
+
+  const enabledRaw = raw.get('online_booking_enabled')
+  settings.onlineBookingEnabled = enabledRaw === true || enabledRaw === 'true'
 
   return settings
 })

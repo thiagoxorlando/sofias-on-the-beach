@@ -16,14 +16,15 @@ type AdminUser = {
 }
 
 const ROLE_LABEL: Record<string, string> = {
-  super_admin:  'Super Admin',
-  admin:        'Administrador',
-  manager:      'Gerente',
-  reception:    'Recepção',
-  housekeeping: 'Governança',
-  maintenance:  'Manutenção',
-  finance:      'Financeiro',
-  staff:        'Equipe',
+  super_admin:             'Super Admin',
+  admin:                   'Administrador',
+  manager:                 'Gerência',
+  reception:               'Recepção',
+  housekeeping_supervisor: 'Chefe de Governança',
+  housekeeping:            'Governança',
+  maintenance:             'Manutenção',
+  finance:                 'Financeiro',
+  staff:                   'Equipe',
 }
 
 type NavLink = { href: string; label: string; icon: string; module: Module }

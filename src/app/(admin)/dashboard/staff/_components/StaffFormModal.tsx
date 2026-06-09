@@ -5,17 +5,23 @@ import { createStaffAction, updateStaffAction, type ActionState } from '../actio
 import { ModalOverlay, FormField, INPUT, BTN_PRIMARY, BTN_SECONDARY, ErrorMessage } from '@/app/(admin)/dashboard/rooms/_components/form-helpers'
 import type { StaffRow } from './types'
 
-const ROLE_OPTIONS: { value: string; label: string; superAdminOnly?: boolean }[] = [
-  { value: 'manager',      label: 'Gerente' },
-  { value: 'reception',    label: 'Recepção' },
-  { value: 'housekeeping_supervisor', label: 'Chefe de Governança' },
-  { value: 'housekeeping',            label: 'Governança' },
-  { value: 'maintenance',  label: 'Manutenção' },
-  { value: 'finance',      label: 'Financeiro' },
-  { value: 'staff',        label: 'Equipe (genérico)' },
-  { value: 'admin',        label: 'Administrador' },
-  { value: 'super_admin',  label: 'Super Admin', superAdminOnly: true },
+// Sofia booking-only role options — only these three are offered for new/edited users
+const SOFIA_ROLE_OPTIONS: { value: string; label: string; superAdminOnly?: boolean }[] = [
+  { value: 'admin',       label: 'Admin' },
+  { value: 'manager',     label: 'Gerência' },
+  { value: 'reception',   label: 'Recepção' },
+  { value: 'super_admin', label: 'Super Admin', superAdminOnly: true },
 ]
+
+// Legacy roles: kept for code compatibility, shown only when a user already has one
+const LEGACY_ROLE_LABELS: Record<string, string> = {
+  housekeeping_supervisor: 'Chefe de Governança',
+  housekeeping:            'Governança',
+  maintenance:             'Manutenção',
+  finance:                 'Financeiro',
+  staff:                   'Equipe',
+}
+const LEGACY_ROLE_SET = new Set(Object.keys(LEGACY_ROLE_LABELS))
 
 type Props = {
   mode: 'create' | 'edit'
@@ -32,7 +38,8 @@ export function StaffFormModal({ mode, initial, isSuperAdmin, onClose }: Props) 
     if (state && 'success' in state) onClose()
   }, [state, onClose])
 
-  const roleOptions = ROLE_OPTIONS.filter((opt) => !opt.superAdminOnly || isSuperAdmin)
+  const roleOptions = SOFIA_ROLE_OPTIONS.filter((opt) => !opt.superAdminOnly || isSuperAdmin)
+  const currentRoleIsLegacy = mode === 'edit' && !!initial?.role && LEGACY_ROLE_SET.has(initial.role)
 
   return (
     <ModalOverlay onClose={onClose}>
@@ -84,6 +91,13 @@ export function StaffFormModal({ mode, initial, isSuperAdmin, onClose }: Props) 
               {roleOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
+              {currentRoleIsLegacy && (
+                <optgroup label="Avançado (legado)">
+                  <option value={initial!.role}>
+                    {LEGACY_ROLE_LABELS[initial!.role] ?? initial!.role}
+                  </option>
+                </optgroup>
+              )}
             </select>
           </FormField>
           <FormField label="Status">

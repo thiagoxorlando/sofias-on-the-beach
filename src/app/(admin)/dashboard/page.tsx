@@ -249,7 +249,7 @@ async function loadData(role: string) {
 
   const unreadyArrivals = arrivals.filter((a) => ['dirty', 'cleaning'].includes(a.roomHkStatus ?? ''))
   if (unreadyArrivals.length > 0)
-    alerts.push({ message: `${unreadyArrivals.length} chegada${unreadyArrivals.length !== 1 ? 's' : ''} hoje com quarto não pronto`, severity: 'danger', href: '/dashboard/housekeeping' })
+    alerts.push({ message: `${unreadyArrivals.length} chegada${unreadyArrivals.length !== 1 ? 's' : ''} hoje com quarto não pronto`, severity: 'danger', href: canHk ? '/dashboard/housekeeping' : '/dashboard/reception' })
 
   const pendingPayArrivals = arrivals.filter((a) => a.status === 'pending_payment')
   if (pendingPayArrivals.length > 0)
@@ -262,7 +262,7 @@ async function loadData(role: string) {
     alerts.push({ message: `${mtUrgent} chamado${mtUrgent !== 1 ? 's' : ''} urgente${mtUrgent !== 1 ? 's' : ''} de manutenção`, severity: 'danger', href: '/dashboard/maintenance' })
 
   if (staleHandoffs > 0)
-    alerts.push({ message: `${staleHandoffs} solicitação${staleHandoffs !== 1 ? 'ões' : ''} interdepartamental${staleHandoffs !== 1 ? 'is' : ''} aberta${staleHandoffs !== 1 ? 's' : ''} há mais de 24h`, severity: 'warning' })
+    alerts.push({ message: `${staleHandoffs} solicitação${staleHandoffs !== 1 ? 'ões' : ''} interna${staleHandoffs !== 1 ? 's' : ''} aberta${staleHandoffs !== 1 ? 's' : ''} há mais de 24h`, severity: 'warning' })
 
   if (canPay && pendingCount > 0)
     alerts.push({ message: `${pendingCount} pagamento${pendingCount !== 1 ? 's' : ''} pendente${pendingCount !== 1 ? 's' : ''} · ${formatBRL(pendingAmount)}`, severity: 'warning', href: '/dashboard/payments' })
@@ -346,7 +346,7 @@ export default async function DashboardOverviewPage() {
           hint="Disponíveis"
           tone={data.hkReady > 0 ? 'success' : 'neutral'}
           icon={<BedIcon />}
-          href="/dashboard/housekeeping"
+          href={data.canHk ? '/dashboard/housekeeping' : undefined}
         />
         <MetricCard
           label="Em limpeza / sujos"
@@ -354,7 +354,7 @@ export default async function DashboardOverviewPage() {
           hint="Aguardando preparo"
           tone={data.hkCleaning + data.hkDirty > 0 ? 'warning' : 'neutral'}
           icon={<CleanIcon />}
-          href="/dashboard/housekeeping"
+          href={data.canHk ? '/dashboard/housekeeping' : undefined}
         />
         {data.canPay ? (
           <MetricCard
@@ -401,9 +401,11 @@ export default async function DashboardOverviewPage() {
             <h2 className="text-[14px] font-semibold text-slate-800">Mapa de quartos</h2>
             <p className="text-[12px] text-slate-400 mt-0.5">Status operacional em tempo real</p>
           </div>
-          <Link href="/dashboard/housekeeping" className="text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors">
-            Ver governança →
-          </Link>
+          {data.canHk && (
+            <Link href="/dashboard/housekeeping" className="text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors">
+              Ver governança →
+            </Link>
+          )}
         </div>
         <div className="px-5 pt-4 flex flex-wrap gap-3">
           {ROOM_STATUS_CFG.map((s) => (
@@ -526,7 +528,7 @@ export default async function DashboardOverviewPage() {
             <h2 className="text-[14px] font-semibold text-slate-800">Ações rápidas</h2>
           </div>
           <div className="p-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3">
-            {QUICK_ACTIONS.map((qa) => (
+            {QUICK_ACTIONS.filter((qa) => !('requiresHk' in qa) || data.canHk).map((qa) => (
               qa.href ? (
                 <Link
                   key={qa.label}
@@ -880,6 +882,7 @@ const QUICK_ACTIONS = [
     label: 'Governança',
     href: '/dashboard/housekeeping',
     iconBg: 'bg-emerald-50',
+    requiresHk: true,
     Icon: () => (
       <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
         <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" />

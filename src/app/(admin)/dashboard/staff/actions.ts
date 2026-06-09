@@ -13,7 +13,9 @@ export type DeleteStaffResult =
   | { deleted: true }
 
 const ASSIGNABLE_ROLES: Role[] = [
-  'manager', 'reception', 'housekeeping', 'maintenance', 'finance', 'staff', 'admin', 'super_admin',
+  'manager', 'reception',
+  'housekeeping', 'housekeeping_supervisor',
+  'maintenance', 'finance', 'staff', 'admin', 'super_admin',
 ]
 
 function str(formData: FormData, key: string): string {
@@ -75,6 +77,9 @@ export async function createStaffAction(
 
   if (insertError) {
     await db.auth.admin.deleteUser(created.user.id)
+    if (insertError.code === '23514') {
+      return { error: 'Esse cargo ainda não existe no banco. Rode a migration 016_add_housekeeping_supervisor_role.sql no Supabase.' }
+    }
     return { error: 'Erro ao salvar os dados da equipe. Tente novamente.' }
   }
 
@@ -122,7 +127,12 @@ export async function updateStaffAction(
     .update({ full_name: fullName, role, is_active: isActive })
     .eq('id', id)
 
-  if (error) return { error: 'Erro ao atualizar o usuário. Tente novamente.' }
+  if (error) {
+    if (error.code === '23514') {
+      return { error: 'Esse cargo ainda não existe no banco. Rode a migration 016_add_housekeeping_supervisor_role.sql no Supabase.' }
+    }
+    return { error: 'Erro ao atualizar o usuário. Tente novamente.' }
+  }
 
   revalidatePath('/dashboard/staff')
   return { success: true }

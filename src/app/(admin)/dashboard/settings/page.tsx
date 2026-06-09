@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireModule } from '@/lib/auth'
 import { AdminPageHeader } from '@/components/admin/AdminUI'
 import { SettingsForm, type SiteSettingsFormValues } from './_components/SettingsForm'
+import { BookingModeToggle } from './_components/BookingModeToggle'
 
 export const metadata: Metadata = { title: "Configurações — Painel Sofia's" }
 
@@ -18,6 +19,7 @@ export default async function SettingsPage() {
   const db = createAdminClient()
   const { data } = await db.from('settings').select('key, value')
   const byKey = new Map((data ?? []).map((row) => [row.key, row.value]))
+  const onlineBookingEnabled = byKey.get('online_booking_enabled') === true || byKey.get('online_booking_enabled') === 'true'
 
   const initial: SiteSettingsFormValues = {
     businessName:               asString(byKey.get('pousada_name')),
@@ -51,6 +53,17 @@ export default async function SettingsPage() {
         subtitle="Dados públicos da pousada, redes sociais e parâmetros de reserva — exibidos no site e usados pela equipe."
       />
 
+      {/* Reservas online — admin toggle */}
+      <section className={CARD}>
+        <h2 className="text-[15px] font-semibold text-slate-800 mb-1">Reservas online</h2>
+        <p className="text-[12px] text-slate-500 mb-4 leading-relaxed">
+          Controla se o formulário de reserva está disponível no site. Desative para lançar o site
+          como landing page primeiro — hóspedes serão direcionados ao WhatsApp. Recepção e reservas
+          internas continuam funcionando normalmente.
+        </p>
+        <BookingModeToggle enabled={onlineBookingEnabled} />
+      </section>
+
       <SettingsForm initial={initial} />
 
       {/* Pagamentos — read-only status */}
@@ -66,10 +79,16 @@ export default async function SettingsPage() {
           <PaymentStatusPill label="Cartão de crédito" ok={asaasConfigured} okText="Disponível" notText="Não disponível" />
         </div>
         {!asaasConfigured && (
-          <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mt-4">
-            Defina <code className="font-mono text-[11px]">ASAAS_API_KEY</code> no ambiente do servidor para ativar PIX e cartão de crédito.
-            Até lá, hóspedes recebem a opção de combinar o pagamento diretamente pelo WhatsApp.
-          </p>
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 space-y-1">
+            <p className="text-[12px] font-semibold text-slate-700">
+              Modo manual — configuração pendente
+            </p>
+            <p className="text-[12px] text-slate-500 leading-relaxed">
+              Pagamentos online via PIX e cartão ainda não estão configurados. No momento, pagamentos são
+              combinados diretamente pelo WhatsApp entre a equipe e o hóspede.
+              Para ativar o gateway, defina <code className="font-mono text-[11px]">ASAAS_API_KEY</code> nas variáveis de ambiente do servidor.
+            </p>
+          </div>
         )}
       </section>
 

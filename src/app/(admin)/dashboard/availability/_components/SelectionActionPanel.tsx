@@ -32,7 +32,7 @@ const BTN_PRIMARY =
   'text-[12px] font-bold uppercase tracking-[0.08em] hover:bg-admin-sidebar-act transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 
 const REASON_PRESETS = [
-  { value: 'Manutenção',                    label: 'Manutenção' },
+  { value: 'Reparo / Obras',                 label: 'Reparo / Obras' },
   { value: 'Uso do proprietário',           label: 'Uso do proprietário' },
   { value: 'Limpeza',                       label: 'Limpeza' },
   { value: 'Indisponível temporariamente',  label: 'Indisponível temporariamente' },

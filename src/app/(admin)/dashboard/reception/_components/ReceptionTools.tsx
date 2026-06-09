@@ -195,7 +195,7 @@ export function ReceptionTools() {
 
         {showSearch && <SearchPanel onClose={closeSearch} />}
 
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <Link href="/dashboard/reception/walk-in" className={QA_WRAPPER}>
             <QAIcon color="emerald"><PlusCircleIcon /></QAIcon>
             <QALabel>Nova reserva / Walk-in</QALabel>
@@ -211,21 +211,12 @@ export function ReceptionTools() {
             <QALabel>Buscar hóspede</QALabel>
           </button>
 
-          <button type="button" onClick={() => setHandoffTarget('housekeeping')} className={QA_WRAPPER}>
-            <QAIcon color="amber"><SparkleIcon2 /></QAIcon>
-            <QALabel>Solicitar governança</QALabel>
-          </button>
-
-          <button type="button" onClick={() => setHandoffTarget('maintenance')} className={QA_WRAPPER}>
-            <QAIcon color="red"><WrenchIcon /></QAIcon>
-            <QALabel>Solicitar manutenção</QALabel>
-          </button>
-
           <button type="button" onClick={() => setShowQueue(true)} className={QA_WRAPPER}>
             <QAIcon color="slate"><CheckInIcon /></QAIcon>
             <QALabel>Ver check-ins/outs</QALabel>
           </button>
         </div>
+        {/* Sofia launch: governança/manutenção handoff buttons hidden — code kept below for future use */}
       </div>
 
       {handoffTarget !== null && (
@@ -274,6 +265,8 @@ function UserIcon() {
   )
 }
 
+// Sofia launch: SparkleIcon2 and WrenchIcon kept for when handoff buttons are re-enabled
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function SparkleIcon2() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
@@ -282,6 +275,7 @@ function SparkleIcon2() {
   )
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function WrenchIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">

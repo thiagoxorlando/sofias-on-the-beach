@@ -12,7 +12,7 @@ export default async function MarketingLayout({
 
   return (
     <>
-      <Header />
+      <Header onlineBookingEnabled={settings.onlineBookingEnabled} whatsapp={settings.whatsapp} />
       <main className="flex-1 pt-[64px] md:pt-[92px]">{children}</main>
       <Footer settings={settings} />
       <WhatsAppButton settings={settings} />

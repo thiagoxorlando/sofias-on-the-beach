@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { calculateRoomPriceForDates } from '@/lib/pricing'
+import { getSiteSettings } from '@/lib/settings'
 
 export type ReservationFormState = { error: string } | undefined
 
@@ -20,6 +21,12 @@ export async function createReservationAction(
   _prev: ReservationFormState,
   formData: FormData,
 ): Promise<ReservationFormState> {
+  // ── Online booking guard ──────────────────────────────────────────────────
+  const siteSettings = await getSiteSettings()
+  if (!siteSettings.onlineBookingEnabled) {
+    return { error: 'Reservas online estão temporariamente desativadas. Entre em contato pelo WhatsApp.' }
+  }
+
   // ── Auth + role check ─────────────────────────────────────────────────────
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

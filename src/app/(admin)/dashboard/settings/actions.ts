@@ -100,3 +100,34 @@ export async function updateSiteSettingsAction(_prev: ActionState, formData: For
   revalidatePath('/', 'layout')
   return { success: true }
 }
+
+// ── Online booking toggle ─────────────────────────────────────────────────────
+// Enables or disables the public online booking flow. When disabled, /reservar
+// shows a WhatsApp fallback and createReservationAction is blocked. Walk-in
+// and admin reservations are never affected.
+
+export async function setOnlineBookingAction(enabled: boolean): Promise<ActionState> {
+  const admin = await requireModule('settings')
+
+  const db = createAdminClient()
+  const { error } = await db
+    .from('settings')
+    .upsert(
+      {
+        key:        'online_booking_enabled',
+        value:      enabled,
+        label:      'Reservas online ativas',
+        group_name: 'general',
+        is_public:  false,
+        updated_by: admin.id,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'key' },
+    )
+
+  if (error) return { error: 'Erro ao salvar configuração. Tente novamente.' }
+
+  revalidatePath('/dashboard/settings')
+  revalidatePath('/', 'layout')
+  return { success: true }
+}

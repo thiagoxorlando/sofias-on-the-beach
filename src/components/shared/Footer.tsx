@@ -1,19 +1,10 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import type { SiteSettings } from '@/lib/settings'
 
 const navLinks = [
-  { href: '/', label: 'Início' },
+  { href: '/',        label: 'Início' },
   { href: '/quartos', label: 'Suítes' },
-  { href: '/experiencia', label: 'Experiências' },
-  { href: '/localizacao', label: 'Localização' },
-  { href: '/contato', label: 'Contato' },
-]
-
-const infoLinks = [
-  { href: '/sobre', label: 'Sobre nós' },
-  { href: '/privacidade', label: 'Política de Privacidade' },
-  { href: '/termos', label: 'Termos de Uso' },
-  { href: '/faq', label: 'Perguntas Frequentes' },
 ]
 
 const WA_MSG = encodeURIComponent(
@@ -29,8 +20,32 @@ export function Footer({ settings }: { settings: SiteSettings }) {
     <footer className="bg-ocean-900 border-t border-white/10">
       <div className="max-w-7xl mx-auto px-6 md:px-10 pt-12 pb-8">
 
-        {/* 4 columns */}
+        {/* 4 columns: Brand · Navegação · Contato · Siga-nos */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10 pb-10 border-b border-white/[0.07]">
+
+          {/* Brand */}
+          <div className="col-span-2 md:col-span-1">
+            <Link href="/" className="inline-flex items-center gap-3 mb-4 group">
+              <Image
+                src="/images/experience/sofias_icon_transparent.png"
+                alt="Sofia's on the Beach"
+                width={40}
+                height={40}
+                className="w-9 h-9 object-contain opacity-90 group-hover:opacity-100 transition-opacity"
+              />
+              <div className="flex flex-col leading-none">
+                <span className="font-serif text-[17px] font-bold text-white tracking-tight leading-none">
+                  Sofia&apos;s
+                </span>
+                <span className="text-[9px] font-bold text-ocean-400 uppercase tracking-[0.18em] mt-0.5">
+                  on the Beach
+                </span>
+              </div>
+            </Link>
+            <p className="text-[12px] text-ocean-500 leading-relaxed max-w-[200px]">
+              Pousada boutique à beira-mar em Búzios, RJ.
+            </p>
+          </div>
 
           {/* Navegação */}
           <div>
@@ -51,26 +66,7 @@ export function Footer({ settings }: { settings: SiteSettings }) {
             </ul>
           </div>
 
-          {/* Informações */}
-          <div>
-            <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.22em] mb-5">
-              Informações
-            </p>
-            <ul className="space-y-3.5">
-              {infoLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-[13px] text-ocean-300 hover:text-white transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contato — items with icons */}
+          {/* Contato */}
           <div>
             <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.22em] mb-5">
               Contato
@@ -102,7 +98,7 @@ export function Footer({ settings }: { settings: SiteSettings }) {
             </ul>
           </div>
 
-          {/* Siga-nos — circular icon buttons, no text labels */}
+          {/* Siga-nos */}
           <div>
             <p className="text-[10px] font-bold text-ocean-400 uppercase tracking-[0.22em] mb-5">
               Siga-nos
@@ -117,17 +113,6 @@ export function Footer({ settings }: { settings: SiteSettings }) {
                   className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-ocean-300 hover:text-white hover:border-white/40 transition-colors"
                 >
                   <InstagramIcon />
-                </a>
-              )}
-              {settings.facebookUrl && (
-                <a
-                  href={settings.facebookUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook"
-                  className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-ocean-300 hover:text-white hover:border-white/40 transition-colors"
-                >
-                  <FacebookIcon />
                 </a>
               )}
               <a
@@ -199,14 +184,6 @@ function InstagramIcon() {
       <rect x={2} y={2} width={20} height={20} rx={5} ry={5} />
       <circle cx={12} cy={12} r={4} />
       <circle cx={17.5} cy={6.5} r={0.5} fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
-
-function FacebookIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
-      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
     </svg>
   )
 }

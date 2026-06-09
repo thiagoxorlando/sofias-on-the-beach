@@ -18,7 +18,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <HeroSection whatsapp={settings.whatsapp} />
+      <HeroSection whatsapp={settings.whatsapp} onlineBookingEnabled={settings.onlineBookingEnabled} />
       <WhyBookDirect />
       <RoomsPreview />
       <ExperienceSection />

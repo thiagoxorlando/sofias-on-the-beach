@@ -467,9 +467,6 @@ export default async function ReceptionPage() {
             <div className="bg-white rounded-2xl border border-admin-border shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <h2 className="text-[15px] font-bold text-slate-800">Mapa de quartos</h2>
-                <Link href="/dashboard/housekeeping" className="text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors">
-                  Governança →
-                </Link>
               </div>
 
               {/* Legend */}

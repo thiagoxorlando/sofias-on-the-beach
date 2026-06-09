@@ -49,6 +49,36 @@ function reservarUrl(roomId: string, checkIn: string, checkOut: string, guests: 
   return `/reservar?room_id=${roomId}&check_in=${checkIn}&check_out=${checkOut}&guests=${guests}`
 }
 
+function QuartosComingSoon({ whatsapp }: { whatsapp: string }) {
+  const waHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent(
+    "Olá! Gostaria de saber sobre disponibilidade e valores na pousada Sofia's on the Beach.",
+  )}`
+  return (
+    <div className="bg-white rounded-2xl border border-foam shadow-[0_4px_24px_-8px_rgba(0,40,80,0.10)] px-6 py-5">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex-1 min-w-0">
+          <span className="inline-block text-[9px] font-bold text-navy/60 bg-foam/60 border border-mist/50 rounded-full px-2.5 py-1 uppercase tracking-[0.20em] mb-2">
+            Site em modo apresentação
+          </span>
+          <p className="text-[14px] font-bold text-navy-deep mb-0.5">Reservas online em breve</p>
+          <p className="text-[12px] text-stone leading-relaxed">
+            Estamos preparando a reserva direta pelo site. Por enquanto, consulte disponibilidade e valores pelo WhatsApp.
+          </p>
+        </div>
+        <a
+          href={waHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`shrink-0 flex items-center justify-center gap-2 px-6 py-3 text-[12px] uppercase tracking-[0.08em] ${BTN_PRIMARY}`}
+        >
+          <WAIcon className="w-[14px] h-[14px] shrink-0" />
+          Falar pelo WhatsApp
+        </a>
+      </div>
+    </div>
+  )
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 type SearchParams = Promise<{ check_in?: string | string[]; check_out?: string | string[]; guests?: string | string[] }>
@@ -65,21 +95,23 @@ export default async function QuartosPage({ searchParams }: { searchParams: Sear
   const checkOut = rawCheckOut && ISO_DATE.test(rawCheckOut) ? rawCheckOut : null
   const guests   = rawGuests   ? Math.max(1, parseInt(rawGuests, 10) || 1) : null
 
-  const hasValidDates = !!(checkIn && checkOut && checkOut > checkIn)
+  // When booking is disabled, ignore date/guest filters entirely — no availability check needed
+  const bookingEnabled = settings.onlineBookingEnabled
+  const hasValidDates = bookingEnabled && !!(checkIn && checkOut && checkOut > checkIn)
 
-  // Date validation error shown to user
+  // Date validation error shown to user (only relevant when booking is on)
   const dateError =
-    rawCheckIn && rawCheckOut && !hasValidDates && (checkIn || checkOut)
+    bookingEnabled && rawCheckIn && rawCheckOut && !hasValidDates && (checkIn || checkOut)
       ? 'A data de check-out deve ser após o check-in.'
       : null
 
   // Fetch all active rooms
   const allRooms = await getAllActiveRooms()
 
-  // Filter by guest capacity (hide rooms that can't accommodate)
-  const guestFiltered = guests ? allRooms.filter((r) => r.maxGuests >= guests) : allRooms
+  // Filter by guest capacity (only when booking is enabled and guests param is present)
+  const guestFiltered = (bookingEnabled && guests) ? allRooms.filter((r) => r.maxGuests >= guests) : allRooms
 
-  // Batch availability check — single query for all rooms
+  // Batch availability check — only when booking is enabled and dates are selected
   let blockedIds = new Set<string>()
   if (hasValidDates && guestFiltered.length > 0) {
     blockedIds = await getBlockedRoomIds(
@@ -117,11 +149,15 @@ export default async function QuartosPage({ searchParams }: { searchParams: Sear
             Escolha sua acomodação à beira-mar em Búzios — cada suíte foi pensada para que a vista do mar seja sempre protagonista.
           </p>
 
-          <RoomSearchBar
-            initialCheckIn={checkIn}
-            initialCheckOut={checkOut}
-            initialGuests={guests}
-          />
+          {bookingEnabled ? (
+            <RoomSearchBar
+              initialCheckIn={checkIn}
+              initialCheckOut={checkOut}
+              initialGuests={guests}
+            />
+          ) : (
+            <QuartosComingSoon whatsapp={settings.whatsapp} />
+          )}
         </div>
       </section>
 
@@ -176,8 +212,9 @@ export default async function QuartosPage({ searchParams }: { searchParams: Sear
                   key={room.id}
                   room={room}
                   available={room.available}
+                  onlineBookingEnabled={settings.onlineBookingEnabled}
                   reservarHref={
-                    room.available === true && hasValidDates && guests
+                    room.available === true && hasValidDates && guests && settings.onlineBookingEnabled
                       ? reservarUrl(room.id, checkIn!, checkOut!, guests)
                       : null
                   }
@@ -197,12 +234,14 @@ export default async function QuartosPage({ searchParams }: { searchParams: Sear
 function RoomCard({
   room,
   available,
+  onlineBookingEnabled,
   reservarHref,
   waHref,
 }: {
   room: PublicRoomFull
   available: boolean | null  // null = no dates selected
-  reservarHref: string | null // non-null only when available + dates selected
+  onlineBookingEnabled: boolean
+  reservarHref: string | null // non-null only when available + dates selected + booking enabled
   waHref: string
 }) {
   const isExternal = room.imageUrl.startsWith('http')
@@ -308,8 +347,8 @@ function RoomCard({
                 Indisponível nas datas
               </span>
             </div>
-          ) : available === true ? (
-            // Available + dates selected: primary CTA is Reservar
+          ) : available === true && onlineBookingEnabled ? (
+            // Available + dates selected + booking enabled: primary CTA is Reservar
             <div className="flex gap-2.5">
               <Link
                 href={reservarHref!}
@@ -328,6 +367,17 @@ function RoomCard({
                 <span className="hidden sm:inline">WhatsApp</span>
               </a>
             </div>
+          ) : !onlineBookingEnabled ? (
+            // Booking disabled: direct to WhatsApp
+            <a
+              href={waHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 text-[11px] uppercase tracking-[0.08em] ${BTN_PRIMARY}`}
+            >
+              <WAIcon />
+              Reservar pelo WhatsApp
+            </a>
           ) : (
             // No dates selected: prompt user to the search bar at the top of this page
             <div className="flex gap-2.5">

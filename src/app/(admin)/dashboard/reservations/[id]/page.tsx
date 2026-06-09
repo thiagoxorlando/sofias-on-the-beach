@@ -165,7 +165,8 @@ export default async function ReservationDetailPage({ params }: { params: Promis
   const canAddCharges = canAccessModule(admin.role, 'reception')
   const canMarkChargesPaid = canAccessModule(admin.role, 'reception') || canAccessModule(admin.role, 'payments')
   const canWaiveCharges = canAccessModule(admin.role, 'reception')
-  const canCreateHandoff = canAccessModule(admin.role, 'reception')
+  // Sofia launch: handoff creation (governança/manutenção) hidden from manager/reception
+  const canCreateHandoff = admin.role === 'admin' || admin.role === 'super_admin'
 
   const notes = (notesData ?? []).map((n) => ({
     id: n.id,
@@ -196,7 +197,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
     if (pendingCharges.length > 0) checkOutWarnings.push(`${pendingCharges.length} cobrança${pendingCharges.length > 1 ? 's' : ''} extra pendente${pendingCharges.length > 1 ? 's' : ''} — confirme o pagamento antes de liberar.`)
     if (relevantPayment?.status !== 'paid') checkOutWarnings.push('Pagamento da reserva ainda não confirmado.')
     checkOutWarnings.push('Recolha as chaves e toalhas de praia do hóspede.')
-    checkOutWarnings.push('O quarto será enviado para Governança (sujo) após o check-out.')
+    checkOutWarnings.push('O quarto ficará aguardando limpeza após o check-out.')
   }
 
   const waMsg = encodeURIComponent(`Olá ${guest?.full_name ?? ''}! Aqui é da Sofia's on the Beach, sobre a sua reserva ${reservation.token}.`)

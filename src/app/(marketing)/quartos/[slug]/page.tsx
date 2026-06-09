@@ -20,21 +20,24 @@ export default async function RoomDetailPage({
     "Olá! Gostaria de reservar na pousada Sofia's on the Beach. Podem me ajudar com disponibilidade?",
   )}`
 
+  const bookingEnabled = settings.onlineBookingEnabled
+
   return (
     <section className="bg-white py-20 md:py-32 px-6">
       <div className="max-w-lg mx-auto text-center">
         <p className="text-[11px] font-bold text-ocean-500 uppercase tracking-[0.25em] mb-5">
-          Em breve
+          {bookingEnabled ? 'Em breve' : 'Reservas via WhatsApp'}
         </p>
         <h1
           className="font-serif font-bold text-ocean-900 leading-tight mb-4"
           style={{ fontSize: 'clamp(24px, 3vw, 36px)' }}
         >
-          Página em construção
+          {bookingEnabled ? 'Página em construção' : 'Consulte disponibilidade pelo WhatsApp'}
         </h1>
         <p className="text-[14px] text-foreground/60 leading-relaxed mb-10 max-w-sm mx-auto">
-          A página de detalhes desta acomodação está sendo preparada. Entre em
-          contato pelo WhatsApp para saber mais ou fazer sua reserva.
+          {bookingEnabled
+            ? 'A página de detalhes desta acomodação está sendo preparada. Entre em contato pelo WhatsApp para saber mais ou fazer sua reserva.'
+            : 'Reservas online ainda não estão disponíveis. Fale conosco pelo WhatsApp para consultar disponibilidade e valores.'}
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <a
@@ -43,7 +46,7 @@ export default async function RoomDetailPage({
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 bg-ocean-900 text-white px-7 py-3.5 rounded-xl text-[13px] font-bold hover:bg-ocean-800 transition-colors shadow-sm uppercase tracking-wide"
           >
-            Falar no WhatsApp
+            {bookingEnabled ? 'Falar no WhatsApp' : 'Consultar pelo WhatsApp'}
           </a>
           <Link
             href="/quartos"

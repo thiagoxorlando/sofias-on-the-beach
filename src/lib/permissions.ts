@@ -32,7 +32,8 @@ const ALL_MODULES: Module[] = [
 const ROLE_MODULES: Record<Role, '*' | Module[]> = {
   super_admin:             '*',
   admin:                   '*',
-  manager:                 ['overview', 'reception', 'housekeeping', 'maintenance', 'finance', 'reservations', 'rooms', 'guests', 'availability', 'settings', 'payments'],
+  // Sofia booking-only mode: manager sees booking modules only, not housekeeping/maintenance
+  manager:                 ['overview', 'reception', 'reservations', 'rooms', 'guests', 'availability', 'settings', 'payments'],
   reception:               ['reception', 'reservations', 'guests'],
   housekeeping:            ['housekeeping'],
   housekeeping_supervisor: ['housekeeping'],

@@ -7,28 +7,35 @@ import { DeleteStaffModal } from './DeleteStaffModal'
 import { BTN_PRIMARY } from '@/app/(admin)/dashboard/rooms/_components/form-helpers'
 import type { StaffRow } from './types'
 
+// Sofia primary roles
 const ROLE_LABEL: Record<string, string> = {
   super_admin:  'Super Admin',
-  admin:        'Administrador',
-  manager:      'Gerente',
+  admin:        'Admin',
+  manager:      'Gerência',
   reception:    'Recepção',
+  // Legacy roles — kept for existing users, not offered in create/edit dropdown
   housekeeping_supervisor: 'Chefe de Governança',
   housekeeping:            'Governança',
   maintenance:             'Manutenção',
-  finance:      'Financeiro',
-  staff:        'Equipe',
+  finance:                 'Financeiro',
+  staff:                   'Equipe',
 }
+
+const LEGACY_ROLES_SET = new Set([
+  'housekeeping_supervisor', 'housekeeping', 'maintenance', 'finance', 'staff',
+])
 
 const ROLE_TONE: Record<string, string> = {
   super_admin:  'bg-red-50 text-red-700',
   admin:        'bg-slate-700 text-white',
   manager:      'bg-slate-200 text-slate-800',
   reception:    'bg-sky-100 text-sky-700',
-  housekeeping_supervisor: 'bg-teal-100 text-teal-700',
-  housekeeping:            'bg-emerald-100 text-emerald-700',
-  maintenance:             'bg-amber-100 text-amber-700',
-  finance:      'bg-violet-100 text-violet-700',
-  staff:        'bg-slate-100 text-slate-600',
+  // Legacy roles use muted slate styling
+  housekeeping_supervisor: 'bg-slate-100 text-slate-500',
+  housekeeping:            'bg-slate-100 text-slate-500',
+  maintenance:             'bg-slate-100 text-slate-500',
+  finance:                 'bg-slate-100 text-slate-500',
+  staff:                   'bg-slate-100 text-slate-500',
 }
 
 function formatDateTime(iso: string | null): string {
@@ -99,6 +106,9 @@ export function StaffManager({ staff, currentAdminId, isSuperAdmin }: {
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${ROLE_TONE[row.role] ?? 'bg-slate-100 text-slate-700'}`}>
                       {ROLE_LABEL[row.role] ?? row.role}
+                      {LEGACY_ROLES_SET.has(row.role) && (
+                        <span className="ml-1 opacity-60">(Legado)</span>
+                      )}
                     </span>
                   </td>
                   <td className="px-4 py-3">
