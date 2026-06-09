@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireModule } from '@/lib/auth'
 import { QuickCheckBtn } from './_components/QuickCheckBtn'
 import { InspectionRequestBtn } from './_components/InspectionRequestBtn'
+import { ReceptionTools } from './_components/ReceptionTools'
+import { NotificationBell } from './_components/NotificationBell'
 
 export const metadata: Metadata = { title: "Recepção — Sofia's" }
 
@@ -47,7 +49,7 @@ function getFullDate(): string {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type GuestJoin = { full_name: string; phone: string | null }
-type RoomJoin  = { id: string; name: string; housekeeping_status: string }
+type RoomJoin  = { id: string; name: string; housekeeping_status: string; room_number: string | null }
 type PayJoin   = { status: string; created_at: string }
 
 type ResRow = {
@@ -69,7 +71,7 @@ type SlimResRow = {
   payments: { status: string; created_at: string }[] | null
 }
 
-type RoomRow = { id: string; name: string; sort_order: number; housekeeping_status: string }
+type RoomRow = { id: string; name: string; sort_order: number; housekeeping_status: string; room_number: string | null }
 
 function one<T>(rel: T | T[] | null): T | null {
   if (!rel) return null
@@ -84,11 +86,12 @@ function latestPayStatus(payments: PayJoin[] | null): string | null {
   return (sorted.find((p) => p.status !== 'failed') ?? sorted[0]).status
 }
 
-// Extract a short room identifier: trailing number ("Suite Mar 2" → "2"),
-// fallback to first 2 initials ("Ocean View" → "OV")
-function roomNumber(name: string): string {
+// Extract a short room identifier: DB room_number → trailing number in name → sort_order → initials
+function roomNumber(dbRoomNumber: string | null | undefined, name: string, sortOrder?: number): string {
+  if (dbRoomNumber) return dbRoomNumber
   const m = name.match(/(\d+[A-Za-z]?)\s*$/)
   if (m) return m[1]
+  if (sortOrder !== undefined) return String(sortOrder)
   return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0].toUpperCase()).join('')
 }
 
@@ -103,7 +106,7 @@ const SELECT = `
   id, token, status, check_in, check_out, adults, children, total_brl,
   special_requests, special_request_status,
   guests ( full_name, phone ),
-  rooms  ( id, name, housekeeping_status ),
+  rooms  ( id, name, housekeeping_status, room_number ),
   payments ( status, created_at )
 `
 
@@ -181,7 +184,7 @@ export default async function ReceptionPage() {
       .order('check_in', { ascending: true })
       .limit(20)
       .returns<SlimResRow[]>(),
-    db.from('rooms').select('id, name, sort_order, housekeeping_status')
+    db.from('rooms').select('id, name, sort_order, housekeeping_status, room_number')
       .eq('is_active', true).order('sort_order', { ascending: true })
       .returns<RoomRow[]>(),
     db.from('payments').select('id, amount_brl')
@@ -235,18 +238,20 @@ export default async function ReceptionPage() {
   type RoomMapEntry = {
     id: string; name: string; sortOrder: number
     hkStatus: string; isOccupied: boolean; guestName: string | null
+    roomNumber: string | null
   }
   const roomMap: RoomMapEntry[] = (roomsData ?? []).map((r) => ({
     id: r.id, name: r.name, sortOrder: r.sort_order,
     hkStatus: r.housekeeping_status,
     isOccupied: checkedInRoomMap.has(r.id),
     guestName: checkedInRoomMap.get(r.id) ?? null,
+    roomNumber: r.room_number,
   }))
 
   // ── Operational queue ─────────────────────────────────────────────────────
   type QueueEntry = {
     id: string; type: 'checkout' | 'checkin'; token: string
-    guestName: string; guestPhone: string | null; roomId: string | null; roomName: string
+    guestName: string; guestPhone: string | null; roomId: string | null; roomName: string; roomNumber: string | null
     status: string; payStatus: string | null; roomHkStatus: string | null
     pendingCharges: number; hasIssue: boolean
     checkInTime: string; checkOutTime: string
@@ -265,7 +270,7 @@ export default async function ReceptionPage() {
       id: r.id, type, token: r.token,
       guestName: guest?.full_name ?? '—',
       guestPhone: guest?.phone ?? null,
-      roomId: room?.id ?? null, roomName: room?.name ?? '—',
+      roomId: room?.id ?? null, roomName: room?.name ?? '—', roomNumber: room?.room_number ?? null,
       status: r.status, payStatus,
       roomHkStatus: room?.housekeeping_status ?? null,
       pendingCharges: charges,
@@ -284,43 +289,35 @@ export default async function ReceptionPage() {
   type AlertItem = { severity: 'critical' | 'warning' | 'info'; text: string; href: string }
   const alerts: AlertItem[] = []
 
-  // Unpaid arrivals — deep-link to specific reservation when only one
+  // Unpaid arrivals — one alert row per reservation
   const unpaidArrivals = (checkInsData ?? []).filter((r) => latestPayStatus(r.payments) !== 'paid')
-  if (unpaidArrivals.length === 1) {
-    alerts.push({ severity: 'critical', text: `Chegada de ${one(unpaidArrivals[0].guests)?.full_name ?? 'hóspede'} com pagamento não confirmado`, href: `/dashboard/reservations/${unpaidArrivals[0].id}` })
-  } else if (unpaidArrivals.length > 1) {
-    alerts.push({ severity: 'critical', text: `${unpaidArrivals.length} chegadas hoje com pagamento não confirmado`, href: '/dashboard/reservations' })
+  for (const r of unpaidArrivals) {
+    alerts.push({ severity: 'critical', text: `Chegada de ${one(r.guests)?.full_name ?? 'hóspede'} com pagamento não confirmado`, href: `/dashboard/reservations/${r.id}` })
   }
 
-  // Rooms not ready — deep-link when only one arrival affected
+  // Rooms not ready — alert for anything that isn't fully ready (one row per arrival)
   const roomsNotReady = (checkInsData ?? []).filter((r) => {
     const hk = one(r.rooms)?.housekeeping_status
-    return hk && !['ready', 'inspected', 'clean'].includes(hk)
+    return hk != null && hk !== 'ready'
   })
-  if (roomsNotReady.length === 1) {
-    const guestName = one(roomsNotReady[0].guests)?.full_name ?? 'hóspede'
-    const roomName  = one(roomsNotReady[0].rooms)?.name ?? 'quarto'
-    alerts.push({ severity: 'critical', text: `${roomName} não pronto para chegada de ${guestName}`, href: `/dashboard/reservations/${roomsNotReady[0].id}` })
-  } else if (roomsNotReady.length > 1) {
-    alerts.push({ severity: 'critical', text: `${roomsNotReady.length} quartos não prontos para chegadas de hoje`, href: '/dashboard/housekeeping' })
+  for (const r of roomsNotReady) {
+    const guestName = one(r.guests)?.full_name ?? 'hóspede'
+    const roomName  = one(r.rooms)?.name ?? 'quarto'
+    alerts.push({ severity: 'critical', text: `${roomName} não pronto para chegada de ${guestName}`, href: `/dashboard/reservations/${r.id}` })
   }
 
-  // Departures with pending extra charges
+  // Departures with pending extra charges — one alert row per reservation
   const departuresWithCharges = (checkOutsData ?? []).filter((r) => (pendingChargesMap.get(r.id) ?? 0) > 0)
-  if (departuresWithCharges.length === 1) {
-    const guestName = one(departuresWithCharges[0].guests)?.full_name ?? 'hóspede'
-    alerts.push({ severity: 'warning', text: `Saída de ${guestName} com cobranças extras pendentes`, href: `/dashboard/reservations/${departuresWithCharges[0].id}` })
-  } else if (departuresWithCharges.length > 1) {
-    alerts.push({ severity: 'warning', text: `${departuresWithCharges.length} saídas hoje com cobranças extras pendentes`, href: '/dashboard/reservations' })
+  for (const r of departuresWithCharges) {
+    const guestName = one(r.guests)?.full_name ?? 'hóspede'
+    alerts.push({ severity: 'warning', text: `Saída de ${guestName} com cobranças extras pendentes`, href: `/dashboard/reservations/${r.id}` })
   }
 
-  // Guests with special requests that haven't been attended yet
+  // Guests with special requests that haven't been attended yet — one row each
   const specialReqs = (stayingData ?? []).filter((r) => r.special_requests && r.special_request_status !== 'done')
-  if (specialReqs.length === 1) {
-    const guestName = one(specialReqs[0].guests)?.full_name ?? 'hóspede'
-    alerts.push({ severity: 'info', text: `Pedido especial de ${guestName} em aberto`, href: `/dashboard/reservations/${specialReqs[0].id}` })
-  } else if (specialReqs.length > 1) {
-    alerts.push({ severity: 'info', text: `${specialReqs.length} hóspedes com pedido especial em aberto`, href: '/dashboard/guests' })
+  for (const r of specialReqs) {
+    const guestName = one(r.guests)?.full_name ?? 'hóspede'
+    alerts.push({ severity: 'info', text: `Pedido especial de ${guestName} em aberto`, href: `/dashboard/reservations/${r.id}` })
   }
 
   if (pendingPayCount > 0) {
@@ -372,26 +369,7 @@ export default async function ReceptionPage() {
             <p className="text-[12px] sm:text-[13px] text-slate-400 mt-0.5 capitalize">{fullDate}</p>
           </div>
           <div className="flex items-center gap-3">
-            {/* Quick search — submits GET to reservations page */}
-            <form action="/dashboard/reservations" method="GET" className="hidden sm:block">
-              <div className="relative">
-                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                <input
-                  name="q"
-                  type="search"
-                  placeholder="Buscar hóspede ou reserva…"
-                  className="pl-9 pr-4 py-2 rounded-xl border border-admin-border bg-admin-page text-[13px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/20 focus:border-admin-sidebar-act/40 w-[260px]"
-                />
-              </div>
-            </form>
-            {alerts.length > 0 && (
-              <a href="#alertas" className="relative flex items-center justify-center w-8 h-8 rounded-xl hover:bg-slate-100 transition-colors" aria-label={`${alerts.length} alertas`}>
-                <BellIcon className="w-5 h-5 text-slate-500" />
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                  {alerts.length}
-                </span>
-              </a>
-            )}
+            <NotificationBell alerts={alerts} />
           </div>
         </div>
       </div>
@@ -451,7 +429,7 @@ export default async function ReceptionPage() {
           <div className="space-y-5">
 
             {/* Operational queue */}
-            <div className="bg-white rounded-2xl border border-admin-border shadow-sm overflow-hidden">
+            <div id="fila" className="bg-white rounded-2xl border border-admin-border shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <div>
                   <h2 className="text-[15px] font-bold text-slate-800">Fila de hoje</h2>
@@ -478,17 +456,7 @@ export default async function ReceptionPage() {
             </div>
 
             {/* Quick actions */}
-            <div className="bg-white rounded-2xl border border-admin-border shadow-sm p-5">
-              <h2 className="text-[15px] font-bold text-slate-800 mb-4">Ferramentas de recepção</h2>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
-                <QuickAction href="/dashboard/reception/walk-in" icon={<PlusCircleIcon />} label="Nova reserva / Walk-in"   color="emerald" />
-                <QuickAction href="/dashboard/reservations"      icon={<SearchIcon2 />}   label="Buscar reserva"           color="blue"    />
-                <QuickAction href="/dashboard/guests"            icon={<UserIcon />}      label="Buscar hóspede"           color="blue"    />
-                <QuickAction href="/dashboard/housekeeping"      icon={<SparkleIcon2 />}  label="Solicitar governança"     color="amber"   />
-                <QuickAction href="/dashboard/maintenance"       icon={<WrenchIcon />}    label="Solicitar manutenção"     color="red"     />
-                <QuickAction href="/dashboard/reservations"      icon={<CheckInIcon />}   label="Ver check-ins/outs"       color="slate"   />
-              </div>
-            </div>
+            <ReceptionTools />
 
           </div>
 
@@ -523,7 +491,7 @@ export default async function ReceptionPage() {
                 {roomMap.map((room) => {
                   const statusKey = room.isOccupied ? 'occupied' : room.hkStatus
                   const cfg = ROOM_STATUS_CFG[statusKey] ?? ROOM_STATUS_CFG.dirty
-                  const num   = roomNumber(room.name)
+                  const num   = roomNumber(room.roomNumber, room.name, room.sortOrder)
                   const short = roomShortName(room.name)
                   return (
                     <div
@@ -678,7 +646,7 @@ function QueueRow({ entry }: {
   entry: {
     id: string; type: 'checkout' | 'checkin'; token: string
     guestName: string; guestPhone: string | null
-    roomId: string | null; roomName: string
+    roomId: string | null; roomName: string; roomNumber: string | null
     status: string; payStatus: string | null; roomHkStatus: string | null
     pendingCharges: number; hasIssue: boolean; checkInTime: string; checkOutTime: string
   }
@@ -702,7 +670,9 @@ function QueueRow({ entry }: {
       {/* Guest + room */}
       <div className="flex-1 min-w-[140px]">
         <p className="text-[13px] font-semibold text-slate-800 truncate">{entry.guestName}</p>
-        <p className="text-[11px] text-slate-400 truncate">{entry.roomName} · {entry.token}</p>
+        <p className="text-[11px] text-slate-400 truncate">
+          {entry.roomNumber ? `#${entry.roomNumber} · ` : ''}{entry.roomName} · {entry.token}
+        </p>
       </div>
 
       {/* Status flags */}
@@ -775,33 +745,6 @@ function QueueRow({ entry }: {
   )
 }
 
-function QuickAction({
-  href, icon, label, color,
-}: {
-  href: string
-  icon: React.ReactNode
-  label: string
-  color: 'blue' | 'amber' | 'emerald' | 'slate' | 'red'
-}) {
-  const iconBg: Record<string, string> = {
-    blue:    'bg-sky-100     text-sky-600',
-    amber:   'bg-amber-100   text-amber-600',
-    emerald: 'bg-emerald-100 text-emerald-600',
-    slate:   'bg-slate-100   text-slate-600',
-    red:     'bg-red-100     text-red-600',
-  }
-  return (
-    <Link
-      href={href}
-      className="flex flex-col items-center gap-2 rounded-xl border border-admin-border bg-slate-50/60 hover:bg-white hover:shadow-sm px-2 py-3.5 text-center transition-all group"
-    >
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${iconBg[color]}`}>
-        {icon}
-      </div>
-      <span className="text-[10px] font-semibold text-slate-600 group-hover:text-slate-800 leading-snug">{label}</span>
-    </Link>
-  )
-}
 
 function AlertRow({ alert }: { alert: { severity: 'critical' | 'warning' | 'info'; text: string; href: string } }) {
   const cfg = {
@@ -837,22 +780,6 @@ function ResStatusBadge({ status }: { status: string }) {
 }
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
-
-function SearchIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <circle cx={11} cy={11} r={8} /><path d="m21 21-4.35-4.35" />
-    </svg>
-  )
-}
-
-function BellIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
-  )
-}
 
 function CheckInIcon() {
   return (
@@ -919,42 +846,3 @@ function WarnIcon() {
   )
 }
 
-function PlusCircleIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
-      <circle cx={12} cy={12} r={9} /><line x1={12} y1={8} x2={12} y2={16} /><line x1={8} y1={12} x2={16} y2={12} />
-    </svg>
-  )
-}
-
-function UserIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx={12} cy={7} r={4} />
-    </svg>
-  )
-}
-
-function SearchIcon2() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
-      <circle cx={11} cy={11} r={8} /><path d="m21 21-4.35-4.35" />
-    </svg>
-  )
-}
-
-function SparkleIcon2() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
-      <path d="M3 12h2M19 12h2M12 3v2M12 19v2M5.6 5.6l1.4 1.4M16.97 16.97l1.44 1.44M5.64 18.36l1.41-1.41M16.97 7.03l1.44-1.44" />
-    </svg>
-  )
-}
-
-function WrenchIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
-      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-    </svg>
-  )
-}

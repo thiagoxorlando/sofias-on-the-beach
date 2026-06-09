@@ -8,7 +8,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: "Quartos — Sofia's Admin" }
 
 export default async function RoomsPage() {
-  await requireModule('rooms')
+  const admin = await requireModule('rooms')
 
   const db = createAdminClient()
 
@@ -19,7 +19,7 @@ export default async function RoomsPage() {
       .order('sort_order', { ascending: true }),
     db
       .from('rooms')
-      .select('id, name, slug, category_id, short_description, base_price_brl, max_guests, ocean_view, featured, is_active, sort_order, size_sqm, amenities')
+      .select('id, name, slug, category_id, short_description, base_price_brl, max_guests, ocean_view, featured, is_active, sort_order, size_sqm, amenities, room_number')
       .order('sort_order', { ascending: true }),
     db
       .from('room_images')
@@ -48,7 +48,7 @@ export default async function RoomsPage() {
           subtitle="Gerencie as categorias e quartos da pousada."
         />
       </div>
-      <RoomsManager categories={categories} rooms={rooms} imagesByRoomId={imagesByRoomId} />
+      <RoomsManager categories={categories} rooms={rooms} imagesByRoomId={imagesByRoomId} adminRole={admin.role} />
     </div>
   )
 }

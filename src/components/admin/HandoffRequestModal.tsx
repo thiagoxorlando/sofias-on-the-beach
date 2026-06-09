@@ -40,11 +40,13 @@ export function HandoffRequestModal({
   reservationId,
   roomId,
   roomName,
+  defaultDepartment,
   onClose,
 }: {
   reservationId?: string | null
   roomId?: string | null
   roomName?: string | null
+  defaultDepartment?: string
   onClose: () => void
 }) {
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(
@@ -96,7 +98,7 @@ export function HandoffRequestModal({
 
             <div>
               <label className={LABEL}>Departamento</label>
-              <select name="target_department" required defaultValue="" className={INPUT}>
+              <select name="target_department" required defaultValue={defaultDepartment ?? ""} className={INPUT}>
                 <option value="" disabled>Selecione</option>
                 {Object.entries(DEPT_LABELS).map(([v, l]) => (
                   <option key={v} value={v}>{l}</option>

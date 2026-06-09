@@ -7,6 +7,7 @@ import { requireAdmin, requireModule } from '@/lib/auth'
 import { canAccessModule } from '@/lib/permissions'
 
 export type ActionState = { error: string } | { success: true } | undefined
+export type ForceDeleteResult = { success: true; count: number } | { error: string } | undefined
 
 function str(formData: FormData, key: string): string {
   return ((formData.get(key) as string) ?? '').trim()
@@ -338,4 +339,42 @@ export async function addReservationNoteAction(
 
   revalidatePath(`/dashboard/reservations/${reservationId}`)
   return { success: true }
+}
+
+// ── Force delete reservations (batch) ─────────────────────────────────────────
+// Hard-deletes multiple reservations and all FK-dependent rows.
+// Only super_admin and admin — never reception, manager, or staff.
+// Does NOT delete guests (guest records belong to the person, not the booking).
+
+export async function forceDeleteReservationsAction(ids: string[]): Promise<ForceDeleteResult> {
+  const admin = await requireModule('reservations')
+  if (admin.role !== 'super_admin' && admin.role !== 'admin') {
+    return { error: 'Apenas administradores podem forçar exclusão de reservas.' }
+  }
+  if (!ids || ids.length === 0) return { error: 'Nenhuma reserva selecionada.' }
+
+  const db = createAdminClient()
+
+  // FK-safe deletion order
+  await db.from('promotion_uses').delete().in('reservation_id', ids)
+  await db.from('payments').delete().in('reservation_id', ids)
+  await db.from('reservation_events').delete().in('reservation_id', ids)
+  await db.from('reservation_notes').delete().in('reservation_id', ids)
+  await db.from('reservation_charges').delete().in('reservation_id', ids)
+  await db.from('handoff_requests').delete().in('reservation_id', ids)
+  await db.from('housekeeping_logs').delete().in('reservation_id', ids)
+  await db.from('room_availability').delete().in('reservation_id', ids)
+  await db.from('leads').update({ converted_reservation_id: null }).in('converted_reservation_id', ids)
+
+  const { error } = await db.from('reservations').delete().in('id', ids)
+  if (error) {
+    console.error('[force-delete-reservations] failed:', error)
+    return { error: 'Erro ao excluir reservas. Tente novamente.' }
+  }
+
+  revalidatePath('/dashboard/reservations')
+  revalidatePath('/dashboard/reception')
+  revalidatePath('/dashboard/availability')
+  revalidatePath('/dashboard/guests')
+  return { success: true, count: ids.length }
 }

@@ -43,4 +43,5 @@ export type RoomRow = {
   sort_order: number
   size_sqm: number | null
   amenities: string[]
+  room_number: string | null
 }

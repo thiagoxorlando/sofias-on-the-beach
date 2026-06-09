@@ -147,6 +147,15 @@ export function RoomFormModal({ mode, initial, images, categories, onClose }: Pr
           />
         </FormField>
 
+        <FormField label="Número interno" hint="ex: 1, 2, 101, 202A">
+          <input
+            name="room_number"
+            defaultValue={initial?.room_number ?? ''}
+            className={INPUT}
+            placeholder="Ex: 1, 101, 202A"
+          />
+        </FormField>
+
         <FormField label="Categoria *">
           <select
             name="category_id"

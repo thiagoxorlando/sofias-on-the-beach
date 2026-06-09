@@ -1008,6 +1008,7 @@ export type Database = {
           name: string
           ocean_view: boolean
           property_id: string | null
+          room_number: string | null
           short_description: string | null
           size_sqm: number | null
           slug: string
@@ -1030,6 +1031,7 @@ export type Database = {
           name: string
           ocean_view?: boolean
           property_id?: string | null
+          room_number?: string | null
           short_description?: string | null
           size_sqm?: number | null
           slug: string
@@ -1052,6 +1054,7 @@ export type Database = {
           name?: string
           ocean_view?: boolean
           property_id?: string | null
+          room_number?: string | null
           short_description?: string | null
           size_sqm?: number | null
           slug?: string

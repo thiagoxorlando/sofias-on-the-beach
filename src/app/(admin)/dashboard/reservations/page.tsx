@@ -3,13 +3,11 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireModule } from '@/lib/auth'
 import { ReservationsFilters } from './_components/ReservationsFilters'
-import { ReservationStatusBadge, PaymentStatusBadge } from './_components/badges'
+import { ReservationsBulkActions } from './_components/ReservationsBulkActions'
 import {
   AdminPageHeader,
   AdminStatCard,
-  AdminListCard,
   AdminEmptyState,
-  AdminActionButton,
 } from '@/components/admin/AdminUI'
 
 export const metadata: Metadata = { title: "Reservas — Painel Sofia's" }
@@ -63,21 +61,6 @@ function latestPaymentStatus(payments: PaymentJoin[] | null): string | null {
   return (sorted.find((p) => p.status !== 'failed') ?? sorted[0]).status
 }
 
-function formatDate(dateStr: string): string {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`
-}
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleDateString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
-  })
-}
-
-function formatBRL(value: number): string {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value)
-}
-
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10)
 }
@@ -92,7 +75,7 @@ type SP = Promise<{
 }>
 
 export default async function ReservationsPage({ searchParams }: { searchParams: SP }) {
-  await requireModule('reservations')
+  const admin = await requireModule('reservations')
 
   const sp = await searchParams
   const q              = (sp.q ?? '').trim().toLowerCase()
@@ -210,35 +193,7 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
         <AdminEmptyState>Nenhuma reserva encontrada com os filtros atuais.</AdminEmptyState>
       ) : (
         <>
-          <div className="space-y-3">
-            {pageRows.map((row) => (
-              <AdminListCard
-                key={row.id}
-                title={row.guestName}
-                titleMeta={`${row.guestEmail}${row.guestPhone ? ` · ${row.guestPhone}` : ''} · criada em ${formatDateTime(row.createdAt)}`}
-                badges={
-                  <>
-                    <ReservationStatusBadge status={row.status} />
-                    <PaymentStatusBadge status={row.paymentStatus} />
-                  </>
-                }
-                meta={row.token}
-                fields={[
-                  { label: 'Quarto', value: row.roomName },
-                  { label: 'Check-in / Check-out', value: <>{formatDate(row.checkIn)} <span className="text-slate-400">→</span> {formatDate(row.checkOut)}</> },
-                  { label: 'Hóspedes', value: `${row.adults}${row.children > 0 ? ` + ${row.children}` : ''}` },
-                  { label: 'Total', value: formatBRL(row.total) },
-                ]}
-                actions={
-                  <div className="flex items-center justify-end">
-                    <AdminActionButton href={`/dashboard/reservations/${row.id}`} variant="link">
-                      Ver detalhes →
-                    </AdminActionButton>
-                  </div>
-                }
-              />
-            ))}
-          </div>
+          <ReservationsBulkActions rows={pageRows} adminRole={admin.role} />
 
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3.5 rounded-[18px] border border-admin-border bg-white">

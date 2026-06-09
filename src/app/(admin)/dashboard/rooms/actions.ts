@@ -2,10 +2,21 @@
 
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireModule } from '@/lib/auth'
 import { toSlug } from '@/lib/utils'
 import type { ImageRow } from './_components/types'
 
 export type FormState = { error: string } | { success: true } | undefined
+export type SeedResult = { success: true; created: number; skipped: number } | { error: string } | undefined
+export type DeleteResult =
+  | { success: true; mode: 'deleted' }
+  | { success: true; mode: 'deactivated' }
+  | { error: string }
+  | undefined
+export type ForceDeleteResult =
+  | { success: true; count: number }
+  | { error: string }
+  | undefined
 export type ImageFormState = { error: string } | { success: true; image: ImageRow } | undefined
 
 export type UploadItemResult =
@@ -17,6 +28,21 @@ export type UploadBatchResult = { results: UploadItemResult[] } | { error: strin
 
 function str(formData: FormData, key: string): string {
   return ((formData.get(key) as string) ?? '').trim()
+}
+
+// When a room is archived (is_active = false) its slug must be released so the
+// same slug can be reused for a fresh room. This renames any inactive room
+// holding `slug` to `{slug}-arquivado-{timestamp}`, clearing the unique index.
+async function freeArchivedSlug(
+  db: ReturnType<typeof createAdminClient>,
+  slug: string,
+): Promise<void> {
+  const ts = new Date().toISOString().replace(/\D/g, '').slice(0, 12)
+  await db
+    .from('rooms')
+    .update({ slug: `${slug}-arquivado-${ts}` })
+    .eq('slug', slug)
+    .eq('is_active', false)
 }
 
 function num(formData: FormData, key: string, fallback = 0): number {
@@ -107,6 +133,7 @@ export async function createRoomAction(
   const slug          = str(formData, 'slug') || toSlug(name)
   const category_id   = str(formData, 'category_id')
   const short_desc    = str(formData, 'short_description') || null
+  const room_number   = str(formData, 'room_number') || null
   const base_price    = num(formData, 'base_price_brl')
   const max_guests    = int(formData, 'max_guests', 2)
   const ocean_view    = formData.get('ocean_view') === 'on'
@@ -128,9 +155,14 @@ export async function createRoomAction(
   if (!max_guests || max_guests < 1)  return { error: 'Capacidade mínima é 1 hóspede.' }
 
   const db = createAdminClient()
+
+  // Free any inactive room holding this slug so the unique index doesn't block.
+  await freeArchivedSlug(db, slug)
+
   const { data: roomData, error } = await db.from('rooms').insert({
     name, slug, category_id,
     short_description: short_desc,
+    room_number,
     base_price_brl: base_price,
     max_guests, ocean_view,
     size_sqm: size_sqm && !isNaN(size_sqm) ? size_sqm : null,
@@ -187,6 +219,7 @@ export async function updateRoomAction(
   const slug          = str(formData, 'slug') || toSlug(name)
   const category_id   = str(formData, 'category_id')
   const short_desc    = str(formData, 'short_description') || null
+  const room_number   = str(formData, 'room_number') || null
   const base_price    = num(formData, 'base_price_brl')
   const max_guests    = int(formData, 'max_guests', 2)
   const ocean_view    = formData.get('ocean_view') === 'on'
@@ -209,11 +242,22 @@ export async function updateRoomAction(
   if (!max_guests || max_guests < 1)  return { error: 'Capacidade mínima é 1 hóspede.' }
 
   const db = createAdminClient()
+
+  // Free any OTHER inactive room holding this slug before saving.
+  // (The room being edited keeps its own current slug without conflict.)
+  await db
+    .from('rooms')
+    .update({ slug: `${slug}-arquivado-${new Date().toISOString().replace(/\D/g, '').slice(0, 12)}` })
+    .eq('slug', slug)
+    .eq('is_active', false)
+    .neq('id', id)
+
   const { error } = await db
     .from('rooms')
     .update({
       name, slug, category_id,
       short_description: short_desc,
+      room_number,
       base_price_brl: base_price,
       max_guests, ocean_view,
       size_sqm: size_sqm && !isNaN(size_sqm) ? size_sqm : null,
@@ -237,6 +281,68 @@ export async function toggleRoomActiveAction(
   const db = createAdminClient()
   await db.from('rooms').update({ is_active: isActive }).eq('id', id)
   revalidatePath('/dashboard/rooms')
+}
+
+export async function deleteRoomAction(id: string): Promise<DeleteResult> {
+  const admin = await requireModule('rooms')
+  if (admin.role !== 'super_admin' && admin.role !== 'admin') {
+    return { error: 'Apenas administradores podem excluir quartos.' }
+  }
+
+  if (!id) return { error: 'ID inválido.' }
+
+  const db = createAdminClient()
+
+  // Safety check: count all history linked to this room in parallel
+  const [
+    { count: reservationCount },
+    { count: hkLogCount },
+    { count: maintenanceCount },
+    { count: handoffCount },
+  ] = await Promise.all([
+    db.from('reservations').select('id', { count: 'exact', head: true }).eq('room_id', id),
+    db.from('housekeeping_logs').select('id', { count: 'exact', head: true }).eq('room_id', id),
+    db.from('maintenance_tickets').select('id', { count: 'exact', head: true }).eq('room_id', id),
+    db.from('handoff_requests').select('id', { count: 'exact', head: true }).eq('room_id', id),
+  ])
+
+  const hasHistory =
+    (reservationCount ?? 0) > 0 ||
+    (hkLogCount ?? 0) > 0 ||
+    (maintenanceCount ?? 0) > 0 ||
+    (handoffCount ?? 0) > 0
+
+  if (hasHistory) {
+    // Archive instead of hard delete. Rename slug so the original slug is free
+    // to be reused when the admin creates a replacement room.
+    const { data: roomRow } = await db.from('rooms').select('slug').eq('id', id).single()
+    const ts = new Date().toISOString().replace(/\D/g, '').slice(0, 12)
+    const archivedSlug = roomRow ? `${roomRow.slug}-arquivado-${ts}` : undefined
+
+    const { error } = await db.from('rooms').update({
+      is_active: false,
+      ...(archivedSlug ? { slug: archivedSlug } : {}),
+    }).eq('id', id)
+    if (error) return { error: 'Erro ao desativar quarto.' }
+
+    revalidatePath('/dashboard/rooms')
+    revalidatePath('/dashboard/reception')
+    revalidatePath('/dashboard/availability')
+    revalidatePath('/dashboard/housekeeping')
+    return { success: true, mode: 'deactivated' }
+  }
+
+  // No history — safe to hard delete. Remove room_availability orphans first.
+  await db.from('room_availability').delete().eq('room_id', id)
+
+  const { error } = await db.from('rooms').delete().eq('id', id)
+  if (error) return { error: 'Erro ao excluir quarto.' }
+
+  revalidatePath('/dashboard/rooms')
+  revalidatePath('/dashboard/reception')
+  revalidatePath('/dashboard/availability')
+  revalidatePath('/dashboard/housekeeping')
+  return { success: true, mode: 'deleted' }
 }
 
 // ── Room images ───────────────────────────────────────────────────────────────
@@ -363,6 +469,141 @@ export async function deleteImageAction(imageId: string, storagePath: string): P
 
   await db.from('room_images').delete().eq('id', imageId)
   revalidatePath('/dashboard/rooms')
+}
+
+export async function seedStandardRoomsAction(): Promise<SeedResult> {
+  const admin = await requireModule('rooms')
+  if (admin.role !== 'super_admin' && admin.role !== 'admin') {
+    return { error: 'Apenas administradores podem criar quartos em massa.' }
+  }
+
+  const db = createAdminClient()
+
+  const { data: cats } = await db
+    .from('room_categories')
+    .select('id')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+    .limit(1)
+
+  if (!cats || cats.length === 0) {
+    return { error: 'Crie uma categoria ativa antes de criar os quartos.' }
+  }
+
+  const categoryId = cats[0].id
+  const numbersToCreate = Array.from({ length: 17 }, (_, i) => String(i + 1))
+  const slugsToCreate = numbersToCreate.map((n) => `quarto-${n}`)
+
+  // Only active rooms count as real conflicts — inactive ones get their slug
+  // freed so the seed can create a fresh replacement.
+  const [{ data: activeByNumber }, { data: activeBySlugs }] = await Promise.all([
+    db.from('rooms').select('room_number').in('room_number', numbersToCreate).eq('is_active', true),
+    db.from('rooms').select('slug').in('slug', slugsToCreate).eq('is_active', true),
+  ])
+
+  const existingNumbers = new Set((activeByNumber ?? []).map((r) => r.room_number).filter(Boolean))
+  const existingSlugs = new Set((activeBySlugs ?? []).map((r) => r.slug).filter(Boolean))
+
+  let created = 0
+  let skipped = 0
+
+  for (let n = 1; n <= 17; n++) {
+    const num = String(n)
+    const slug = `quarto-${n}`
+    if (existingNumbers.has(num) || existingSlugs.has(slug)) {
+      skipped++
+      continue
+    }
+    // Free any inactive room still holding this slug before inserting.
+    await freeArchivedSlug(db, slug)
+
+    const { error } = await db.from('rooms').insert({
+      name: `Quarto ${n}`,
+      slug,
+      room_number: num,
+      category_id: categoryId,
+      base_price_brl: 1,
+      max_guests: 2,
+      is_active: true,
+      sort_order: n,
+      ocean_view: false,
+      featured: false,
+      amenities: [],
+    })
+    if (!error) created++
+    else skipped++
+  }
+
+  revalidatePath('/dashboard/rooms')
+  revalidatePath('/dashboard/reception')
+  revalidatePath('/dashboard/housekeeping')
+  return { success: true, created, skipped }
+}
+
+export async function forceDeleteRoomsAction(ids: string[]): Promise<ForceDeleteResult> {
+  const admin = await requireModule('rooms')
+  if (admin.role !== 'super_admin' && admin.role !== 'admin') {
+    return { error: 'Apenas administradores podem forçar exclusão de quartos.' }
+  }
+  if (!ids || ids.length === 0) return { error: 'Nenhum quarto selecionado.' }
+
+  const db = createAdminClient()
+
+  // Get all reservation IDs linked to these rooms
+  const { data: reservationRows } = await db
+    .from('reservations')
+    .select('id')
+    .in('room_id', ids)
+  const reservationIds = (reservationRows ?? []).map((r) => r.id)
+
+  // Delete reservation dependents first (FK-RESTRICT order)
+  if (reservationIds.length > 0) {
+    await db.from('promotion_uses').delete().in('reservation_id', reservationIds)
+    await db.from('payments').delete().in('reservation_id', reservationIds)
+    await db.from('reservation_events').delete().in('reservation_id', reservationIds)
+    await db.from('reservation_notes').delete().in('reservation_id', reservationIds)
+    await db.from('reservation_charges').delete().in('reservation_id', reservationIds)
+    await db.from('leads').update({ converted_reservation_id: null }).in('converted_reservation_id', reservationIds)
+  }
+
+  // Delete room-linked records
+  await db.from('handoff_requests').delete().in('room_id', ids)
+  await db.from('housekeeping_logs').delete().in('room_id', ids)
+  await db.from('maintenance_tickets').update({ room_id: null }).in('room_id', ids)
+  await db.from('leads').update({ room_id: null }).in('room_id', ids)
+  await db.from('room_availability').delete().in('room_id', ids)
+  await db.from('room_rates').delete().in('room_id', ids)
+
+  // Delete room images (storage + DB)
+  const { data: imageRows } = await db.from('room_images').select('storage_path').in('room_id', ids)
+  if (imageRows && imageRows.length > 0) {
+    const storagePaths = imageRows
+      .map((img) => img.storage_path)
+      .filter((p): p is string => !!p && p.startsWith('rooms/'))
+    if (storagePaths.length > 0) {
+      await db.storage.from('room-images').remove(storagePaths)
+    }
+  }
+  await db.from('room_images').delete().in('room_id', ids)
+
+  // Delete reservations
+  if (reservationIds.length > 0) {
+    await db.from('reservations').delete().in('id', reservationIds)
+  }
+
+  // Delete rooms
+  const { error } = await db.from('rooms').delete().in('id', ids)
+  if (error) {
+    console.error('[force-delete-rooms] failed:', error)
+    return { error: 'Erro ao excluir quartos. Tente novamente.' }
+  }
+
+  revalidatePath('/dashboard/rooms')
+  revalidatePath('/dashboard/reception')
+  revalidatePath('/dashboard/availability')
+  revalidatePath('/dashboard/housekeeping')
+  revalidatePath('/dashboard/reservations')
+  return { success: true, count: ids.length }
 }
 
 export async function uploadRoomImagesAction(formData: FormData): Promise<UploadBatchResult> {

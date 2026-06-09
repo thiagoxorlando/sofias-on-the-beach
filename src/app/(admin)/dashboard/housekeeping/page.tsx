@@ -63,6 +63,7 @@ type RoomRecord = {
   id: string
   name: string
   housekeeping_status: string
+  room_number: string | null
   room_categories: CategoryJoin | CategoryJoin[] | null
 }
 
@@ -88,6 +89,7 @@ type LogInfo = { toStatus: string; note: string | null; authorName: string | nul
 type RoomBoardItem = {
   id: string
   name: string
+  roomNumber: string | null
   categoryName: string
   status: string
   lastCheckout: MovementInfo | null
@@ -95,7 +97,7 @@ type RoomBoardItem = {
   latestLog: LogInfo | null
 }
 
-const ROOM_SELECT = 'id, name, housekeeping_status, room_categories ( name )'
+const ROOM_SELECT = 'id, name, housekeeping_status, room_number, room_categories ( name )'
 const RESERVATION_SELECT = 'room_id, token, check_in, check_out, guests ( full_name )'
 const LOG_SELECT = 'room_id, to_status, note, created_at, admin_users ( full_name )'
 
@@ -167,6 +169,7 @@ export default async function HousekeepingPage() {
   const rooms: RoomBoardItem[] = (roomsData ?? []).map((r) => ({
     id: r.id,
     name: r.name,
+    roomNumber: r.room_number,
     categoryName: one(r.room_categories)?.name ?? '—',
     status: r.housekeeping_status,
     lastCheckout: lastCheckoutByRoom.get(r.id) ?? null,
@@ -296,6 +299,9 @@ function RoomCard({ room }: { room: RoomBoardItem }) {
       {/* Room + status */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
+          {room.roomNumber && (
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">#{room.roomNumber} · </span>
+          )}
           <p className="font-semibold text-slate-800 text-[14px] truncate">{room.name}</p>
           <p className="text-[12px] text-slate-400 truncate">{room.categoryName}</p>
         </div>
