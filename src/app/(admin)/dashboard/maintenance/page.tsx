@@ -143,20 +143,25 @@ export default async function MaintenancePage() {
       </div>
 
       {handoffRequests.length > 0 && (
-        <section>
-          <div className="flex items-center gap-2.5 mb-3">
-            <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold bg-amber-50 text-amber-700">
-              Solicitações da recepção
-            </span>
-            <span className="text-[12px] font-semibold text-slate-400">{handoffRequests.length}</span>
+        <>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 border-t border-admin-border" />
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.14em] px-1 shrink-0">Solicitações da recepção</span>
+            <div className="flex-1 border-t border-admin-border" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {handoffRequests.map((req) => (
               <HandoffRequestCard key={req.id} request={req} />
             ))}
           </div>
-        </section>
+        </>
       )}
+
+      <div className="flex items-center gap-3 pt-2">
+        <div className="flex-1 border-t border-admin-border" />
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.14em] px-1 shrink-0">Chamados de manutenção</span>
+        <div className="flex-1 border-t border-admin-border" />
+      </div>
 
       <TicketManager tickets={tickets} rooms={roomsData ?? []} staff={staffData ?? []} />
 

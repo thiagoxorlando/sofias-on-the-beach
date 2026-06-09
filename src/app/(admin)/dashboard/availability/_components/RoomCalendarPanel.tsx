@@ -140,6 +140,10 @@ export function RoomCalendarPanel({
                 Período selecionado: {formatDateFull(selectionRange.startDate)} até {formatDateFull(selectionRange.lastNight)}
                 {' · '}{selectionRange.nights} noite{selectionRange.nights !== 1 ? 's' : ''}
               </p>
+            ) : selStart ? (
+              <p className="text-[12.5px] font-semibold text-admin-sidebar-act mt-1.5">
+                Início: {formatDateFull(selStart)} — clique na data final para completar o período.
+              </p>
             ) : (
               <p className="text-[12.5px] text-slate-500 mt-1.5">
                 Clique na primeira data e depois na última para selecionar um período.

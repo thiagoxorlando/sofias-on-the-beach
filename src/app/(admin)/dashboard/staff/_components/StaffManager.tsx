@@ -18,6 +18,17 @@ const ROLE_LABEL: Record<string, string> = {
   staff:        'Equipe',
 }
 
+const ROLE_TONE: Record<string, string> = {
+  super_admin:  'bg-red-50 text-red-700',
+  admin:        'bg-slate-700 text-white',
+  manager:      'bg-slate-200 text-slate-800',
+  reception:    'bg-sky-100 text-sky-700',
+  housekeeping: 'bg-emerald-100 text-emerald-700',
+  maintenance:  'bg-amber-100 text-amber-700',
+  finance:      'bg-violet-100 text-violet-700',
+  staff:        'bg-slate-100 text-slate-600',
+}
+
 function formatDateTime(iso: string | null): string {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString('pt-BR', {
@@ -84,7 +95,7 @@ export function StaffManager({ staff, currentAdminId, isSuperAdmin }: {
                   </td>
                   <td className="px-4 py-3 text-slate-600 hidden md:table-cell">{row.email}</td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700">
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${ROLE_TONE[row.role] ?? 'bg-slate-100 text-slate-700'}`}>
                       {ROLE_LABEL[row.role] ?? row.role}
                     </span>
                   </td>

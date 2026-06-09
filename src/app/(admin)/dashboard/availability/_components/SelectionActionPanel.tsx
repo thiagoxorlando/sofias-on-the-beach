@@ -59,7 +59,7 @@ export function SelectionActionPanel({
   manualBlocks: ManualBlockBrief[]
   onCancel: () => void
 }) {
-  const [mode, setMode] = useState<ActionMode>('block')
+  const [mode, setMode] = useState<ActionMode>('available')
 
   return (
     <div className={CARD}>

@@ -98,6 +98,7 @@ export function RoomsManager({ categories, rooms, imagesByRoomId }: Props) {
                   <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-[0.08em] hidden sm:table-cell">Preço</th>
                   <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-[0.08em] hidden lg:table-cell">Hóspedes</th>
                   <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-[0.08em] hidden lg:table-cell">Vista</th>
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-[0.08em] hidden lg:table-cell">Fotos</th>
                   <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-[0.08em] hidden sm:table-cell">Landing page</th>
                   <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-[0.08em]">Status</th>
                   <th className="px-4 py-3" />
@@ -109,6 +110,7 @@ export function RoomsManager({ categories, rooms, imagesByRoomId }: Props) {
                     key={room.id}
                     row={room}
                     categoryName={categories.find((c) => c.id === room.category_id)?.name ?? '—'}
+                    photoCount={(imagesByRoomId[room.id] ?? []).length}
                     onEdit={() => setModal({ type: 'room-edit', row: room })}
                   />
                 ))}
@@ -188,10 +190,12 @@ function CategoryTableRow({ row, onEdit }: { row: CategoryRow; onEdit: () => voi
 function RoomTableRow({
   row,
   categoryName,
+  photoCount,
   onEdit,
 }: {
   row: RoomRow
   categoryName: string
+  photoCount: number
   onEdit: () => void
 }) {
   const [isPending, startTransition] = useTransition()
@@ -214,6 +218,13 @@ function RoomTableRow({
           <span className="text-[11px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Sim</span>
         ) : (
           <span className="text-[11px] text-slate-400">—</span>
+        )}
+      </td>
+      <td className="px-4 py-3 hidden lg:table-cell">
+        {photoCount > 0 ? (
+          <span className="text-[11px] font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full">{photoCount}</span>
+        ) : (
+          <span className="text-[11px] text-red-400">Sem fotos</span>
         )}
       </td>
       <td className="px-4 py-3 hidden sm:table-cell">

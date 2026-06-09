@@ -22,12 +22,6 @@ const STATUS_TONES: Record<string, string> = {
   fixed:       'bg-emerald-50 text-emerald-700',
 }
 
-const STATUS_BADGE_LABELS: Record<string, string> = {
-  open:        'Aberto',
-  in_progress: 'Em andamento',
-  fixed:       'Resolvido',
-}
-
 const PRIORITY_TONES: Record<string, string> = {
   urgent: 'bg-red-100 text-red-700',
   high:   'bg-amber-100 text-amber-700',
@@ -127,30 +121,31 @@ function TicketCard({ ticket, onSelect }: { ticket: TicketRow; onSelect: () => v
   return (
     <div className={CARD}>
 
-      {/* Title + badges */}
+      {/* Title + priority */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold text-slate-800 text-[14px] truncate">{ticket.title}</p>
           <p className="text-[12px] text-slate-400 truncate">{ticket.roomName ?? 'Sem quarto específico'}</p>
         </div>
-        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap ${PRIORITY_TONES[ticket.priority] ?? 'bg-slate-100 text-slate-500'}`}>
+        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap shrink-0 ${PRIORITY_TONES[ticket.priority] ?? 'bg-slate-100 text-slate-500'}`}>
           {PRIORITY_LABELS[ticket.priority] ?? ticket.priority}
         </span>
       </div>
 
+      {ticket.description && (
+        <p className="mt-2 text-[12px] text-slate-500 line-clamp-2 leading-relaxed">{ticket.description}</p>
+      )}
+
       {/* Details */}
       <div className="mt-3.5 pt-3.5 border-t border-slate-100 space-y-1.5">
-        <InfoLine label="Status" value={STATUS_BADGE_LABELS[ticket.status] ?? ticket.status} />
         <InfoLine label="Aberto em" value={formatDate(ticket.created_at)} />
         {ticket.assignedToName && <InfoLine label="Responsável" value={ticket.assignedToName} />}
-        <InfoLine
-          label="Bloqueia o quarto"
-          value={
-            ticket.blocks_room && ticket.blocked_start_date && ticket.blocked_end_date
-              ? `Sim · ${formatDate(ticket.blocked_start_date)} até ${formatDate(ticket.blocked_end_date)}`
-              : 'Não'
-          }
-        />
+        {ticket.blocks_room && ticket.blocked_start_date && ticket.blocked_end_date && (
+          <InfoLine
+            label="Bloqueia quarto"
+            value={`${formatDate(ticket.blocked_start_date)} → ${formatDate(ticket.blocked_end_date)}`}
+          />
+        )}
         {ticket.photo_paths.length > 0 && (
           <InfoLine label="Fotos" value={`${ticket.photo_paths.length} anexada${ticket.photo_paths.length !== 1 ? 's' : ''}`} />
         )}

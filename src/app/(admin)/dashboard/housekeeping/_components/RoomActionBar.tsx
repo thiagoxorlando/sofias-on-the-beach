@@ -15,6 +15,10 @@ const TEXTAREA =
   'w-full border border-admin-border rounded-xl px-3.5 py-2.5 text-[12px] text-slate-800 placeholder:text-slate-400 bg-white ' +
   'focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/30 focus:border-admin-sidebar-act/40 resize-none'
 
+const BTN_NOTE =
+  'inline-flex items-center justify-center rounded-xl border border-dashed border-slate-300 text-slate-400 px-3 py-2 ' +
+  'text-[11px] font-semibold hover:border-slate-400 hover:text-slate-600 transition-colors'
+
 const STATUS_BUTTONS: { status: string; label: string }[] = [
   { status: 'dirty',     label: 'Sujo' },
   { status: 'cleaning',  label: 'Em limpeza' },
@@ -26,6 +30,7 @@ const STATUS_BUTTONS: { status: string; label: string }[] = [
 export function RoomActionBar({ roomId, currentStatus }: { roomId: string; currentStatus: string }) {
   const [isPending, startTransition] = useTransition()
   const [note, setNote] = useState('')
+  const [showNote, setShowNote] = useState(false)
   const [feedback, setFeedback] = useState<{ kind: 'error' | 'success'; text: string } | null>(null)
 
   function run(status: string, label: string) {
@@ -37,6 +42,7 @@ export function RoomActionBar({ roomId, currentStatus }: { roomId: string; curre
       } else {
         setFeedback({ kind: 'success', text: `${label} — registrado.` })
         setNote('')
+        setShowNote(false)
       }
     })
   }
@@ -58,15 +64,20 @@ export function RoomActionBar({ roomId, currentStatus }: { roomId: string; curre
             </button>
           )
         })}
+        <button type="button" onClick={() => setShowNote((v) => !v)} className={BTN_NOTE}>
+          {showNote ? 'Fechar nota' : '+ Nota'}
+        </button>
       </div>
 
-      <textarea
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        rows={2}
-        placeholder="Nota opcional sobre a limpeza…"
-        className={TEXTAREA}
-      />
+      {showNote && (
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          rows={2}
+          placeholder="Nota sobre a limpeza (opcional)…"
+          className={TEXTAREA}
+        />
+      )}
 
       {feedback && (
         <p className={`text-[12px] font-medium ${feedback.kind === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>

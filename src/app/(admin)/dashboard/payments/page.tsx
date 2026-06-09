@@ -13,6 +13,15 @@ export const metadata: Metadata = { title: "Financeiro — Painel Sofia's" }
 const PAGE_SIZE = 20
 const CARD = 'bg-white rounded-2xl border border-admin-border shadow-sm'
 
+const STATUS_ROW_ACCENT: Record<string, string> = {
+  paid:      'border-l-[3px] border-l-emerald-400',
+  pending:   'border-l-[3px] border-l-amber-400',
+  overdue:   'border-l-[3px] border-l-red-500',
+  failed:    'border-l-[3px] border-l-slate-300',
+  cancelled: 'border-l-[3px] border-l-slate-300',
+  refunded:  'border-l-[3px] border-l-slate-300',
+}
+
 const METHOD_LABELS: Record<string, string> = {
   pix:         'PIX',
   credit_card: 'Cartão de crédito',
@@ -263,7 +272,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: SP 
         <div className={`${CARD} overflow-hidden`}>
           <div className="divide-y divide-slate-100">
             {pageRows.map((row) => (
-              <div key={row.id} className="px-4 sm:px-5 py-4 hover:bg-slate-50/60 transition-colors">
+              <div key={row.id} className={`px-4 sm:px-5 py-4 hover:bg-slate-50/60 transition-colors ${STATUS_ROW_ACCENT[row.status] ?? ''}`}>
 
                 {/* Top line — guest + reservation + status */}
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
