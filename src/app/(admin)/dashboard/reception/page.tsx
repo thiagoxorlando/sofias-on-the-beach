@@ -1,20 +1,17 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireModule } from '@/lib/auth'
-import { ReservationStatusBadge, PaymentStatusBadge } from '../reservations/_components/badges'
-import { ReceptionActionBar } from './_components/ReceptionActionBar'
-import {
-  AdminPageHeader,
-  AdminSection,
-  AdminStatCard,
-  AdminListCard,
-  AdminEmptyState,
-} from '@/components/admin/AdminUI'
+import { QuickCheckBtn } from './_components/QuickCheckBtn'
+import { InspectionRequestBtn } from './_components/InspectionRequestBtn'
 
-export const metadata: Metadata = { title: "Recepção — Painel Sofia's" }
+export const metadata: Metadata = { title: "Recepção — Sofia's" }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+// sv-SE locale always produces YYYY-MM-DD — use it to get local BRT date
 function todayISO(): string {
-  return new Date().toISOString().slice(0, 10)
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
 }
 
 function addDaysISO(dateStr: string, days: number): string {
@@ -28,369 +25,936 @@ function formatDate(dateStr: string): string {
   return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`
 }
 
-type GuestJoin = { full_name: string; email: string; phone: string | null }
-type RoomJoin = { id: string; name: string; housekeeping_status: string }
-type PaymentJoin = { status: string; created_at: string }
+function formatBRL(value: number): string {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value)
+}
 
-type ReservationRow = {
-  id: string
-  token: string
-  status: string
-  check_in: string
-  check_out: string
-  adults: number
-  children: number
-  total_brl: number
+function getGreeting(): string {
+  // Brazil Standard Time = UTC − 3
+  const brHour = (new Date().getUTCHours() - 3 + 24) % 24
+  if (brHour >= 5 && brHour < 12) return 'Bom dia'
+  if (brHour >= 12 && brHour < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
+
+function getFullDate(): string {
+  return new Date().toLocaleDateString('pt-BR', {
+    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
+    timeZone: 'America/Sao_Paulo',
+  })
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type GuestJoin = { full_name: string; phone: string | null }
+type RoomJoin  = { id: string; name: string; housekeeping_status: string }
+type PayJoin   = { status: string; created_at: string }
+
+type ResRow = {
+  id: string; token: string; status: string
+  check_in: string; check_out: string
+  adults: number; children: number; total_brl: number
   special_requests: string | null
+  special_request_status: string
   guests: GuestJoin | GuestJoin[] | null
-  rooms: RoomJoin | RoomJoin[] | null
-  payments: PaymentJoin[] | null
+  rooms:  RoomJoin  | RoomJoin[]  | null
+  payments: PayJoin[] | null
 }
 
-type Row = {
-  id: string
-  token: string
-  status: string
-  checkIn: string
-  checkOut: string
-  adults: number
-  children: number
-  total: number
-  specialRequests: string | null
-  guestName: string
-  guestEmail: string
-  guestPhone: string | null
-  roomId: string | null
-  roomName: string
-  roomHousekeepingStatus: string | null
-  paymentStatus: string | null
-  latestNote: string | null
+type SlimResRow = {
+  id: string; token: string; status: string
+  check_in: string; check_out: string; adults: number; children: number
+  guests: GuestJoin | GuestJoin[] | null
+  rooms:  { name: string } | { name: string }[] | null
+  payments: { status: string; created_at: string }[] | null
 }
+
+type RoomRow = { id: string; name: string; sort_order: number; housekeeping_status: string }
 
 function one<T>(rel: T | T[] | null): T | null {
   if (!rel) return null
   return Array.isArray(rel) ? (rel[0] ?? null) : rel
 }
 
-function latestPaymentStatus(payments: PaymentJoin[] | null): string | null {
+function latestPayStatus(payments: PayJoin[] | null): string | null {
   if (!payments || payments.length === 0) return null
+  // If any payment is paid, the reservation is considered paid
+  if (payments.some((p) => p.status === 'paid')) return 'paid'
   const sorted = [...payments].sort((a, b) => b.created_at.localeCompare(a.created_at))
   return (sorted.find((p) => p.status !== 'failed') ?? sorted[0]).status
 }
 
-function formatBRL(value: number): string {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value)
+// Extract a short room identifier: trailing number ("Suite Mar 2" → "2"),
+// fallback to first 2 initials ("Ocean View" → "OV")
+function roomNumber(name: string): string {
+  const m = name.match(/(\d+[A-Za-z]?)\s*$/)
+  if (m) return m[1]
+  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0].toUpperCase()).join('')
 }
 
+// Short label without trailing number ("Suite Vista Mar 2" → "Suite Vista Mar")
+function roomShortName(name: string): string {
+  return name.replace(/\s*\d+[A-Za-z]?\s*$/, '').trim() || name
+}
+
+// ── Data selection strings ────────────────────────────────────────────────────
+
 const SELECT = `
-  id, token, status, check_in, check_out, adults, children, total_brl, special_requests,
-  guests ( full_name, email, phone ),
-  rooms ( id, name, housekeeping_status ),
+  id, token, status, check_in, check_out, adults, children, total_brl,
+  special_requests, special_request_status,
+  guests ( full_name, phone ),
+  rooms  ( id, name, housekeeping_status ),
   payments ( status, created_at )
 `
 
-function toRow(r: ReservationRow, latestNote: string | null): Row {
-  const guest = one(r.guests)
-  const room = one(r.rooms)
-  return {
-    id: r.id,
-    token: r.token,
-    status: r.status,
-    checkIn: r.check_in,
-    checkOut: r.check_out,
-    adults: r.adults,
-    children: r.children,
-    total: r.total_brl,
-    specialRequests: r.special_requests,
-    guestName: guest?.full_name ?? '—',
-    guestEmail: guest?.email ?? '—',
-    guestPhone: guest?.phone ?? null,
-    roomId: room?.id ?? null,
-    roomName: room?.name ?? '—',
-    roomHousekeepingStatus: room?.housekeeping_status ?? null,
-    paymentStatus: latestPaymentStatus(r.payments),
-    latestNote,
-  }
+const SELECT_SLIM = `
+  id, token, status, check_in, check_out, adults, children,
+  guests ( full_name, phone ),
+  rooms  ( name ),
+  payments ( status, created_at )
+`
+
+// ── Status configs ────────────────────────────────────────────────────────────
+
+const ROOM_STATUS_CFG: Record<string, { label: string; dot: string; bg: string; border: string; text: string }> = {
+  occupied:  { label: 'Ocupado',      dot: 'bg-sky-500',     bg: 'bg-sky-50',      border: 'border-sky-200',     text: 'text-sky-700'     },
+  ready:     { label: 'Pronto',       dot: 'bg-emerald-500', bg: 'bg-emerald-50',  border: 'border-emerald-200', text: 'text-emerald-700' },
+  inspected: { label: 'Inspecionado', dot: 'bg-blue-400',    bg: 'bg-blue-50',     border: 'border-blue-200',    text: 'text-blue-700'    },
+  clean:     { label: 'Limpo',        dot: 'bg-teal-400',    bg: 'bg-teal-50',     border: 'border-teal-200',    text: 'text-teal-700'    },
+  cleaning:  { label: 'Em limpeza',   dot: 'bg-amber-500',   bg: 'bg-amber-50',    border: 'border-amber-200',   text: 'text-amber-700'   },
+  dirty:     { label: 'Sujo',         dot: 'bg-red-500',     bg: 'bg-red-50',      border: 'border-red-200',     text: 'text-red-700'     },
 }
 
-const HOUSEKEEPING_READY_LABEL: Record<string, string> = {
-  dirty:     'sujo',
-  cleaning:  'em limpeza',
-  clean:     'limpo (aguardando inspeção)',
-  inspected: 'inspecionado',
-  ready:     'pronto',
+const RES_STATUS_LABEL: Record<string, string> = {
+  confirmed:       'Confirmado',
+  pending_payment: 'Aguardando pag.',
+  checked_in:      'Hospedado',
+  checked_out:     'Check-out feito',
+  cancelled:       'Cancelado',
 }
 
-type AttentionRow = { row: Row; reasons: string[] }
-
-function attentionFor(checkIns: Row[], staying: Row[]): AttentionRow[] {
-  const out: AttentionRow[] = []
-  for (const row of checkIns) {
-    const reasons: string[] = []
-    if (row.paymentStatus !== 'paid') {
-      reasons.push('Pagamento ainda não confirmado para a chegada de hoje')
-    }
-    if (row.roomHousekeepingStatus && row.roomHousekeepingStatus !== 'ready') {
-      reasons.push(`Quarto ainda não está pronto (${HOUSEKEEPING_READY_LABEL[row.roomHousekeepingStatus] ?? row.roomHousekeepingStatus})`)
-    }
-    if (reasons.length > 0) out.push({ row, reasons })
-  }
-  for (const row of staying) {
-    if (row.specialRequests) {
-      out.push({ row, reasons: ['Hóspede com pedido especial em aberto'] })
-    }
-  }
-  return out
+const PAY_STATUS_LABEL: Record<string, string> = {
+  paid:      'Pago',
+  pending:   'Pendente',
+  overdue:   'Vencido',
+  failed:    'Falhou',
+  cancelled: 'Cancelado',
+  refunded:  'Estornado',
 }
 
-function checkInWarningsFor(row: Row, pendingCharges: number): string[] {
-  const warnings: string[] = []
-  if (row.paymentStatus !== 'paid') warnings.push('Pagamento ainda não confirmado.')
-  if (row.roomHousekeepingStatus && row.roomHousekeepingStatus !== 'ready') {
-    warnings.push(`Quarto ainda não está pronto (${HOUSEKEEPING_READY_LABEL[row.roomHousekeepingStatus] ?? row.roomHousekeepingStatus}).`)
-  }
-  if (row.specialRequests) warnings.push('Hóspede tem pedidos especiais — confira antes de liberar o check-in.')
-  warnings.push('Imprima e assine a ficha do hóspede antes de liberar o check-in.')
-  if (pendingCharges > 0) warnings.push(`${pendingCharges} cobrança${pendingCharges > 1 ? 's' : ''} extra pendente${pendingCharges > 1 ? 's' : ''} — resolva antes do check-in.`)
-  return warnings
-}
-
-function checkOutWarningsFor(row: Row, pendingCharges: number): string[] {
-  const warnings: string[] = []
-  if (pendingCharges > 0) warnings.push(`${pendingCharges} cobrança${pendingCharges > 1 ? 's' : ''} extra pendente${pendingCharges > 1 ? 's' : ''} — confirme o pagamento antes de liberar.`)
-  if (row.paymentStatus !== 'paid') warnings.push('Pagamento da reserva ainda não confirmado.')
-  warnings.push('Recolha as chaves e toalhas de praia do hóspede.')
-  warnings.push('O quarto será enviado para Governança (sujo) após o check-out.')
-  return warnings
-}
-
-function waHrefFor(row: Row): string | null {
-  if (!row.guestPhone) return null
-  const msg = encodeURIComponent(`Olá ${row.guestName}! Aqui é da Sofia's on the Beach, sobre a sua reserva ${row.token}.`)
-  return `https://wa.me/${row.guestPhone.replace(/\D/g, '')}?text=${msg}`
-}
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function ReceptionPage() {
   await requireModule('reception')
 
-  const db = createAdminClient()
-  const today = todayISO()
-  const weekAhead = addDaysISO(today, 7)
+  const db      = createAdminClient()
+  const today   = todayISO()
+  const in7Days = addDaysISO(today, 7)
+  const greeting = getGreeting()
+  const fullDate  = getFullDate()
 
-  const [{ data: checkInsData }, { data: checkOutsData }, { data: stayingData }, { data: upcomingData }] = await Promise.all([
+  // ── Parallel data fetch ───────────────────────────────────────────────────
+  const [
+    { data: checkInsData },
+    { data: checkOutsData },
+    { data: stayingData },
+    { data: upcoming7Data },
+    { data: roomsData },
+    { data: pendingPayData },
+    { data: settingsData },
+  ] = await Promise.all([
     db.from('reservations').select(SELECT)
       .eq('check_in', today).in('status', ['confirmed', 'pending_payment'])
       .order('created_at', { ascending: true })
-      .returns<ReservationRow[]>(),
+      .returns<ResRow[]>(),
     db.from('reservations').select(SELECT)
       .eq('check_out', today).in('status', ['checked_in', 'confirmed'])
       .order('created_at', { ascending: true })
-      .returns<ReservationRow[]>(),
+      .returns<ResRow[]>(),
     db.from('reservations').select(SELECT)
       .eq('status', 'checked_in')
       .order('check_out', { ascending: true })
-      .returns<ReservationRow[]>(),
-    db.from('reservations').select(SELECT)
-      .gt('check_in', today).lte('check_in', weekAhead)
+      .returns<ResRow[]>(),
+    db.from('reservations').select(SELECT_SLIM)
+      .gt('check_in', today).lte('check_in', in7Days)
       .in('status', ['confirmed', 'pending_payment'])
       .order('check_in', { ascending: true })
-      .returns<ReservationRow[]>(),
+      .limit(20)
+      .returns<SlimResRow[]>(),
+    db.from('rooms').select('id, name, sort_order, housekeeping_status')
+      .eq('is_active', true).order('sort_order', { ascending: true })
+      .returns<RoomRow[]>(),
+    db.from('payments').select('id, amount_brl')
+      .in('status', ['pending', 'overdue'])
+      .returns<{ id: string; amount_brl: number }[]>(),
+    db.from('settings').select('key, value')
+      .in('key', ['check_in_time', 'check_out_time']),
   ])
 
-  const allReservations = [
-    ...(checkInsData ?? []), ...(checkOutsData ?? []), ...(stayingData ?? []), ...(upcomingData ?? []),
+  // ── Secondary: pending charges for today's ops ────────────────────────────
+  const todayIds = [
+    ...(checkInsData ?? []).map((r) => r.id),
+    ...(checkOutsData ?? []).map((r) => r.id),
   ]
-  const reservationIds = [...new Set(allReservations.map((r) => r.id))]
-
-  const [{ data: notesData }, { data: pendingChargesData }] = await Promise.all([
-    reservationIds.length > 0
-      ? db
-          .from('reservation_notes')
-          .select('reservation_id, note, created_at')
-          .in('reservation_id', reservationIds)
-          .order('created_at', { ascending: false })
-      : Promise.resolve({ data: [] as { reservation_id: string; note: string; created_at: string }[], error: null }),
-    reservationIds.length > 0
-      ? db
-          .from('reservation_charges')
-          .select('reservation_id')
-          .in('reservation_id', reservationIds)
-          .eq('status', 'pending')
-      : Promise.resolve({ data: [] as { reservation_id: string }[], error: null }),
-  ])
-
-  const latestNoteByReservation = new Map<string, string>()
-  for (const n of notesData ?? []) {
-    if (!latestNoteByReservation.has(n.reservation_id)) latestNoteByReservation.set(n.reservation_id, n.note)
-  }
-  const noteFor = (id: string) => latestNoteByReservation.get(id) ?? null
-
-  const pendingCountBy = new Map<string, number>()
-  for (const c of pendingChargesData ?? []) {
-    pendingCountBy.set(c.reservation_id, (pendingCountBy.get(c.reservation_id) ?? 0) + 1)
+  const pendingChargesMap = new Map<string, number>()
+  if (todayIds.length > 0) {
+    const { data: chargesData } = await db
+      .from('reservation_charges')
+      .select('reservation_id')
+      .in('reservation_id', todayIds)
+      .eq('status', 'pending')
+    for (const c of chargesData ?? []) {
+      pendingChargesMap.set(c.reservation_id, (pendingChargesMap.get(c.reservation_id) ?? 0) + 1)
+    }
   }
 
-  const checkIns = (checkInsData ?? []).map((r) => toRow(r, noteFor(r.id)))
-  const checkOuts = (checkOutsData ?? []).map((r) => toRow(r, noteFor(r.id)))
-  const staying = (stayingData ?? []).map((r) => toRow(r, noteFor(r.id)))
-  const upcoming = (upcomingData ?? []).map((r) => toRow(r, noteFor(r.id)))
-  const attention = attentionFor(checkIns, staying)
+  // ── Settings ──────────────────────────────────────────────────────────────
+  const settingsMap = new Map((settingsData ?? []).map((s) => [s.key, s.value as string]))
+  const checkInTime  = settingsMap.get('check_in_time')  ?? '14:00'
+  const checkOutTime = settingsMap.get('check_out_time') ?? '12:00'
 
+  // ── Stats ─────────────────────────────────────────────────────────────────
+  const hkCounts = { ready: 0, inspected: 0, clean: 0, cleaning: 0, dirty: 0 }
+  const checkedInRoomMap = new Map<string, string>() // roomId → guestFirstName
+  for (const r of stayingData ?? []) {
+    const roomId = one(r.rooms)?.id
+    const guestName = one(r.guests)?.full_name ?? null
+    if (roomId) checkedInRoomMap.set(roomId, guestName ? guestName.split(' ')[0] : 'Hóspede')
+  }
+  for (const room of roomsData ?? []) {
+    if (!checkedInRoomMap.has(room.id)) {
+      const s = room.housekeeping_status as keyof typeof hkCounts
+      if (s in hkCounts) hkCounts[s]++
+    }
+  }
+
+  const pendingPayTotal = (pendingPayData ?? []).reduce((sum, p) => sum + p.amount_brl, 0)
+  const pendingPayCount = (pendingPayData ?? []).length
+
+  // ── Room map ──────────────────────────────────────────────────────────────
+  type RoomMapEntry = {
+    id: string; name: string; sortOrder: number
+    hkStatus: string; isOccupied: boolean; guestName: string | null
+  }
+  const roomMap: RoomMapEntry[] = (roomsData ?? []).map((r) => ({
+    id: r.id, name: r.name, sortOrder: r.sort_order,
+    hkStatus: r.housekeeping_status,
+    isOccupied: checkedInRoomMap.has(r.id),
+    guestName: checkedInRoomMap.get(r.id) ?? null,
+  }))
+
+  // ── Operational queue ─────────────────────────────────────────────────────
+  type QueueEntry = {
+    id: string; type: 'checkout' | 'checkin'; token: string
+    guestName: string; guestPhone: string | null; roomId: string | null; roomName: string
+    status: string; payStatus: string | null; roomHkStatus: string | null
+    pendingCharges: number; hasIssue: boolean
+    checkInTime: string; checkOutTime: string
+  }
+
+  function toQueue(r: ResRow, type: 'checkin' | 'checkout'): QueueEntry {
+    const guest = one(r.guests)
+    const room  = one(r.rooms)
+    const payStatus = latestPayStatus(r.payments)
+    const charges = pendingChargesMap.get(r.id) ?? 0
+    const hasIssue =
+      type === 'checkin'
+        ? (payStatus !== 'paid' || (room?.housekeeping_status ?? 'ready') !== 'ready')
+        : (charges > 0 || payStatus !== 'paid')
+    return {
+      id: r.id, type, token: r.token,
+      guestName: guest?.full_name ?? '—',
+      guestPhone: guest?.phone ?? null,
+      roomId: room?.id ?? null, roomName: room?.name ?? '—',
+      status: r.status, payStatus,
+      roomHkStatus: room?.housekeeping_status ?? null,
+      pendingCharges: charges,
+      hasIssue,
+      checkInTime, checkOutTime,
+    }
+  }
+
+  // Check-outs shown first (earlier in the day)
+  const queue: QueueEntry[] = [
+    ...(checkOutsData ?? []).map((r) => toQueue(r, 'checkout')),
+    ...(checkInsData  ?? []).map((r) => toQueue(r, 'checkin')),
+  ]
+
+  // ── Alerts ────────────────────────────────────────────────────────────────
+  type AlertItem = { severity: 'critical' | 'warning' | 'info'; text: string; href: string }
+  const alerts: AlertItem[] = []
+
+  // Unpaid arrivals — deep-link to specific reservation when only one
+  const unpaidArrivals = (checkInsData ?? []).filter((r) => latestPayStatus(r.payments) !== 'paid')
+  if (unpaidArrivals.length === 1) {
+    alerts.push({ severity: 'critical', text: `Chegada de ${one(unpaidArrivals[0].guests)?.full_name ?? 'hóspede'} com pagamento não confirmado`, href: `/dashboard/reservations/${unpaidArrivals[0].id}` })
+  } else if (unpaidArrivals.length > 1) {
+    alerts.push({ severity: 'critical', text: `${unpaidArrivals.length} chegadas hoje com pagamento não confirmado`, href: '/dashboard/reservations' })
+  }
+
+  // Rooms not ready — deep-link when only one arrival affected
+  const roomsNotReady = (checkInsData ?? []).filter((r) => {
+    const hk = one(r.rooms)?.housekeeping_status
+    return hk && !['ready', 'inspected', 'clean'].includes(hk)
+  })
+  if (roomsNotReady.length === 1) {
+    const guestName = one(roomsNotReady[0].guests)?.full_name ?? 'hóspede'
+    const roomName  = one(roomsNotReady[0].rooms)?.name ?? 'quarto'
+    alerts.push({ severity: 'critical', text: `${roomName} não pronto para chegada de ${guestName}`, href: `/dashboard/reservations/${roomsNotReady[0].id}` })
+  } else if (roomsNotReady.length > 1) {
+    alerts.push({ severity: 'critical', text: `${roomsNotReady.length} quartos não prontos para chegadas de hoje`, href: '/dashboard/housekeeping' })
+  }
+
+  // Departures with pending extra charges
+  const departuresWithCharges = (checkOutsData ?? []).filter((r) => (pendingChargesMap.get(r.id) ?? 0) > 0)
+  if (departuresWithCharges.length === 1) {
+    const guestName = one(departuresWithCharges[0].guests)?.full_name ?? 'hóspede'
+    alerts.push({ severity: 'warning', text: `Saída de ${guestName} com cobranças extras pendentes`, href: `/dashboard/reservations/${departuresWithCharges[0].id}` })
+  } else if (departuresWithCharges.length > 1) {
+    alerts.push({ severity: 'warning', text: `${departuresWithCharges.length} saídas hoje com cobranças extras pendentes`, href: '/dashboard/reservations' })
+  }
+
+  // Guests with special requests that haven't been attended yet
+  const specialReqs = (stayingData ?? []).filter((r) => r.special_requests && r.special_request_status !== 'done')
+  if (specialReqs.length === 1) {
+    const guestName = one(specialReqs[0].guests)?.full_name ?? 'hóspede'
+    alerts.push({ severity: 'info', text: `Pedido especial de ${guestName} em aberto`, href: `/dashboard/reservations/${specialReqs[0].id}` })
+  } else if (specialReqs.length > 1) {
+    alerts.push({ severity: 'info', text: `${specialReqs.length} hóspedes com pedido especial em aberto`, href: '/dashboard/guests' })
+  }
+
+  if (pendingPayCount > 0) {
+    alerts.push({ severity: 'warning', text: `${pendingPayCount} pagamento${pendingPayCount > 1 ? 's' : ''} pendente${pendingPayCount > 1 ? 's' : ''} — ${formatBRL(pendingPayTotal)}`, href: '/dashboard/reservations' })
+  }
+
+  // ── 7-day upcoming table ──────────────────────────────────────────────────
+  type UpcomingEntry = {
+    id: string; date: string; type: 'checkin' | 'checkout'
+    guestName: string; roomName: string; nights: number; status: string; payStatus: string | null
+  }
+
+  function nightsBetween(ci: string, co: string): number {
+    return Math.round((new Date(co + 'T00:00:00Z').getTime() - new Date(ci + 'T00:00:00Z').getTime()) / 86_400_000)
+  }
+
+  const upcoming7: UpcomingEntry[] = [
+    ...(upcoming7Data ?? []).map((r): UpcomingEntry => ({
+      id: r.id, date: r.check_in, type: 'checkin',
+      guestName: one(r.guests)?.full_name ?? '—',
+      roomName: one(r.rooms)?.name ?? '—',
+      nights: nightsBetween(r.check_in, r.check_out),
+      status: r.status,
+      payStatus: latestPayStatus(r.payments),
+    })),
+    ...(stayingData ?? [])
+      .filter((r) => r.check_out > today && r.check_out <= in7Days)
+      .map((r): UpcomingEntry => ({
+        id: r.id, date: r.check_out, type: 'checkout',
+        guestName: one(r.guests)?.full_name ?? '—',
+        roomName: one(r.rooms)?.name ?? '—',
+        nights: nightsBetween(r.check_in, r.check_out),
+        status: r.status,
+        payStatus: latestPayStatus(r.payments),
+      })),
+  ].sort((a, b) => a.date.localeCompare(b.date))
+
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-5xl space-y-8">
+    <div className="min-h-full bg-admin-page">
 
-      <AdminPageHeader
-        eyebrow="Operação diária"
-        title="Recepção"
-        subtitle={`Chegadas, saídas e hóspedes na pousada — hoje, ${formatDate(today)}.`}
-      />
-
-      {/* Summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <AdminStatCard label="Check-ins hoje" value={checkIns.length} tone="navy"
-          icon={<svg viewBox="0 0 24 24" fill="none" stroke="#061A2A" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1={15} y1={12} x2={3} y2={12} /></svg>}
-        />
-        <AdminStatCard label="Check-outs hoje" value={checkOuts.length} tone="info"
-          icon={<svg viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1={21} y1={12} x2={9} y2={12} /></svg>}
-        />
-        <AdminStatCard label="Hospedados agora" value={staying.length} tone="success"
-          icon={<svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx={9} cy={7} r={4} /></svg>}
-        />
-        <AdminStatCard
-          label="Atenção necessária"
-          value={attention.length}
-          tone={attention.length > 0 ? 'warning' : 'neutral'}
-          icon={<svg viewBox="0 0 24 24" fill="none" stroke={attention.length > 0 ? '#D97706' : '#94A3B8'} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1={12} y1={9} x2={12} y2={13} /><line x1={12} y1={17} x2={12.01} y2={17} /></svg>}
-        />
+      {/* ── Command header ── */}
+      <div className="bg-white border-b border-admin-border px-5 sm:px-7 py-5 print:hidden">
+        <div className="max-w-[1400px] mx-auto flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-[20px] sm:text-[22px] font-bold text-slate-800 leading-tight">
+              {greeting}, Recepção
+            </h1>
+            <p className="text-[12px] sm:text-[13px] text-slate-400 mt-0.5 capitalize">{fullDate}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Quick search — submits GET to reservations page */}
+            <form action="/dashboard/reservations" method="GET" className="hidden sm:block">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <input
+                  name="q"
+                  type="search"
+                  placeholder="Buscar hóspede ou reserva…"
+                  className="pl-9 pr-4 py-2 rounded-xl border border-admin-border bg-admin-page text-[13px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-admin-sidebar-act/20 focus:border-admin-sidebar-act/40 w-[260px]"
+                />
+              </div>
+            </form>
+            {alerts.length > 0 && (
+              <a href="#alertas" className="relative flex items-center justify-center w-8 h-8 rounded-xl hover:bg-slate-100 transition-colors" aria-label={`${alerts.length} alertas`}>
+                <BellIcon className="w-5 h-5 text-slate-500" />
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                  {alerts.length}
+                </span>
+              </a>
+            )}
+          </div>
+        </div>
       </div>
 
-      {attention.length > 0 && (
-        <AdminSection title="Atenção necessária" count={attention.length}>
-          <div className="space-y-3">
-            {attention.map(({ row, reasons }) => (
-              <AdminListCard
-                key={row.id}
-                tone="warning"
-                title={row.guestName}
-                titleMeta={`${row.roomName} · ${formatDate(row.checkIn)} → ${formatDate(row.checkOut)}`}
-                badges={<ReservationStatusBadge status={row.status} />}
-                meta={row.token}
-                notes={reasons.map((reason) => ({ label: 'Atenção', text: reason }))}
-                actions={
-                  <ReceptionActionBar
-                    reservationId={row.id}
-                    roomId={row.roomId}
-                    roomName={row.roomName}
-                    action={row.status === 'confirmed' && row.checkIn === today ? 'check_in' : null}
-                    waHref={waHrefFor(row)}
-                    note={null}
-                    checkInWarnings={checkInWarningsFor(row, pendingCountBy.get(row.id) ?? 0)}
-                  />
-                }
-              />
-            ))}
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-7 py-5 space-y-5">
+
+        {/* ── Stats row ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+          <StatCard
+            label="Check-ins hoje"
+            value={checkInsData?.length ?? 0}
+            color="blue"
+            icon={<CheckInIcon />}
+            sub={checkInsData?.length === 0 ? 'Nenhuma chegada' : `às ${checkInTime}`}
+          />
+          <StatCard
+            label="Check-outs hoje"
+            value={checkOutsData?.length ?? 0}
+            color="amber"
+            icon={<CheckOutIcon />}
+            sub={checkOutsData?.length === 0 ? 'Nenhuma saída' : `até ${checkOutTime}`}
+          />
+          <StatCard
+            label="Na pousada agora"
+            value={stayingData?.length ?? 0}
+            color="emerald"
+            icon={<HouseIcon />}
+            sub="hóspedes"
+          />
+          <StatCard
+            label="Quartos prontos"
+            value={hkCounts.ready + hkCounts.inspected}
+            color={hkCounts.ready + hkCounts.inspected > 0 ? 'emerald' : 'neutral'}
+            icon={<BedIcon />}
+            sub="disponíveis"
+          />
+          <StatCard
+            label="Em limpeza / sujos"
+            value={hkCounts.cleaning + hkCounts.dirty}
+            color={hkCounts.cleaning + hkCounts.dirty > 0 ? 'amber' : 'neutral'}
+            icon={<SparkleIcon />}
+            sub="aguardando governança"
+          />
+          <StatCard
+            label="Pag. pendentes"
+            value={pendingPayCount}
+            color={pendingPayCount > 0 ? 'red' : 'neutral'}
+            icon={<CoinIcon />}
+            sub={pendingPayCount > 0 ? formatBRL(pendingPayTotal) : 'em dia'}
+          />
+        </div>
+
+        {/* ── Main grid ── */}
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-5">
+
+          {/* Left column */}
+          <div className="space-y-5">
+
+            {/* Operational queue */}
+            <div className="bg-white rounded-2xl border border-admin-border shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                <div>
+                  <h2 className="text-[15px] font-bold text-slate-800">Fila de hoje</h2>
+                  <p className="text-[12px] text-slate-400 mt-0.5">
+                    {queue.length === 0 ? 'Nenhuma operação para hoje' : `${queue.length} operação${queue.length > 1 ? 'ões' : ''}`}
+                  </p>
+                </div>
+                <Link href="/dashboard/reservations" className="text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors">
+                  Ver todas →
+                </Link>
+              </div>
+
+              {queue.length === 0 ? (
+                <div className="py-12 text-center text-[13px] text-slate-400">
+                  Nenhum check-in ou check-out previsto para hoje.
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {queue.map((entry) => (
+                    <QueueRow key={entry.id} entry={entry} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Quick actions */}
+            <div className="bg-white rounded-2xl border border-admin-border shadow-sm p-5">
+              <h2 className="text-[15px] font-bold text-slate-800 mb-4">Ferramentas de recepção</h2>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
+                <QuickAction href="/dashboard/reception/walk-in" icon={<PlusCircleIcon />} label="Nova reserva / Walk-in"   color="emerald" />
+                <QuickAction href="/dashboard/reservations"      icon={<SearchIcon2 />}   label="Buscar reserva"           color="blue"    />
+                <QuickAction href="/dashboard/guests"            icon={<UserIcon />}      label="Buscar hóspede"           color="blue"    />
+                <QuickAction href="/dashboard/housekeeping"      icon={<SparkleIcon2 />}  label="Solicitar governança"     color="amber"   />
+                <QuickAction href="/dashboard/maintenance"       icon={<WrenchIcon />}    label="Solicitar manutenção"     color="red"     />
+                <QuickAction href="/dashboard/reservations"      icon={<CheckInIcon />}   label="Ver check-ins/outs"       color="slate"   />
+              </div>
+            </div>
+
           </div>
-        </AdminSection>
-      )}
 
-      <ReceptionSection
-        title="Check-ins de hoje"
-        emptyText="Nenhuma chegada prevista para hoje."
-        rows={checkIns}
-        renderAction={(row) => (
-          <ReceptionActionBar
-            reservationId={row.id}
-            roomId={row.roomId}
-            roomName={row.roomName}
-            action={row.status === 'confirmed' ? 'check_in' : null}
-            waHref={waHrefFor(row)}
-            note={row.status !== 'confirmed' ? 'Aguardando confirmação de pagamento para liberar o check-in.' : null}
-            checkInWarnings={checkInWarningsFor(row, pendingCountBy.get(row.id) ?? 0)}
-          />
-        )}
-      />
+          {/* Right column */}
+          <div className="space-y-5">
 
-      <ReceptionSection
-        title="Check-outs de hoje"
-        emptyText="Nenhuma saída prevista para hoje."
-        rows={checkOuts}
-        renderAction={(row) => (
-          <ReceptionActionBar
-            reservationId={row.id}
-            roomId={row.roomId}
-            roomName={row.roomName}
-            action={row.status === 'checked_in' ? 'check_out' : null}
-            waHref={waHrefFor(row)}
-            note={row.status !== 'checked_in' ? 'Check-in ainda não foi registrado para esta reserva.' : null}
-            checkOutWarnings={row.status === 'checked_in' ? checkOutWarningsFor(row, pendingCountBy.get(row.id) ?? 0) : undefined}
-          />
-        )}
-      />
+            {/* Room mini-map */}
+            <div className="bg-white rounded-2xl border border-admin-border shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                <h2 className="text-[15px] font-bold text-slate-800">Mapa de quartos</h2>
+                <Link href="/dashboard/housekeeping" className="text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors">
+                  Governança →
+                </Link>
+              </div>
 
-      <ReceptionSection
-        title="Hospedados agora"
-        emptyText="Nenhum hóspede com check-in ativo no momento."
-        rows={staying}
-        renderAction={(row) => (
-          <ReceptionActionBar reservationId={row.id} roomId={row.roomId} roomName={row.roomName} action={null} waHref={waHrefFor(row)} note={null} />
-        )}
-      />
+              {/* Legend */}
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 px-5 pt-3 pb-1">
+                {[
+                  { key: 'occupied', label: 'Ocupado', dot: 'bg-sky-500' },
+                  { key: 'ready',    label: 'Pronto',  dot: 'bg-emerald-500' },
+                  { key: 'cleaning', label: 'Limpeza', dot: 'bg-amber-500' },
+                  { key: 'dirty',    label: 'Sujo',    dot: 'bg-red-500' },
+                ].map((s) => (
+                  <div key={s.key} className="flex items-center gap-1.5">
+                    <div className={`w-2 h-2 rounded-full ${s.dot} shrink-0`} />
+                    <span className="text-[11px] text-slate-500">{s.label}</span>
+                  </div>
+                ))}
+              </div>
 
-      <ReceptionSection
-        title="Próximas chegadas (7 dias)"
-        emptyText="Nenhuma chegada prevista para os próximos 7 dias."
-        rows={upcoming}
-        renderAction={(row) => (
-          <ReceptionActionBar reservationId={row.id} roomId={row.roomId} roomName={row.roomName} action={null} waHref={waHrefFor(row)} note={null} />
+              <div className="px-4 pb-4 pt-2 grid grid-cols-4 sm:grid-cols-5 gap-2">
+                {roomMap.map((room) => {
+                  const statusKey = room.isOccupied ? 'occupied' : room.hkStatus
+                  const cfg = ROOM_STATUS_CFG[statusKey] ?? ROOM_STATUS_CFG.dirty
+                  const num   = roomNumber(room.name)
+                  const short = roomShortName(room.name)
+                  return (
+                    <div
+                      key={room.id}
+                      title={room.name}
+                      className={`rounded-xl border p-2 text-center ${cfg.bg} ${cfg.border}`}
+                    >
+                      <div className="flex items-center justify-center gap-1 mb-0.5">
+                        <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot} shrink-0`} />
+                        <p className={`text-[16px] font-black leading-none ${cfg.text}`}>{num}</p>
+                      </div>
+                      <p className={`text-[9px] font-medium ${cfg.text} opacity-70 leading-tight truncate`}>
+                        {room.isOccupied ? (room.guestName ?? 'Ocupado') : short}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {roomMap.length === 0 && (
+                <p className="px-5 pb-5 text-[12px] text-slate-400">Nenhum quarto ativo cadastrado.</p>
+              )}
+            </div>
+
+            {/* Alerts panel */}
+            <div id="alertas" className="bg-white rounded-2xl border border-admin-border shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                <h2 className="text-[15px] font-bold text-slate-800">Alertas</h2>
+                {alerts.length > 0 && (
+                  <span className="text-[11px] font-bold text-white bg-red-500 rounded-full px-2 py-0.5">
+                    {alerts.length}
+                  </span>
+                )}
+              </div>
+
+              {alerts.length === 0 ? (
+                <div className="px-5 py-10 text-center text-[13px] text-slate-400">
+                  Tudo em ordem. Nenhum alerta no momento.
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {alerts.map((alert, i) => (
+                    <AlertRow key={i} alert={alert} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+
+        {/* ── 7-day arrivals & departures ── */}
+        {upcoming7.length > 0 && (
+          <div className="bg-white rounded-2xl border border-admin-border shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <div>
+                <h2 className="text-[15px] font-bold text-slate-800">Chegadas e partidas</h2>
+                <p className="text-[12px] text-slate-400 mt-0.5">Próximos 7 dias</p>
+              </div>
+              <Link href="/dashboard/reservations" className="text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors">
+                Ver todas →
+              </Link>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/60">
+                    {['Data', 'Tipo', 'Hóspede', 'Quarto', 'Noites', 'Status', ''].map((h) => (
+                      <th key={h} className="px-4 py-2.5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.10em] whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {upcoming7.map((entry) => (
+                    <tr key={`${entry.id}-${entry.type}`} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-4 py-3 text-[13px] text-slate-700 whitespace-nowrap font-medium">{formatDate(entry.date)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                          entry.type === 'checkin'
+                            ? 'bg-sky-50 text-sky-700'
+                            : 'bg-amber-50 text-amber-700'
+                        }`}>
+                          {entry.type === 'checkin' ? 'Check-in' : 'Check-out'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-[13px] text-slate-800 font-medium max-w-[160px] truncate">{entry.guestName}</td>
+                      <td className="px-4 py-3 text-[13px] text-slate-600 whitespace-nowrap">{entry.roomName}</td>
+                      <td className="px-4 py-3 text-[13px] text-slate-500">{entry.nights}n</td>
+                      <td className="px-4 py-3">
+                        <ResStatusBadge status={entry.status} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/dashboard/reservations/${entry.id}`}
+                          className="text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors whitespace-nowrap"
+                        >
+                          Ver →
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
-      />
+
+      </div>
+    </div>
+  )
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function StatCard({
+  label, value, color, icon, sub,
+}: {
+  label: string
+  value: number
+  color: 'blue' | 'amber' | 'emerald' | 'red' | 'neutral'
+  icon: React.ReactNode
+  sub?: string
+}) {
+  const accent: Record<string, string> = {
+    blue:    'border-l-sky-400    bg-sky-50/40',
+    amber:   'border-l-amber-400  bg-amber-50/40',
+    emerald: 'border-l-emerald-400 bg-emerald-50/40',
+    red:     'border-l-red-400    bg-red-50/40',
+    neutral: 'border-l-slate-200  bg-white',
+  }
+  const iconColor: Record<string, string> = {
+    blue:    'text-sky-500',
+    amber:   'text-amber-500',
+    emerald: 'text-emerald-500',
+    red:     'text-red-500',
+    neutral: 'text-slate-400',
+  }
+  return (
+    <div className={`rounded-2xl border border-admin-border border-l-[3px] ${accent[color]} shadow-sm p-4`}>
+      <div className={`w-8 h-8 flex items-center justify-center rounded-xl bg-white/80 mb-3 ${iconColor[color]}`}>
+        {icon}
+      </div>
+      <p className="text-[24px] font-bold text-slate-800 leading-none">{value}</p>
+      <p className="text-[11px] font-semibold text-slate-600 mt-1 leading-snug">{label}</p>
+      {sub && <p className="text-[10px] text-slate-400 mt-0.5 truncate">{sub}</p>}
+    </div>
+  )
+}
+
+function QueueRow({ entry }: {
+  entry: {
+    id: string; type: 'checkout' | 'checkin'; token: string
+    guestName: string; guestPhone: string | null
+    roomId: string | null; roomName: string
+    status: string; payStatus: string | null; roomHkStatus: string | null
+    pendingCharges: number; hasIssue: boolean; checkInTime: string; checkOutTime: string
+  }
+}) {
+  const isIn = entry.type === 'checkin'
+  const time = isIn ? entry.checkInTime : entry.checkOutTime
+
+  return (
+    <div className={`px-5 py-3.5 flex flex-wrap items-center gap-x-4 gap-y-2 ${entry.hasIssue ? 'bg-amber-50/40' : ''}`}>
+
+      {/* Time + type */}
+      <div className="flex items-center gap-2.5 shrink-0 w-[110px]">
+        <span className="text-[12px] font-semibold text-slate-400 tabular-nums w-10 shrink-0">{time}</span>
+        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold whitespace-nowrap ${
+          isIn ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700'
+        }`}>
+          {isIn ? 'Entrada' : 'Saída'}
+        </span>
+      </div>
+
+      {/* Guest + room */}
+      <div className="flex-1 min-w-[140px]">
+        <p className="text-[13px] font-semibold text-slate-800 truncate">{entry.guestName}</p>
+        <p className="text-[11px] text-slate-400 truncate">{entry.roomName} · {entry.token}</p>
+      </div>
+
+      {/* Status flags */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {entry.payStatus && entry.payStatus !== 'paid' && (
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-0.5">
+            <WarnIcon />
+            Pag. {PAY_STATUS_LABEL[entry.payStatus] ?? entry.payStatus}
+          </span>
+        )}
+        {isIn && entry.roomHkStatus && (() => {
+          const s = entry.roomHkStatus
+          if (s === 'ready') return (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-2 py-0.5">
+              <OkIcon /> Pronto para check-in
+            </span>
+          )
+          if (s === 'inspected') return (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-2 py-0.5">
+              <WarnIcon /> Inspecionado — aguarda liberação
+            </span>
+          )
+          if (s === 'clean') return (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-0.5">
+                <WarnIcon /> Limpo — falta inspeção
+              </span>
+              {entry.roomId && (
+                <InspectionRequestBtn
+                  reservationId={entry.id}
+                  roomId={entry.roomId}
+                  roomName={entry.roomName}
+                  guestName={entry.guestName}
+                />
+              )}
+            </div>
+          )
+          if (s === 'cleaning') return (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-2 py-0.5">
+              <WarnIcon /> Em limpeza
+            </span>
+          )
+          return (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-2 py-0.5">
+              <WarnIcon /> Sujo
+            </span>
+          )
+        })()}
+        {entry.pendingCharges > 0 && (
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 rounded-lg px-2 py-0.5">
+            {entry.pendingCharges} cobrança{entry.pendingCharges > 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex items-center gap-2 shrink-0 ml-auto">
+        {(isIn ? entry.status === 'confirmed' : entry.status === 'checked_in') && (
+          <QuickCheckBtn reservationId={entry.id} type={isIn ? 'in' : 'out'} />
+        )}
+        <Link
+          href={`/dashboard/reservations/${entry.id}`}
+          className="text-[12px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors whitespace-nowrap"
+        >
+          Ver reserva →
+        </Link>
+      </div>
 
     </div>
   )
 }
 
-// ─── Section & card ───────────────────────────────────────────────────────────
-
-function ReceptionSection({
-  title,
-  emptyText,
-  rows,
-  renderAction,
+function QuickAction({
+  href, icon, label, color,
 }: {
-  title: string
-  emptyText: string
-  rows: Row[]
-  renderAction: (row: Row) => React.ReactNode
+  href: string
+  icon: React.ReactNode
+  label: string
+  color: 'blue' | 'amber' | 'emerald' | 'slate' | 'red'
 }) {
+  const iconBg: Record<string, string> = {
+    blue:    'bg-sky-100     text-sky-600',
+    amber:   'bg-amber-100   text-amber-600',
+    emerald: 'bg-emerald-100 text-emerald-600',
+    slate:   'bg-slate-100   text-slate-600',
+    red:     'bg-red-100     text-red-600',
+  }
   return (
-    <AdminSection title={title} count={rows.length}>
-      {rows.length === 0 ? (
-        <AdminEmptyState>{emptyText}</AdminEmptyState>
-      ) : (
-        <div className="space-y-3">
-          {rows.map((row) => (
-            <AdminListCard
-              key={row.id}
-              title={row.guestName}
-              titleMeta={`${row.guestEmail}${row.guestPhone ? ` · ${row.guestPhone}` : ''}`}
-              badges={<ReservationStatusBadge status={row.status} />}
-              meta={row.token}
-              fields={[
-                { label: 'Quarto', value: row.roomName },
-                { label: 'Período', value: `${formatDate(row.checkIn)} → ${formatDate(row.checkOut)}` },
-                { label: 'Hóspedes', value: `${row.adults}${row.children > 0 ? ` + ${row.children}` : ''}` },
-                { label: 'Total', value: formatBRL(row.total) },
-                { label: 'Pagamento', value: <PaymentStatusBadge status={row.paymentStatus} /> },
-              ]}
-              notes={[
-                ...(row.specialRequests ? [{ label: 'Pedido especial', text: row.specialRequests }] : []),
-                ...(row.latestNote ? [{ label: 'Última nota', text: row.latestNote }] : []),
-              ]}
-              actions={renderAction(row)}
-            />
-          ))}
-        </div>
-      )}
-    </AdminSection>
+    <Link
+      href={href}
+      className="flex flex-col items-center gap-2 rounded-xl border border-admin-border bg-slate-50/60 hover:bg-white hover:shadow-sm px-2 py-3.5 text-center transition-all group"
+    >
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${iconBg[color]}`}>
+        {icon}
+      </div>
+      <span className="text-[10px] font-semibold text-slate-600 group-hover:text-slate-800 leading-snug">{label}</span>
+    </Link>
+  )
+}
+
+function AlertRow({ alert }: { alert: { severity: 'critical' | 'warning' | 'info'; text: string; href: string } }) {
+  const cfg = {
+    critical: { border: 'border-l-red-400',    bg: '',              dot: 'bg-red-500',    text: 'text-red-700'    },
+    warning:  { border: 'border-l-amber-400',  bg: 'bg-amber-50/30', dot: 'bg-amber-500',  text: 'text-amber-700'  },
+    info:     { border: 'border-l-sky-300',    bg: '',              dot: 'bg-sky-400',    text: 'text-slate-700'  },
+  }[alert.severity]
+
+  return (
+    <div className={`flex items-center gap-3 px-5 py-3 border-l-[3px] ${cfg.border} ${cfg.bg}`}>
+      <div className={`w-2 h-2 rounded-full ${cfg.dot} shrink-0`} />
+      <p className={`text-[12px] font-medium ${cfg.text} flex-1`}>{alert.text}</p>
+      <Link href={alert.href} className="text-[11px] font-semibold text-admin-sidebar-act hover:text-admin-sidebar transition-colors shrink-0">
+        Ver →
+      </Link>
+    </div>
+  )
+}
+
+function ResStatusBadge({ status }: { status: string }) {
+  const cfg: Record<string, string> = {
+    confirmed:       'bg-emerald-50 text-emerald-700',
+    pending_payment: 'bg-amber-50   text-amber-700',
+    checked_in:      'bg-sky-50     text-sky-700',
+    checked_out:     'bg-slate-100  text-slate-500',
+    cancelled:       'bg-red-50     text-red-600',
+  }
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${cfg[status] ?? 'bg-slate-100 text-slate-500'}`}>
+      {RES_STATUS_LABEL[status] ?? status}
+    </span>
+  )
+}
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
+
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <circle cx={11} cy={11} r={8} /><path d="m21 21-4.35-4.35" />
+    </svg>
+  )
+}
+
+function BellIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  )
+}
+
+function CheckInIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1={15} y1={12} x2={3} y2={12} />
+    </svg>
+  )
+}
+
+function CheckOutIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1={21} y1={12} x2={9} y2={12} />
+    </svg>
+  )
+}
+
+function HouseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  )
+}
+
+function BedIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
+      <path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8" /><path d="M2 15h20M2 20h20" /><path d="M6 10V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4" />
+    </svg>
+  )
+}
+
+function SparkleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
+      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" />
+    </svg>
+  )
+}
+
+function CoinIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
+      <circle cx={12} cy={12} r={9} /><path d="M14.5 9a3 3 0 0 0-5 2.2c0 2.4 5 3.8 5 6a3 3 0 0 1-5 2.1" /><line x1={12} y1={6} x2={12} y2={8} /><line x1={12} y1={19} x2={12} y2={21} />
+    </svg>
+  )
+}
+
+function OkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 shrink-0" aria-hidden="true">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  )
+}
+
+function WarnIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 shrink-0" aria-hidden="true">
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1={12} y1={9} x2={12} y2={13} /><line x1={12} y1={17} x2={12.01} y2={17} />
+    </svg>
+  )
+}
+
+function PlusCircleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
+      <circle cx={12} cy={12} r={9} /><line x1={12} y1={8} x2={12} y2={16} /><line x1={8} y1={12} x2={16} y2={12} />
+    </svg>
+  )
+}
+
+function UserIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx={12} cy={7} r={4} />
+    </svg>
+  )
+}
+
+function SearchIcon2() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
+      <circle cx={11} cy={11} r={8} /><path d="m21 21-4.35-4.35" />
+    </svg>
+  )
+}
+
+function SparkleIcon2() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
+      <path d="M3 12h2M19 12h2M12 3v2M12 19v2M5.6 5.6l1.4 1.4M16.97 16.97l1.44 1.44M5.64 18.36l1.41-1.41M16.97 7.03l1.44-1.44" />
+    </svg>
+  )
+}
+
+function WrenchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5" aria-hidden="true">
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+    </svg>
   )
 }

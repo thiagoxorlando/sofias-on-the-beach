@@ -12,6 +12,7 @@ import { ChargesPanel, type ChargeRow } from './_components/ChargesPanel'
 import { ReceiptLink } from '../../payments/_components/ReceiptLink'
 import { DeleteReservationDanger } from './_components/DeleteReservationDanger'
 import { HandoffRequestsPanel, type HandoffRequestItem } from './_components/HandoffRequestsPanel'
+import { SpecialRequestBtn } from './_components/SpecialRequestBtn'
 
 export const metadata: Metadata = { title: "Detalhe da reserva — Painel Sofia's" }
 
@@ -87,6 +88,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
     .select(`
       id, token, status, check_in, check_out, adults, children,
       base_amount_brl, discount_brl, total_brl, special_requests,
+      special_request_status, special_request_handled_at,
       cancellation_reason, cancelled_at, checked_in_at, checked_out_at, created_at,
       guests ( id, full_name, email, phone, cpf, nationality, total_stays ),
       rooms ( id, name, slug, max_guests, base_price_brl, housekeeping_status, room_categories ( name ) )
@@ -260,10 +262,25 @@ export default async function ReservationDetailPage({ params }: { params: Promis
             </div>
             {reservation.special_requests && (
               <div className="mt-4">
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.10em] mb-1.5">Pedidos especiais</p>
+                <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.10em]">Pedidos especiais</p>
+                  {reservation.special_request_status === 'done' ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                      ✓ Pedido atendido
+                      {reservation.special_request_handled_at && (
+                        <span className="text-emerald-500 font-normal">
+                          {' '}· {formatDateTime(reservation.special_request_handled_at)}
+                        </span>
+                      )}
+                    </span>
+                  ) : null}
+                </div>
                 <p className="text-[13px] text-slate-700 leading-relaxed bg-slate-50 rounded-xl px-4 py-3">
                   {reservation.special_requests}
                 </p>
+                {reservation.special_request_status !== 'done' && canManageReservation && (
+                  <SpecialRequestBtn reservationId={reservation.id} />
+                )}
               </div>
             )}
             {reservation.status === 'cancelled' && (

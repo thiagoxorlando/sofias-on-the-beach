@@ -642,6 +642,9 @@ export type Database = {
           promotion_id: string | null
           room_id: string
           source: string
+          special_request_handled_at: string | null
+          special_request_handled_by: string | null
+          special_request_status: string
           special_requests: string | null
           status: string
           token: string
@@ -668,6 +671,9 @@ export type Database = {
           promotion_id?: string | null
           room_id: string
           source?: string
+          special_request_handled_at?: string | null
+          special_request_handled_by?: string | null
+          special_request_status?: string
           special_requests?: string | null
           status?: string
           token: string
@@ -694,6 +700,9 @@ export type Database = {
           promotion_id?: string | null
           room_id?: string
           source?: string
+          special_request_handled_at?: string | null
+          special_request_handled_by?: string | null
+          special_request_status?: string
           special_requests?: string | null
           status?: string
           token?: string

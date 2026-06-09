@@ -56,6 +56,7 @@ function revalidatePayment(reservationId: string) {
   revalidatePath('/dashboard/payments')
   revalidatePath('/dashboard/reservations')
   revalidatePath(`/dashboard/reservations/${reservationId}`)
+  revalidatePath('/dashboard/reception')
 }
 
 // ── Manual payment confirmation ───────────────────────────────────────────────

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { isAdminUser } from '@/lib/auth'
@@ -100,7 +101,7 @@ export default async function EntrarPage({ searchParams }: { searchParams: SP })
 function Brand() {
   return (
     <div className="flex items-center justify-center gap-3 mb-6">
-      <SofiasMark className="w-11 h-11 text-navy-deep shrink-0" />
+      <Image src="/images/experience/sofias_icon_transparent.png" alt="Sofia's on the Beach" width={44} height={44} className="w-11 h-11 object-contain shrink-0" />
       <div>
         <p className="font-serif text-[25px] font-bold text-navy-deep leading-none tracking-tight">
           SOFIA&apos;S
@@ -117,22 +118,3 @@ function Divider() {
   return <div className="w-10 h-[2px] rounded-full bg-warm-sand mx-auto mb-7" />
 }
 
-function SofiasMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 40" fill="none" className={className} aria-hidden="true">
-      <path
-        d="M10 36 L10 20 A10 10 0 0 1 30 20 L30 36"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M4 38 Q12 34 20 38 T36 38"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}

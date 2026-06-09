@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -94,7 +95,7 @@ export function DashboardShell({
             className="flex items-center gap-3"
             onClick={() => setSidebarOpen(false)}
           >
-            <SofiasMark className="w-7 h-7 text-white/70 shrink-0" />
+            <Image src="/images/experience/sofias_icon_transparent.png" alt="Sofia's on the Beach" width={28} height={28} className="w-7 h-7 object-contain shrink-0" />
             <div className="leading-none">
               <p className="text-[14px] font-bold text-white leading-none tracking-wide">
                 SOFIA&apos;S
@@ -149,7 +150,7 @@ export function DashboardShell({
         <div className="px-3 pb-3 shrink-0 print:hidden">
           <div className="bg-white/5 border border-white/8 rounded-xl p-3 flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-              <SofiasMark className="w-5 h-5 text-white/50" />
+              <Image src="/images/experience/sofias_icon_transparent.png" alt="" width={20} height={20} className="w-5 h-5 object-contain" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-semibold text-white/75 truncate">Sofia&apos;s on the Beach</p>
@@ -228,15 +229,6 @@ function NavIcon({ name, active }: { name: string; active: boolean }) {
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
-
-function SofiasMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 40" fill="none" className={className} aria-hidden="true">
-      <path d="M10 36 L10 20 A10 10 0 0 1 30 20 L30 36" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4 38 Q12 34 20 38 T36 38" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  )
-}
 
 function ExternalLinkIcon() {
   return (

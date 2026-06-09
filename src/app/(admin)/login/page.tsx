@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { LoginForm } from './LoginForm'
@@ -27,7 +28,7 @@ export default async function LoginPage() {
 
           {/* Brand */}
           <div className="flex items-center justify-center gap-3 mb-8">
-            <SofiasMark className="w-10 h-10 text-admin-sidebar shrink-0" />
+            <Image src="/images/experience/sofias_icon_transparent.png" alt="Sofia's on the Beach" width={40} height={40} className="w-10 h-10 object-contain shrink-0" />
             <div>
               <p className="text-[26px] font-bold text-slate-800 leading-none tracking-tight">
                 SOFIA&apos;S
@@ -62,22 +63,3 @@ export default async function LoginPage() {
   )
 }
 
-function SofiasMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 40" fill="none" className={className} aria-hidden="true">
-      <path
-        d="M10 36 L10 20 A10 10 0 0 1 30 20 L30 36"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M4 38 Q12 34 20 38 T36 38"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { signOutAction } from './actions'
 import { DashboardShell } from './_components/DashboardShell'
+import { ReceptionShell } from './_components/ReceptionShell'
 
 export default async function DashboardLayout({
   children,
@@ -45,14 +46,20 @@ export default async function DashboardLayout({
     )
   }
 
+  const adminUserProps = {
+    email:     adminUser.email,
+    full_name: adminUser.full_name,
+    role:      adminUser.role,
+  }
+
+  // Reception staff get a dedicated front-desk workstation shell with
+  // only reception-relevant navigation — no admin modules visible.
+  if (adminUser.role === 'reception') {
+    return <ReceptionShell adminUser={adminUserProps}>{children}</ReceptionShell>
+  }
+
   return (
-    <DashboardShell
-      adminUser={{
-        email:      adminUser.email,
-        full_name:  adminUser.full_name,
-        role:       adminUser.role,
-      }}
-    >
+    <DashboardShell adminUser={adminUserProps}>
       {children}
     </DashboardShell>
   )

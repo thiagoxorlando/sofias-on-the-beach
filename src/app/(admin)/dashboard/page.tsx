@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireModule } from '@/lib/auth'
@@ -290,6 +291,7 @@ async function loadData(role: string) {
 
 export default async function DashboardOverviewPage() {
   const admin = await requireModule('overview')
+  if (admin.role === 'reception') redirect('/dashboard/reception')
   const data  = await loadData(admin.role)
 
   const dateLabel = new Date().toLocaleDateString('pt-BR', {

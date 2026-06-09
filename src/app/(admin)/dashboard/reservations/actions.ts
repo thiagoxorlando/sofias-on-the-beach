@@ -30,6 +30,7 @@ async function logEvent(
 function revalidateReservation(id: string) {
   revalidatePath('/dashboard/reservations')
   revalidatePath(`/dashboard/reservations/${id}`)
+  revalidatePath('/dashboard/reception')
 }
 
 // Mirrors the dual-module check on the reservation detail page guard: finance

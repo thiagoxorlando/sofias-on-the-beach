@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Menu, X, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -47,7 +48,13 @@ export function Header() {
           className="flex items-center gap-3 shrink-0 group"
           onClick={() => setMenuOpen(false)}
         >
-          <SofiasMark className="w-9 h-9 md:w-12 md:h-12 text-ocean-600 group-hover:text-ocean-500 transition-colors" />
+          <Image
+            src="/images/experience/sofias_icon_transparent.png"
+            alt="Sofia's on the Beach"
+            width={48}
+            height={48}
+            className="w-9 h-9 md:w-12 md:h-12 object-contain"
+          />
           <div className="flex flex-col leading-none">
             <span className="font-serif text-[17px] md:text-[20px] font-bold text-foreground tracking-tight leading-none">
               Sofia&apos;s
@@ -159,22 +166,3 @@ export function Header() {
   )
 }
 
-function SofiasMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 40" fill="none" className={className} aria-hidden="true">
-      <path
-        d="M10 36 L10 20 A10 10 0 0 1 30 20 L30 36"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M4 38 Q12 34 20 38 T36 38"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}

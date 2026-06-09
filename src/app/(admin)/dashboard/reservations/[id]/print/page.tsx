@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import { notFound, redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/auth'
@@ -83,7 +84,7 @@ export default async function ReservationPrintPage({ params }: { params: Promise
         {/* Brand header */}
         <div className="flex items-center justify-between gap-4 pb-5 border-b-2 border-admin-sidebar print:border-black">
           <div className="flex items-center gap-3">
-            <SofiasMark className="w-10 h-10 text-admin-sidebar print:text-black shrink-0" />
+            <Image src="/images/experience/sofias_icon_transparent.png" alt="Sofia's on the Beach" width={40} height={40} className="w-10 h-10 object-contain shrink-0" />
             <div className="leading-none">
               <p className="text-[22px] font-bold text-slate-800 print:text-black leading-none">
                 {settings.businessName}
@@ -201,11 +202,3 @@ function PField({ label, value }: { label: string; value: string }) {
   )
 }
 
-function SofiasMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 40" fill="none" className={className} aria-hidden="true">
-      <path d="M10 36 L10 20 A10 10 0 0 1 30 20 L30 36" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4 38 Q12 34 20 38 T36 38" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  )
-}

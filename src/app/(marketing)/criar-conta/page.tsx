@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { GuestSignUpForm } from './GuestSignUpForm'
@@ -25,7 +26,7 @@ export default async function CriarContaPage({ searchParams }: { searchParams: S
         <div className="bg-ivory-soft rounded-[32px] shadow-[0_40px_110px_-20px_rgba(2,12,22,0.5)] px-9 py-12 md:px-12 md:py-14">
 
           <div className="flex items-center justify-center gap-3 mb-6">
-            <SofiasMark className="w-11 h-11 text-navy-deep shrink-0" />
+            <Image src="/images/experience/sofias_icon_transparent.png" alt="Sofia's on the Beach" width={44} height={44} className="w-11 h-11 object-contain shrink-0" />
             <div>
               <p className="font-serif text-[25px] font-bold text-navy-deep leading-none tracking-tight">
                 SOFIA&apos;S
@@ -60,22 +61,3 @@ export default async function CriarContaPage({ searchParams }: { searchParams: S
   )
 }
 
-function SofiasMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 40" fill="none" className={className} aria-hidden="true">
-      <path
-        d="M10 36 L10 20 A10 10 0 0 1 30 20 L30 36"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M4 38 Q12 34 20 38 T36 38"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
