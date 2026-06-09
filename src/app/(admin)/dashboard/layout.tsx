@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { signOutAction } from './actions'
 import { DashboardShell } from './_components/DashboardShell'
 import { ReceptionShell } from './_components/ReceptionShell'
+import { HousekeepingShell } from './_components/HousekeepingShell'
 
 export default async function DashboardLayout({
   children,
@@ -56,6 +57,10 @@ export default async function DashboardLayout({
   // only reception-relevant navigation — no admin modules visible.
   if (adminUser.role === 'reception') {
     return <ReceptionShell adminUser={adminUserProps}>{children}</ReceptionShell>
+  }
+
+  if (adminUser.role === 'housekeeping' || adminUser.role === 'housekeeping_supervisor') {
+    return <HousekeepingShell adminUser={adminUserProps}>{children}</HousekeepingShell>
   }
 
   return (

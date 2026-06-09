@@ -292,6 +292,7 @@ async function loadData(role: string) {
 export default async function DashboardOverviewPage() {
   const admin = await requireModule('overview')
   if (admin.role === 'reception') redirect('/dashboard/reception')
+  if (admin.role === 'housekeeping' || admin.role === 'housekeeping_supervisor') redirect('/dashboard/housekeeping')
   const data  = await loadData(admin.role)
 
   const dateLabel = new Date().toLocaleDateString('pt-BR', {

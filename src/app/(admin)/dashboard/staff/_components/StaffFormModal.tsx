@@ -8,7 +8,8 @@ import type { StaffRow } from './types'
 const ROLE_OPTIONS: { value: string; label: string; superAdminOnly?: boolean }[] = [
   { value: 'manager',      label: 'Gerente' },
   { value: 'reception',    label: 'Recepção' },
-  { value: 'housekeeping', label: 'Governança' },
+  { value: 'housekeeping_supervisor', label: 'Chefe de Governança' },
+  { value: 'housekeeping',            label: 'Governança' },
   { value: 'maintenance',  label: 'Manutenção' },
   { value: 'finance',      label: 'Financeiro' },
   { value: 'staff',        label: 'Equipe (genérico)' },

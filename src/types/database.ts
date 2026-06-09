@@ -224,6 +224,87 @@ export type Database = {
           },
         ]
       }
+      housekeeping_assignments: {
+        Row: {
+          id: string
+          room_id: string
+          assigned_to: string
+          assigned_by: string
+          reservation_id: string | null
+          handoff_request_id: string | null
+          status: string
+          priority: string
+          notes: string | null
+          created_at: string
+          updated_at: string
+          completed_at: string | null
+        }
+        Insert: {
+          id?: string
+          room_id: string
+          assigned_to: string
+          assigned_by: string
+          reservation_id?: string | null
+          handoff_request_id?: string | null
+          status?: string
+          priority?: string
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          completed_at?: string | null
+        }
+        Update: {
+          id?: string
+          room_id?: string
+          assigned_to?: string
+          assigned_by?: string
+          reservation_id?: string | null
+          handoff_request_id?: string | null
+          status?: string
+          priority?: string
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          completed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "housekeeping_assignments_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "housekeeping_assignments_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "housekeeping_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "housekeeping_assignments_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "housekeeping_assignments_handoff_request_id_fkey"
+            columns: ["handoff_request_id"]
+            isOneToOne: false
+            referencedRelation: "handoff_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           admin_notes: string | null
