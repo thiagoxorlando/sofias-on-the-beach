@@ -65,7 +65,7 @@ export async function getCurrentGuest(): Promise<GuestSession | null> {
 
 export async function requireAdmin(): Promise<AdminSession> {
   const admin = await getCurrentAdmin()
-  if (!admin) redirect('/login')
+  if (!admin) redirect('/entrar')
   return admin
 }
 

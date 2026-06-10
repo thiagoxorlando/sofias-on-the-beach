@@ -32,8 +32,7 @@ export async function proxy(request: NextRequest) {
 
   // Redirect unauthenticated users away from the admin panel
   if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
-    const loginUrl = request.nextUrl.clone()
-    loginUrl.pathname = '/login'
+    const loginUrl = new URL('/entrar', request.nextUrl.origin)
     return NextResponse.redirect(loginUrl)
   }
 

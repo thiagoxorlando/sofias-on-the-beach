@@ -46,6 +46,12 @@ const FIELD_KEYS = {
   check_out_time:               'check_out_time',
   cancellation_policy:          'cancellation_policy',
   booking_confirmation_message: 'booking_confirmation_message',
+  manual_payment_holder_name:   'manual_payment_holder_name',
+  manual_payment_bank_name:     'manual_payment_bank_name',
+  manual_payment_pix_key:       'manual_payment_pix_key',
+  manual_payment_pix_key_type:  'manual_payment_pix_key_type',
+  manual_payment_instructions:  'manual_payment_instructions',
+  manual_payment_whatsapp:      'manual_payment_whatsapp',
 } as const
 
 export async function updateSiteSettingsAction(_prev: ActionState, formData: FormData): Promise<ActionState> {

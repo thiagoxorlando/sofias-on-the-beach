@@ -132,14 +132,14 @@ export function Footer({ settings }: { settings: SiteSettings }) {
         {/* Bottom bar */}
         <div className="pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <p className="text-[11px] text-ocean-600">
-            © {year} Sofia&apos;s on the Beach. Todos os direitos reservados.
+            {`© ${year} Sofia's on the Beach. Todos os direitos reservados.`}
           </p>
           <div className="flex items-center gap-4">
             <p className="text-[11px] text-ocean-700">
               Reservas diretas · Melhor tarifa garantida
             </p>
             <Link
-              href="/login"
+              href="/entrar"
               className="text-[10px] text-ocean-800/30 hover:text-ocean-500 transition-colors"
             >
               Acesso administrativo

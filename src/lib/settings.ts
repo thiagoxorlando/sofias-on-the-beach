@@ -22,6 +22,12 @@ export type SiteSettings = {
   cancellationPolicy: string
   bookingConfirmationMessage: string
   onlineBookingEnabled: boolean
+  manualPaymentHolderName: string
+  manualPaymentBankName: string
+  manualPaymentPixKey: string
+  manualPaymentPixKeyType: string
+  manualPaymentInstructions: string
+  manualPaymentWhatsapp: string
 }
 
 const FALLBACK_SETTINGS: SiteSettings = {
@@ -41,6 +47,12 @@ const FALLBACK_SETTINGS: SiteSettings = {
   cancellationPolicy:         '',
   bookingConfirmationMessage: '',
   onlineBookingEnabled:       false,
+  manualPaymentHolderName:    '',
+  manualPaymentBankName:      '',
+  manualPaymentPixKey:        '',
+  manualPaymentPixKeyType:    '',
+  manualPaymentInstructions:  '',
+  manualPaymentWhatsapp:      '',
 }
 
 type StringSettingField = keyof Omit<SiteSettings, 'onlineBookingEnabled'>
@@ -61,6 +73,12 @@ const SETTING_KEY: Record<StringSettingField, string> = {
   checkOutTime:               'check_out_time',
   cancellationPolicy:         'cancellation_policy',
   bookingConfirmationMessage: 'booking_confirmation_message',
+  manualPaymentHolderName:    'manual_payment_holder_name',
+  manualPaymentBankName:      'manual_payment_bank_name',
+  manualPaymentPixKey:        'manual_payment_pix_key',
+  manualPaymentPixKeyType:    'manual_payment_pix_key_type',
+  manualPaymentInstructions:  'manual_payment_instructions',
+  manualPaymentWhatsapp:      'manual_payment_whatsapp',
 }
 
 // Wrapped in React's cache() — many marketing components on the same page

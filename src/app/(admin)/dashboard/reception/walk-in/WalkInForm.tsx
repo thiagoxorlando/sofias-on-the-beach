@@ -55,9 +55,17 @@ type SuccessData = {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function WalkInForm() {
+const PIX_KEY_TYPE_LABELS: Record<string, string> = {
+  cpf_cnpj:  'CPF/CNPJ',
+  email:     'E-mail',
+  telefone:  'Telefone',
+  aleatoria: 'Chave aleatória',
+}
+
+export function WalkInForm({ pixKey, pixKeyType }: { pixKey?: string; pixKeyType?: string }) {
   const [step, setStep] = useState<Step>('dates')
   const [isPending, startTransition] = useTransition()
+  const [paymentMethod, setPaymentMethod] = useState('')
 
   // Step 1: dates
   const [checkIn,  setCheckIn]  = useState('')
@@ -451,12 +459,27 @@ export function WalkInForm() {
                   required
                   defaultValue=""
                   className={SELECT_CLS}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
                 >
                   <option value="" disabled>Selecione…</option>
                   {PAYMENT_METHODS.map((m) => (
                     <option key={m.value} value={m.value}>{m.label}</option>
                   ))}
                 </select>
+                {paymentMethod === 'pix_manual' && pixKey && (
+                  <div className="mt-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3">
+                    <p className="text-[11px] font-bold text-sky-700 uppercase tracking-[0.08em] mb-1">Chave PIX configurada</p>
+                    <p className="text-[13px] font-mono font-semibold text-sky-900">{pixKey}</p>
+                    {pixKeyType && (
+                      <p className="text-[11px] text-sky-600 mt-0.5">{PIX_KEY_TYPE_LABELS[pixKeyType] ?? pixKeyType}</p>
+                    )}
+                  </div>
+                )}
+                {paymentMethod === 'pix_manual' && !pixKey && (
+                  <p className="mt-2 text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                    Chave PIX não configurada. Acesse Configurações para cadastrá-la.
+                  </p>
+                )}
               </div>
             </div>
 

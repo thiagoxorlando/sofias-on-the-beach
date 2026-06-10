@@ -137,7 +137,7 @@ export function HeroSection({ whatsapp, onlineBookingEnabled }: { whatsapp: stri
       ────────────────────────────────────────────────── */}
       <section
         className="md:hidden relative overflow-hidden"
-        style={{ height: 'calc(100svh - 64px)', minHeight: '680px' }}
+        style={{ height: 'calc(100svh - 64px)', minHeight: '720px' }}
       >
         {/* Background */}
         <div className="absolute inset-0">
@@ -161,29 +161,63 @@ export function HeroSection({ whatsapp, onlineBookingEnabled }: { whatsapp: stri
           )}
         </div>
 
+        {/* Gradient overlay — darker at bottom for text legibility */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              'linear-gradient(180deg, rgba(0,10,24,0.24) 0%, rgba(0,10,24,0.40) 42%, rgba(0,10,24,0.76) 70%, rgba(0,8,20,0.92) 100%)',
+              'linear-gradient(180deg, rgba(0,10,24,0.18) 0%, rgba(0,10,24,0.38) 38%, rgba(0,10,24,0.74) 65%, rgba(0,8,20,0.95) 100%)',
           }}
         />
 
-        <div className="absolute inset-x-0 bottom-[calc(7rem+env(safe-area-inset-bottom))] px-6">
-          <p className="text-[10px] font-bold text-white/65 uppercase tracking-[0.32em] mb-3">
+        {/* Content — centered, anchored from bottom */}
+        <div className="absolute inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] px-7 text-center">
+
+          {/* Sofia logomark */}
+          <div className="flex justify-center mb-5">
+            <div
+              className="w-[62px] h-[62px] rounded-full flex items-center justify-center"
+              style={{
+                background: 'rgba(255,255,255,0.10)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.22)',
+                boxShadow: '0 4px 18px rgba(0,0,0,0.22)',
+              }}
+            >
+              <Image
+                src="/images/experience/sofias_icon_transparent.png"
+                alt="Sofia's on the Beach"
+                width={36}
+                height={36}
+                className="w-9 h-9 object-contain"
+              />
+            </div>
+          </div>
+
+          {/* Location badge */}
+          <p className="text-[10px] font-bold text-white/60 uppercase tracking-[0.32em] mb-4">
             Beira-mar · Búzios · RJ
           </p>
-          <h1 className="font-serif text-4xl font-bold text-white leading-[1.12] mb-3">
+
+          {/* Headline */}
+          <h1 className="font-serif text-[36px] font-bold text-white leading-[1.1] mb-3">
             Acorde de frente para o mar em Búzios
           </h1>
-          <p className="font-serif italic text-white/80 text-[15px] mb-6">
+
+          {/* Thin ornament */}
+          <div className="w-8 h-[2px] rounded-full bg-white/28 mx-auto mb-4" />
+
+          {/* Tagline */}
+          <p className="font-serif italic text-white/75 text-[15px] mb-8 leading-relaxed">
             Seu refúgio. Sua vista. Seu tempo.
           </p>
-          <div className="flex flex-col gap-2.5">
+
+          {/* CTAs */}
+          <div className="flex flex-col gap-3">
             {onlineBookingEnabled ? (
               <Link
                 href="/quartos"
-                className="flex items-center justify-center gap-2.5 bg-white text-ocean-900 py-3 rounded-xl font-bold text-[13px] uppercase tracking-[0.08em] shadow-[0_8px_28px_rgba(0,0,0,0.20)]"
+                className="flex items-center justify-center gap-2.5 bg-white text-ocean-900 py-3.5 rounded-xl font-bold text-[13px] uppercase tracking-[0.08em] shadow-[0_8px_32px_rgba(0,0,0,0.24)]"
               >
                 <CalendarIcon />
                 Consultar disponibilidade
@@ -193,7 +227,7 @@ export function HeroSection({ whatsapp, onlineBookingEnabled }: { whatsapp: stri
                 href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2.5 bg-white text-ocean-900 py-3 rounded-xl font-bold text-[13px] uppercase tracking-[0.08em] shadow-[0_8px_28px_rgba(0,0,0,0.20)]"
+                className="flex items-center justify-center gap-2.5 bg-white text-ocean-900 py-3.5 rounded-xl font-bold text-[13px] uppercase tracking-[0.08em] shadow-[0_8px_32px_rgba(0,0,0,0.24)]"
               >
                 <WhatsAppIcon className="w-[15px] h-[15px] text-[#25D366] shrink-0" />
                 Falar pelo WhatsApp
@@ -201,7 +235,7 @@ export function HeroSection({ whatsapp, onlineBookingEnabled }: { whatsapp: stri
             )}
             <Link
               href="/quartos"
-              className="flex items-center justify-center gap-2.5 border border-white/30 bg-white/10 backdrop-blur-sm text-white py-3 rounded-xl font-semibold text-[13px] uppercase tracking-[0.08em]"
+              className="flex items-center justify-center gap-2.5 border border-white/28 bg-white/10 backdrop-blur-sm text-white py-3.5 rounded-xl font-semibold text-[13px] uppercase tracking-[0.08em]"
             >
               Ver suítes
             </Link>

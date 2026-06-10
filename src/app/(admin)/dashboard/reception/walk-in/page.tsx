@@ -1,12 +1,14 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { requireModule } from '@/lib/auth'
+import { getSiteSettings } from '@/lib/settings'
 import { WalkInForm } from './WalkInForm'
 
 export const metadata: Metadata = { title: "Nova Reserva Walk-in — Sofia's" }
 
 export default async function WalkInPage() {
   await requireModule('reception')
+  const settings = await getSiteSettings()
 
   return (
     <div className="min-h-full bg-admin-page">
@@ -29,7 +31,7 @@ export default async function WalkInPage() {
       </div>
 
       <div className="max-w-[900px] mx-auto px-4 sm:px-6 lg:px-7 py-6">
-        <WalkInForm />
+        <WalkInForm pixKey={settings.manualPaymentPixKey} pixKeyType={settings.manualPaymentPixKeyType} />
       </div>
 
     </div>

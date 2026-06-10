@@ -36,6 +36,12 @@ export default async function SettingsPage() {
     checkOutTime:               asString(byKey.get('check_out_time')),
     cancellationPolicy:         asString(byKey.get('cancellation_policy')),
     bookingConfirmationMessage: asString(byKey.get('booking_confirmation_message')),
+    manualPaymentHolderName:    asString(byKey.get('manual_payment_holder_name')),
+    manualPaymentBankName:      asString(byKey.get('manual_payment_bank_name')),
+    manualPaymentPixKey:        asString(byKey.get('manual_payment_pix_key')),
+    manualPaymentPixKeyType:    asString(byKey.get('manual_payment_pix_key_type')),
+    manualPaymentInstructions:  asString(byKey.get('manual_payment_instructions')),
+    manualPaymentWhatsapp:      asString(byKey.get('manual_payment_whatsapp')),
   }
 
   // Payment status — read-only. PIX and credit card are both billing types of

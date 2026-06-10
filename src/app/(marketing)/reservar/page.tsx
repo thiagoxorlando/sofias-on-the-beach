@@ -258,11 +258,11 @@ function BookingBlocked({ whatsapp }: { whatsapp: string }) {
           </svg>
         </div>
         <h1 className="font-serif text-[26px] font-bold text-navy-deep mb-4">
-          Reservas temporariamente indisponíveis
+          Reservas online em breve
         </h1>
         <p className="text-[14px] text-stone leading-relaxed mb-8">
-          No momento, reservas online estão desativadas. Fale diretamente com nossa equipe pelo
-          WhatsApp — será um prazer atendê-lo!
+          Estamos preparando a reserva direta pelo site. Por enquanto, fale conosco pelo WhatsApp
+          para consultar disponibilidade e valores.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link href="/quartos" className={`px-7 py-3.5 text-[13px] ${BTN_PRIMARY}`} style={{ background: 'none', border: '1px solid', borderColor: 'var(--color-mist, #d1dbe8)', color: 'var(--color-navy, #0a2540)' }}>

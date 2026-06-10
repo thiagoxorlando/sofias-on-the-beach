@@ -23,22 +23,43 @@ export async function guestSignInAction(
 
   if (!email || !password) return { error: 'Preencha o e-mail e a senha.' }
 
-  // Block admin/staff accounts from the guest login form
   const db = createAdminClient()
+
+  // Check if this is a staff / admin account
   const { data: adminRecord } = await db
     .from('admin_users')
-    .select('id')
+    .select('id, role, is_active')
     .eq('email', email)
-    .eq('is_active', true)
     .maybeSingle()
+
   if (adminRecord) {
-    return { error: 'Esta conta é de funcionário da pousada. Use o acesso administrativo no rodapé do site para entrar no painel.' }
+    if (!adminRecord.is_active) {
+      return {
+        error:
+          'Seu usuário ainda não tem permissão de acesso ao painel. Fale com a administração.',
+      }
+    }
+
+    // Active staff — authenticate
+    const supabase = await createClient()
+    const { error: authErr } = await supabase.auth.signInWithPassword({ email, password })
+    if (authErr) return { error: 'E-mail ou senha inválidos.' }
+
+    // Record login time
+    await db
+      .from('admin_users')
+      .update({ last_login_at: new Date().toISOString() })
+      .eq('id', adminRecord.id)
+
+    // Role-based redirect
+    const dest = adminRecord.role === 'reception' ? '/dashboard/reception' : '/dashboard'
+    redirect(dest)
   }
 
+  // Guest / regular user flow
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-  if (error) return { error: 'E-mail ou senha incorretos, ou sua conta ainda não foi confirmada.' }
+  if (error) return { error: 'E-mail ou senha inválidos.' }
 
   redirect(next)
 }

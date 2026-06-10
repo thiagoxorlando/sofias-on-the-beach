@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/auth'
+import { getSiteSettings } from '@/lib/settings'
 import { canAccessModule } from '@/lib/permissions'
 import { ReservationStatusBadge, PaymentStatusBadge, PAYMENT_LABELS } from '../_components/badges'
 import { ReservationActions } from './_components/ReservationActions'
@@ -177,6 +178,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
 
   const relevantPayment = (payments ?? []).find((p) => p.status !== 'failed') ?? payments?.[0] ?? null
   const nights = nightsBetween(reservation.check_in, reservation.check_out)
+  const settings = await getSiteSettings()
 
   const pendingCharges = charges.filter((c) => c.status === 'pending')
 
@@ -411,6 +413,25 @@ export default async function ReservationDetailPage({ params }: { params: Promis
                 <p className="text-[13px] text-slate-400">Sem pagamento registrado para esta reserva.</p>
                 {(reservation.status === 'pending_payment' || reservation.status === 'confirmed') && (
                   <ManualPaymentTrigger reservationId={reservation.id} amount={reservation.total_brl} />
+                )}
+                {(settings.manualPaymentPixKey || settings.manualPaymentInstructions) && (
+                  <div className="rounded-xl border border-sky-100 bg-sky-50/50 px-4 py-3 space-y-1.5">
+                    <p className="text-[10px] font-bold text-sky-600 uppercase tracking-[0.08em]">Dados para pagamento manual</p>
+                    {settings.manualPaymentPixKey && (
+                      <p className="text-[13px] font-mono font-semibold text-slate-800 break-all">
+                        PIX: {settings.manualPaymentPixKey}
+                        {settings.manualPaymentPixKeyType && (
+                          <span className="text-[11px] text-slate-500 font-normal font-sans ml-1.5">({settings.manualPaymentPixKeyType})</span>
+                        )}
+                      </p>
+                    )}
+                    {settings.manualPaymentHolderName && (
+                      <p className="text-[12px] text-slate-600">{settings.manualPaymentHolderName}{settings.manualPaymentBankName ? ` · ${settings.manualPaymentBankName}` : ''}</p>
+                    )}
+                    {settings.manualPaymentInstructions && (
+                      <p className="text-[12px] text-slate-500 leading-relaxed">{settings.manualPaymentInstructions}</p>
+                    )}
+                  </div>
                 )}
               </div>
             )}

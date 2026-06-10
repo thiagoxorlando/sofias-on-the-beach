@@ -33,6 +33,34 @@ export type SiteSettingsFormValues = {
   checkOutTime: string
   cancellationPolicy: string
   bookingConfirmationMessage: string
+  manualPaymentHolderName: string
+  manualPaymentBankName: string
+  manualPaymentPixKey: string
+  manualPaymentPixKeyType: string
+  manualPaymentInstructions: string
+  manualPaymentWhatsapp: string
+}
+
+function SelectField({ label, name, defaultValue, options, hint }: {
+  label: string
+  name: string
+  defaultValue: string
+  options: { value: string; label: string }[]
+  hint?: string
+}) {
+  return (
+    <div>
+      <label className={LABEL}>
+        {label} {hint && <span className={HINT}>{hint}</span>}
+      </label>
+      <select name={name} defaultValue={defaultValue} className={INPUT}>
+        <option value="">— não informado —</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </div>
+  )
 }
 
 function Field({ label, name, defaultValue, type = 'text', placeholder, hint }: {
@@ -111,6 +139,42 @@ export function SettingsForm({ initial }: { initial: SiteSettingsFormValues }) {
               className={TEXTAREA}
             />
           </div>
+        </div>
+      </section>
+
+      {/* 4. Pagamento manual interno */}
+      <section className={CARD}>
+        <h2 className="text-[15px] font-semibold text-slate-800 mb-1">Pagamento manual interno</h2>
+        <p className="text-[12px] text-slate-500 mb-4 leading-relaxed">
+          Usado apenas pela equipe para registrar pagamentos combinados diretamente com o hóspede.
+          Essas informações não são exibidas no site enquanto o modo landing page estiver ativo.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Nome do titular" name="manual_payment_holder_name" defaultValue={initial.manualPaymentHolderName} placeholder="Sofia Rodrigues ou razão social" />
+          <Field label="Banco" name="manual_payment_bank_name" defaultValue={initial.manualPaymentBankName} placeholder="Nubank, Itaú, Bradesco…" />
+          <Field label="Chave PIX" name="manual_payment_pix_key" defaultValue={initial.manualPaymentPixKey} placeholder="chave@email.com, CPF, CNPJ ou chave aleatória" />
+          <SelectField
+            label="Tipo da chave PIX"
+            name="manual_payment_pix_key_type"
+            defaultValue={initial.manualPaymentPixKeyType}
+            options={[
+              { value: 'cpf_cnpj',  label: 'CPF / CNPJ' },
+              { value: 'email',     label: 'E-mail' },
+              { value: 'telefone',  label: 'Telefone' },
+              { value: 'aleatoria', label: 'Chave aleatória' },
+            ]}
+          />
+          <Field label="WhatsApp para pagamento" name="manual_payment_whatsapp" defaultValue={initial.manualPaymentWhatsapp} placeholder="5522999999999" hint="(código do país + DDD)" />
+        </div>
+        <div className="mt-4">
+          <label className={LABEL}>Instruções de pagamento</label>
+          <textarea
+            name="manual_payment_instructions"
+            rows={3}
+            defaultValue={initial.manualPaymentInstructions}
+            placeholder="Ex.: Faça um PIX para a chave abaixo e envie o comprovante pelo WhatsApp. O pagamento deve ser efetuado em até 24h para garantir a reserva."
+            className={TEXTAREA}
+          />
         </div>
       </section>
 

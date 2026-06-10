@@ -3,9 +3,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { isAdminUser } from '@/lib/auth'
+import { getCurrentAdmin } from '@/lib/auth'
 import { GuestLoginForm } from './GuestLoginForm'
-import { BTN_PRIMARY } from '@/components/booking/ui'
 
 export const metadata: Metadata = { title: "Entrar — Sofia's on the Beach" }
 
@@ -24,37 +23,13 @@ export default async function EntrarPage({ searchParams }: { searchParams: SP })
   const { data: { user } } = await supabase.auth.getUser()
 
   if (user) {
-    const isAdmin = await isAdminUser(user.id)
-    if (!isAdmin) {
-      // Guest already logged in — redirect them
-      redirect(nextUrl)
+    const admin = await getCurrentAdmin()
+    if (admin) {
+      // Staff member already logged in — send to their workspace
+      redirect(admin.role === 'reception' ? '/dashboard/reception' : '/dashboard')
     }
-    // Admin is on the guest login page — show staff warning
-    return (
-      <div className="min-h-[calc(100svh-64px)] md:min-h-[calc(100svh-92px)] flex items-center justify-center px-4 py-12" style={{ background: PAGE_BG }}>
-        <div className="w-full max-w-[480px]">
-          <div className="bg-ivory-soft rounded-[32px] shadow-[0_40px_110px_-20px_rgba(2,12,22,0.5)] px-9 py-12 md:px-12 md:py-14 text-center space-y-6">
-            <Brand />
-            <Divider />
-            <h1 className="font-serif text-[24px] font-bold text-navy-deep">
-              Conta de funcionário
-            </h1>
-            <p className="text-[14px] text-stone leading-relaxed">
-              Você está logado como membro da equipe. Esta área é exclusiva para hóspedes.
-              Para fazer uma reserva como hóspede, crie uma conta separada com outro e-mail.
-            </p>
-            <div className="flex flex-col gap-3 pt-2">
-              <Link href="/dashboard" className={`w-full py-3.5 text-[13px] ${BTN_PRIMARY}`}>
-                Ir para o painel
-              </Link>
-              <Link href="/" className="text-[12px] text-stone hover:text-navy-deep transition-colors">
-                ← Voltar ao site
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+    // Guest already logged in
+    redirect(nextUrl)
   }
 
   const warning = msgParam === 'admin_account'
@@ -74,7 +49,7 @@ export default async function EntrarPage({ searchParams }: { searchParams: SP })
               Entrar na sua conta
             </h1>
             <p className="text-[14px] text-stone mt-3">
-              Acesse para acompanhar suas reservas e seus dados.
+              Acesse a área de hóspedes ou o painel da pousada.
             </p>
           </div>
 
@@ -117,4 +92,5 @@ function Brand() {
 function Divider() {
   return <div className="w-10 h-[2px] rounded-full bg-warm-sand mx-auto mb-7" />
 }
+
 

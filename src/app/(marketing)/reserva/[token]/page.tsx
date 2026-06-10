@@ -109,6 +109,7 @@ export default async function ReservaPage({
   )
 
   const settings = await getSiteSettings()
+  const asaasConfigured = !!process.env.ASAAS_API_KEY?.trim()
   const waMsg = encodeURIComponent(
     `Olá! Fiz uma pré-reserva no site com o código ${reservation.token}. Gostaria de confirmar.`,
   )
@@ -206,27 +207,43 @@ export default async function ReservaPage({
               </div>
             )}
 
-            {/* Payment section / status message */}
+            {/* Status message */}
             <div>
               {reservation.status === 'pending_payment' ? (
-                <PaymentSection
-                  reservationToken={reservation.token}
-                  initialPayment={existingPayment}
-                  whatsapp={settings.whatsapp}
-                />
+                asaasConfigured ? (
+                  <PaymentSection
+                    reservationToken={reservation.token}
+                    initialPayment={existingPayment}
+                    whatsapp={settings.whatsapp}
+                  />
+                ) : (
+                  <div className="bg-foam/50 rounded-2xl p-5 space-y-3">
+                    <p className="text-[14px] text-navy leading-relaxed">
+                      Para informações sobre sua reserva, fale com a pousada pelo WhatsApp.
+                    </p>
+                    <a
+                      href={waHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-[13px] font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
+                    >
+                      <WAIcon />
+                      Falar pelo WhatsApp
+                    </a>
+                  </div>
+                )
               ) : reservation.status === 'confirmed' ? (
                 <div className="bg-emerald-50 rounded-2xl p-5">
                   <p className="text-[14px] text-emerald-700 font-medium leading-relaxed">
                     {hasPaidPayment
-                      ? 'Pagamento confirmado. Sua reserva está garantida!'
-                      : 'Reserva confirmada pela equipe. Pagamento será tratado diretamente com a pousada.'}
+                      ? 'Reserva confirmada!'
+                      : 'Reserva confirmada pela equipe. Em breve entraremos em contato.'}
                   </p>
                 </div>
               ) : (
                 <div className="bg-foam/50 rounded-2xl p-5">
                   <p className="text-[14px] text-navy leading-relaxed">
-                    Sua pré-reserva foi criada. O pagamento será ativado na próxima etapa.
-                    Nossa equipe entrará em contato em breve para confirmar.
+                    Sua pré-reserva foi criada com sucesso. Nossa equipe entrará em contato em breve para confirmar.
                   </p>
                 </div>
               )}
